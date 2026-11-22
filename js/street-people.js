@@ -88,6 +88,30 @@ window.StreetPeople = function (D) {
   };
   var WALKERS = ['coatWoman', 'hoodie', 'oldMan', 'coatMan', 'puffer', 'cape', 'student', 'nurse', 'jacketWoman'];
   var DINERS = ['coatWoman', 'coatMan', 'jacketWoman', 'student', 'nurse', 'hoodie', 'oldMan'];
+  // More people, built from parts (rule 5 of the street's design rules): build and height, skin tone, hair, top,
+  // cloth, trousers, shoes, and extras. Seeded, so the same 18 people live on the street on every visit.
+  (function () {
+    var seed = 7177, r = function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }, of = function (a) { return a[Math.floor(r() * a.length)]; };
+    var SKIN = ['#f0c8a8', '#e0b49a', '#c89a80', '#a8765a', '#8a5a40', '#6a4430'];
+    var HAIR = ['#141010', '#2a1a14', '#3a2010', '#6a4a2a', '#c8a060', '#8a8a8a', '#d8d0c8'];
+    var COAT = ['#2a3a4a', '#5a3a2a', '#3a4a3a', '#6a2a3a', '#2e2e34', '#7a6a4a', '#3a5a6a', '#8a4a2a', '#4a3a5a', '#b8a888', '#5a5a62', '#2a4a5a'];
+    var PANTS = ['#1a1a22', '#2a3448', '#3a3a3a', '#4a3c28', '#2a2a30', '#5a5a60', '#3a2a22'];
+    var SHOES = ['#1a1a1a', '#2a1a14', '#e8e8e8', '#c8c8d0', '#6a3a2a'];
+    var UMB = ['#c23a5a', '#2a8a96', '#d8b040', '#2a2a3a', '#5a7a3a', '#8a3ac2', '#e0e0e0'];
+    for (var i = 0; i < 18; i++) {
+      var f = r() < 0.5, type = of(['long', 'long', 'jacket', 'jacket', 'hoodie', 'puffer', 'cape']), coat = of(COAT);
+      var p = { sex: f ? 'f' : 'm', build: 0.86 + r() * 0.22, scale: 0.94 + r() * 0.1, coat: coat, coatType: type, weave: of(['twill', 'check', 'stripe', 'tweed', 'denim', 'canvas', 'cord', 'fleece']),
+        pants: of(PANTS), pantsWeave: of(['twill', 'denim', 'cord']), shoes: of(SHOES), skin: of(SKIN), hair: of(HAIR), speed: [8 + r() * 2, 10.5 + r() * 2.5] };
+      p.hairStyle = f ? of(['long', 'pony', 'bun', 'short', 'long']) : of(['short', 'short', 'none', 'short']);
+      if (type === 'long') { p.coatLen = 0.42 + r() * 0.2; p.belt = r() < 0.4; if (r() < 0.6) p.shirt = of(['#d8d0c0', '#c8ccd0', '#e8e0d8']); }
+      if (type === 'cape') p.coatLen = 0.5 + r() * 0.2;
+      if (type === 'hoodie' && r() < 0.5) { p.head = 'hood'; } else { var hr = r(); if (hr < 0.14) { p.head = 'beanie'; p.headColor = of(COAT); } else if (hr < 0.26) { p.head = 'cap'; p.headColor = of(['#1a1a1a', '#2a3a5a', '#8a2a2a']); } else if (hr < 0.32 && type === 'long') { p.head = 'fedora'; p.headColor = '#2a2420'; } }
+      if (r() < 0.25) p.scarf = of(['#3ec8be', '#d8b848', '#b8483a', '#8a8aa8', '#c8c0b0']);
+      var br = r(); if (br < 0.2) { p.bag = 'tote'; p.bagColor = of(['#d8c8a8', '#c8508a', '#5a7a8a']); } else if (br < 0.38) { p.bag = 'backpack'; p.bagColor = of(['#151515', '#3a4a5a', '#6a3a2a']); }
+      if (r() < 0.6) p.umbrella = of(UMB); else p.runs = true;
+      CAST['g' + i] = p; WALKERS.push('g' + i); if (type !== 'cape' && p.head !== 'hood') DINERS.push('g' + i);
+    }
+  })();
 
   // ---------- Small helpers ----------
   var rgbCache = {};
@@ -342,7 +366,7 @@ window.StreetPeople = function (D) {
     var bw = sp.build || 1, fem = sp.sex === 'f', type = sp.coatType, cape = type === 'cape', wv = sp.weave;
     var legLen = (THIGH + SHIN) * s;
     var hemLen = seated ? 0.05 * s : type === 'long' ? (sp.coatLen || 0.5) * legLen : cape ? (sp.coatLen || 0.6) * legLen : type === 'apron' ? 0.22 * s : 0.035 * s;
-    var hemY = hipY + hemLen, wide = type === 'puffer' ? 1.28 : type === 'long' ? 1.06 : 1;
+    var hemY = hipY + hemLen, wide = type === 'puffer' ? 1.1 : type === 'long' ? 1.05 : 1;
     var sf = 0.062 * s * bw * wide, sb = 0.064 * s * bw * wide;
     var chest = (fem ? 0.088 : 0.08) * s * bw * wide, back = 0.085 * s * bw * wide;
     var waistF = (fem ? 0.05 : 0.058) * s * bw * wide, waistB = (fem ? 0.058 : 0.064) * s * bw * wide;
@@ -643,7 +667,7 @@ window.StreetPeople = function (D) {
     var lift = kind === 'eat' ? Math.max(0, Math.sin(u * TAU)) : kind === 'drink' ? Math.max(0, Math.sin(clamp((u - 0.2) * 2.2, 0, 1) * Math.PI)) : 0;
     var bow = kind === 'eat' ? 0.016 * s * (1 - lift) : kind === 'phone' ? 0.02 * s : 0;
     var turn = kind === 'talk' ? 0.012 * s * Math.sin(u * TAU) : 0, breath = 0.004 * s * Math.sin(u * TAU * 2);
-    var wide = sp.coatType === 'puffer' ? 1.22 : sp.coatType === 'long' ? 1.06 : 1;
+    var wide = sp.coatType === 'puffer' ? 1.08 : sp.coatType === 'long' ? 1.05 : 1;
     var hipW = 0.074 * s * bw * wide, shW = 0.098 * s * bw * wide * (sp.sex === 'f' ? 0.92 : 1);
     var hipY = seatY - 0.012 * s, shY = hipY - 0.27 * s - breath;
     anchor(ox, footY);
@@ -857,7 +881,7 @@ window.StreetPeople = function (D) {
     if (r < 0.12) { var a = makeAgent('jacketWoman', lane, x, dir), b = makeAgent('coatMan', lane, x, dir); b.speed = a.speed; b.follow = a; b.gap = -h * 0.42; a.partner = b; agents.push(a, b); return; }
     if (r < 0.2) { var pa = makeAgent('coatWoman', lane, x, dir), kd = makeAgent('kid', lane, x, dir); kd.speed = pa.speed; kd.follow = pa; kd.gap = h * 0.38; pa.partner = kd; agents.push(pa, kd); return; }
     var ag = makeAgent(pick(WALKERS), lane, x, dir);
-    if (CAST[ag.id].dog) ag.dog = { x: ag.x + dir * h * 0.8, dist: 0 };
+    if (CAST[ag.id].dog) ag.dog = { x: ag.x + dir * h * 0.8, dist: 0, dir: dir };
     agents.push(ag);
   }
   LANES.forEach(function (lane, li) { for (var i = 0; i < lane.max; i++) spawn(li, false); });
@@ -984,8 +1008,11 @@ window.StreetPeople = function (D) {
         if (a.alpha >= 1) { a.alpha = 1; a.state = 'walk'; a.cooldown = 6; }
       }
       if (a.dog) {
-        var want = a.x + a.dir * LANES[a.lane].h * 0.85, moving = a.state === 'walk' || a.state === 'run';
-        var step = (want - a.dog.x) * Math.min(1, dt * 3); a.dog.x += step; a.dog.dist += Math.abs(step); a.dog.still = !moving;
+        // The dog keeps to its own pace and turns round to follow; it never slides sideways or backwards
+        var want = a.x + a.dir * LANES[a.lane].h * 0.85, moving = a.state === 'walk' || a.state === 'run', gap = want - a.dog.x;
+        var vmax = (a.speed * (a.state === 'run' ? 1.9 : 1) * 1.7 + 6) * dt, step = Math.max(-vmax, Math.min(vmax, gap * Math.min(1, dt * 3)));
+        if (Math.abs(gap) > 1.5) a.dog.dir = gap > 0 ? 1 : -1; else if (!moving) a.dog.dir = a.dir;
+        a.dog.x += step; a.dog.dist += Math.abs(step); a.dog.still = Math.abs(step) < 0.02 * dt * 60 && !moving;
       }
     }
     agents = agents.filter(function (a) { return a.active; });
@@ -1182,12 +1209,13 @@ window.StreetPeople = function (D) {
       drawSprite(ctx, sh, frame, x, y, a.dir, alpha, env);
       if (a.dog) {
         var Hd = Math.max(8, Math.round(s * 0.26)), ds = dogSheet(Hd), df = a.dog.still ? DOG_IDLE[Math.floor((env.t + a.phase) * 3) % DOG_IDLE.length] : Math.floor(a.dog.dist / (s / S * 0.25)) % 4, dx = Math.round(a.dog.x * S) + ox;
-        ctx.save(); ctx.globalAlpha = alpha; ctx.translate(dx, y); ctx.scale(a.dir, 1);
+        var dd = a.dog.dir || a.dir;
+        ctx.save(); ctx.globalAlpha = alpha; ctx.translate(dx, y); ctx.scale(dd, 1);
         ctx.drawImage(ds.canvas, df * ds.fw, 0, ds.fw, ds.fh, -Math.round(ds.fw * 0.5), -ds.fh + 3, ds.fw, ds.fh);
         ctx.globalAlpha = alpha * env.lights; ctx.drawImage(ds.canvas, df * ds.fw, ds.fh, ds.fw, ds.fh, -Math.round(ds.fw * 0.5), -ds.fh + 3, ds.fw, ds.fh);
         ctx.restore();
         ctx.fillStyle = 'rgba(20,20,24,' + (0.85 * alpha) + ')';
-        var hx = x + a.dir * Math.round(s * 0.1), hy = y - Math.round(s * 0.42), ex2 = dx + a.dir * Math.round(Hd * 0.75), ey = y - Math.round(Hd * 0.75);
+        var hx = x + a.dir * Math.round(s * 0.1), hy = y - Math.round(s * 0.42), ex2 = dx + dd * Math.round(Hd * 0.75), ey = y - Math.round(Hd * 0.75);
         for (var st = 0; st <= 24; st++) { var tt = st / 24; ctx.fillRect(Math.round(hx + (ex2 - hx) * tt), Math.round(hy + (ey - hy) * tt + Math.sin(tt * Math.PI) * 4), 1, 1); }
       }
       if (pose === 'phone' && env.lights > 0.2) { ctx.fillStyle = 'rgba(127,243,255,' + (0.9 * alpha) + ')'; ctx.fillRect(x + a.dir * Math.round(s * 0.1), y - Math.round(s * 0.72), 2, 3); }

@@ -804,6 +804,62 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
   .d-hint { animation: none; }
   .d-grain::before { animation: none; }
 }
+/* The game interface (district.js): one canvas over the street for the prompt, the dialogue box, the clock corner
+   and the title screen. It never takes the pointer: the real links and buttons are underneath. */
+.stage > canvas.d-ui { z-index: 6; pointer-events: none; }
+.stage > canvas.d-clock { inset: auto; top: calc(8 * var(--px)); right: calc(8 * var(--px)); width: calc(86 * var(--px)); height: calc(27 * var(--px)); z-index: 6; pointer-events: none; }
+/* The boards and labels are drawn in the street's pixel letters; the page's own words stay in place, invisible, for
+   links, keyboard focus, screen readers and search engines */
+.district.is-live:not(.is-broken) .d-bill, .district.is-live:not(.is-broken) .d-ticker { background: transparent; }
+.district.is-live:not(.is-broken) .d-bill::after { display: none; }
+.district.is-live:not(.is-broken) .d-bill > span, .district.is-live:not(.is-broken) .d-menu-h, .district.is-live:not(.is-broken) .d-menu li,
+.district.is-live:not(.is-broken) .d-menu li::before, .district.is-live:not(.is-broken) .d-menu a, .district.is-live:not(.is-broken) .d-ticker-run {
+  color: transparent;
+  text-decoration-color: transparent;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.district.is-live:not(.is-broken) .d-ticker-run { animation: none; }
+.district.is-live:not(.is-broken) .d-sign .d-tag { opacity: 0 !important; }   /* the prompt and the dialogue box take over */
+.district.is-talking .d-hint, .district.is-title .d-hint { opacity: 0; }
+.district.is-title .d-overlays { pointer-events: none; }
+/* The corner menu is the pause menu (Esc opens it), in the interface kit's frame */
+.hud .hud-toggle, .hud-panel { border: 2px solid var(--c-amber); border-radius: 0; background: #18111c; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45); }
+.hud-panel .links li::before { content: ""; }
+.hud-panel .links li:hover::before, .hud-panel .links li:focus-within::before { content: "\25B6"; color: var(--c-amber); font-size: 12px; }
+@media (hover: hover) { .hud-menu::after { content: " \00B7  Esc"; color: var(--c-muted); font-size: 15px; text-transform: none; } }
+
+/* Phones held upright: the side-scroller (district.js). It settles on each shop; arrows on the edges, a map of the
+   street at the bottom, and an ENTER button for the shop in the middle */
+.d-arrow, .d-enter, .d-map, .d-snap { display: none; }
+.d-arrow, .d-enter {
+  border: 2px solid var(--c-amber);
+  border-radius: 0;
+  background: #18111c;
+  color: var(--c-amber);
+  font-family: var(--pixel);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+@media (max-aspect-ratio: 1/1) {
+  .district { scroll-snap-type: x mandatory; }
+  .d-snap { display: block; position: absolute; top: 0; width: 1px; height: 100%; scroll-snap-align: center; pointer-events: none; }
+  .d-arrow { display: block; position: fixed; top: 46%; z-index: 12; width: 44px; height: 64px; padding: 0; font-size: 22px; }
+  .d-arrow[hidden] { display: none; }
+  .d-arrow-l { left: 6px; }
+  .d-arrow-r { right: 6px; }
+  .d-enter { display: block; position: fixed; left: 50%; bottom: 104px; z-index: 12; transform: translateX(-50%); min-height: 48px; padding: 6px 18px; font-size: 24px; white-space: nowrap; }
+  .d-map { display: block; position: fixed; left: 50%; bottom: 16px; z-index: 12; width: min(86vw, 360px); height: auto; transform: translateX(-50%); border: 2px solid var(--c-amber); background: #18111c; image-rendering: pixelated; }
+  .d-hint { display: none; }
+}
+@media (max-aspect-ratio: 1/1) and (prefers-reduced-motion: no-preference) {
+  .d-arrow-l.is-new { animation: d-nudge-l 1.1s ease-in-out 4; }
+  .d-arrow-r.is-new { animation: d-nudge-r 1.1s ease-in-out 4; }
+}
+@keyframes d-nudge-l { 50% { transform: translateX(-5px); } }
+@keyframes d-nudge-r { 50% { transform: translateX(5px); } }
+.district.is-leaving ~ .d-enter, .district.is-leaving .d-enter, .district.is-title .d-enter, .district.is-title .d-arrow, .district.is-title .d-map { visibility: hidden; }
+
 /* Stepping into a shop (district.js): the street dissolves in big pixels into the other pages' navy */
 .d-wipe {
   position: fixed;
