@@ -218,6 +218,10 @@
     U: 'X...X X...X X...X X...X X...X X...X .XXX.', W: 'X...X X...X X...X X.X.X X.X.X XX.XX X...X', Y: 'X...X X...X .X.X. ..X.. ..X.. ..X.. ..X..',
     '.': '..... ..... ..... ..... ..... .XX.. .XX..', "'": '..X.. ..X.. .X... ..... ..... ..... .....'
   };
+  // Cyrillic for the bar's sign: Т, А and Н look like T, A and H; Ь and Я are drawn here
+  F5['Т'] = F5.T; F5['А'] = F5.A; F5['Н'] = F5.H;
+  F5['Ь'] = 'X.... X.... X.... XXXX. X...X X...X XXXX.';
+  F5['Я'] = '.XXXX X...X X...X .XXXX ..X.X .X..X X...X';
   var F3 = {
     A: '.X. X.X XXX X.X X.X', B: 'XX. X.X XX. X.X XX.', C: '.XX X.. X.. X.. .XX', D: 'XX. X.X X.X X.X XX.', E: 'XXX X.. XX. X.. XXX', F: 'XXX X.. XX. X.. X..',
     G: '.XX X.. X.X X.X .XX', H: 'X.X X.X XXX X.X X.X', I: 'XXX .X. .X. .X. XXX', J: '..X ..X ..X X.X .X.', K: 'X.X X.X XX. X.X X.X', L: 'X.. X.. X.. X.. XXX',
@@ -573,7 +577,7 @@
 
   }
 
-  // D: the bar, OPEN KITCHEN (about me): a wooden house with a flat roof. Customers sit outside at the counter on
+  // D: the bar, ТАТЬЯНА'S BAR (about me): a wooden house with a flat roof. Customers sit outside at the counter on
   // stools, facing in; the server works inside
   function paintD() {
     seed = 404;
@@ -583,7 +587,7 @@
     box(566, 336, 208, 66, K.MENUBG); frame(563, 333, 214, 72, K.MENUFR, 3);
     [600, 740].forEach(function (lx) { box(lx - 6, 330, 14, 3, K.LAMPS); });                  // two little lamps on the roof edge, shining down on the board
     box(540, 424, 260, 16, K.BOARD); frame(540, 424, 260, 16, K.WOODD);
-    sign('OPEN KITCHEN', 670, 425, { font: FB, scale: 2, fill: K.GOLD, hi: K.GOLDHI, outline: K.LETD, wear: 0.05 });
+    sign("ТАТЬЯНА'S BAR", 670, 425, { font: FB, scale: 2, fill: K.GOLD, hi: K.GOLDHI, outline: K.LETD, wear: 0.05 });
     box(540, 440, 260, 90, K.WOODD);
     [[556, 84], [698, 92]].forEach(function (p) {
       var x0 = p[0], w = p[1];
