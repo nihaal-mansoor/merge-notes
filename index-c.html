@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <script src="js/street-people.js" defer></script>
+  <script src="js/district.js" defer></script>
+  <title>Merge Notes · by Nihaal</title>
+  <meta name="description" content="I'm a developer at a real-estate company in Dubai. I build the systems that catch, route and follow up every lead with Claude Code, and write about what breaks and what works.">
+  <!-- TODO domain: add <link rel="canonical"> and og:url once the domain is bought -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Merge Notes · by Nihaal">
+  <meta property="og:description" content="What breaks and what works when one developer builds a sales team's systems with AI.">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Merge Notes" href="feed.xml">
+  <link rel="stylesheet" href="css/style.css">
+  <noscript><style>.stage { background-image: url(img/district/fallback.jpg); } .d-hint { display: none; }</style></noscript>
+</head>
+<body class="district-home">
+<a class="skip" href="#hud">Skip to the menu</a>
+<h1 class="visually-hidden">Merge Notes, by Nihaal</h1>
+
+<!--
+  Home C: a whole street is the page, and every shop's name is a link. The words on the billboard, the
+  specials board and the ticker are real text. Boxes are in the scene's own units (1280 x 720), so they
+  stay on their signs at any screen size; --z is how far away each one is (it only matters with ?cam=).
+  js/district.js paints the street behind them, and steps into a shop when its link is clicked.
+-->
+<main class="district" id="district">
+  <div class="stage">
+    <div class="d-overlays">
+
+      <a class="d-area d-sign d-tag-left" data-area="feed" href="feed.xml" style="--x:0;--y:416;--w:190;--h:114;--z:.43">
+        <span class="d-tag">FEED: the RSS feed &gt;&gt;</span>
+      </a>
+      <!-- TODO linkedin: replace YOUR-PROFILE here and in the NETWORK sign and the menu -->
+      <a class="d-area d-sign d-tag-left" data-area="linkedin" href="https://www.linkedin.com/in/YOUR-PROFILE/" style="--x:104;--y:334;--w:88;--h:64;--z:.43">
+        <span class="d-tag">LinkedIn, Tue and Thu &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign" data-area="articles" href="articles/index.html" style="--x:394;--y:200;--w:48;--h:232;--z:.53">
+        <span class="d-tag">Articles: all six &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign" data-area="books" href="articles/index.html" style="--x:196;--y:400;--w:192;--h:130;--z:.47">
+        <span class="d-tag">Browse the articles &gt;&gt;</span>
+      </a>
+      <!-- TODO substack: replace YOUR-SUBSTACK here and in the form below -->
+      <a class="d-area d-sign d-kiosk" data-area="kiosk" data-opens="d-news" href="https://YOUR-SUBSTACK.substack.com/subscribe" style="--x:436;--y:402;--w:84;--h:128;--z:.47">
+        <span class="d-tag">The newsletter &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign" data-area="about" href="about.html" style="--x:540;--y:422;--w:260;--h:108;--z:.5">
+        <span class="d-tag">NIHAAL'S: about me &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign" data-area="data" href="data/index.html" style="--x:800;--y:410;--w:190;--h:120;--z:.42">
+        <span class="d-tag">Dubai data, checked &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign" data-area="contact" href="contact.html" style="--x:990;--y:410;--w:180;--h:120;--z:.46">
+        <span class="d-tag">Write to me &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign d-tag-right" data-area="network" href="https://www.linkedin.com/in/YOUR-PROFILE/" style="--x:1172;--y:116;--w:34;--h:208;--z:.43">
+        <span class="d-tag">NETWORK: LinkedIn &gt;&gt;</span>
+      </a>
+      <a class="d-area d-sign" data-area="subway" href="articles/index.html#h-soon" style="--x:998;--y:520;--w:176;--h:108;--z:.61">
+        <span class="d-tag">Under construction: coming up next &gt;&gt;</span>
+      </a>
+
+      <a class="d-area d-bill" data-area="billboard" href="articles/one-developer-eight-apps.html" style="--x:1000;--y:118;--w:160;--h:108;--z:.46">
+        <span class="d-bill-k">New article</span>
+        <span class="d-bill-t">One developer, eight apps</span>
+        <span class="d-bill-s">The rules that keep AI-built software under control</span>
+        <span class="d-bill-m">29 Nov · 5 min read &gt;&gt;</span>
+      </a>
+
+      <div class="d-area d-menu" data-area="menu" style="--x:566;--y:338;--w:208;--h:64;--z:.5">
+        <p class="d-menu-h">Today's specials</p>
+        <ol>
+          <li><a href="articles/where-leads-leak.html">Where leads leak</a></li>
+          <li><a href="articles/the-train-driver.html">The train driver</a></li>
+          <li><a href="articles/ai-doesnt-build-the-wrong-thing.html">AI doesn't build the wrong thing</a></li>
+        </ol>
+      </div>
+
+      <div class="d-area d-ticker" style="--x:998;--y:256;--w:164;--h:20;--z:.46" tabindex="0" role="region" aria-label="Numbers from my own logs (point at it or focus it to pause)">
+        <p class="d-ticker-run"><span>8 apps I look after · 1,307 prompts to Claude Code · 450+ merged pull requests · 288 tasks finished · 1,000+ tests on the lead dashboard · from my own logs, 13 Oct to 7 Nov 2026 ·&nbsp;</span><span aria-hidden="true">8 apps I look after · 1,307 prompts to Claude Code · 450+ merged pull requests · 288 tasks finished · 1,000+ tests on the lead dashboard · from my own logs, 13 Oct to 7 Nov 2026 ·&nbsp;</span></p>
+      </div>
+
+      <form class="d-pop signup" id="d-news" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get" hidden style="--x:380;--y:240;--w:300;--h:140">
+        <label for="d-email">Every two weeks: what broke, what worked, and what I'm building next.</label>
+        <div class="row">
+          <input id="d-email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+          <button type="submit">Join</button>
+        </div>
+        <small>Free. Unsubscribe any time.</small>
+        <button class="d-pop-x" type="button" aria-label="Close">x</button>
+      </form>
+    </div>
+  </div>
+  <p class="d-hint" aria-hidden="true">Every shop name is a link<span class="d-swipe"> · swipe to look around</span></p>
+</main>
+
+<nav class="hud" id="hud" aria-label="Main">
+  <button class="hud-toggle" type="button" aria-expanded="true" aria-controls="hud-panel"><span class="hud-logo">MERGE NOTES<span class="dot">.</span></span> <span class="hud-by">by Nihaal</span> <span class="hud-menu">Menu</span></button>
+  <div class="hud-panel" id="hud-panel">
+    <p class="hud-intro">I'm Nihaal, a developer at a real-estate company in Dubai. I build the systems that catch, route and follow up every lead, with Claude Code, and write about what breaks and what works.</p>
+    <ul class="links">
+      <li><a href="articles/index.html">Articles</a></li>
+      <li><a href="data/index.html">Dubai data</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="https://YOUR-SUBSTACK.substack.com/subscribe">Newsletter</a></li>
+      <li><a href="https://www.linkedin.com/in/YOUR-PROFILE/">LinkedIn</a></li>
+      <li><a href="feed.xml">RSS feed</a></li>
+    </ul>
+    <p class="hud-tip">Every shop's name in the street is a link. Point at one to light it up, click it to step inside.</p>
+    <p class="hud-alt"><a href="index.html">Home A</a><span class="sep">|</span><a href="index-b.html">Home B</a></p>
+  </div>
+</nav>
+</body>
+</html>

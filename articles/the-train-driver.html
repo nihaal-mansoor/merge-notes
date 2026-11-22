@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="../js/city-data.js" defer></script>
+  <script src="../js/city.js" defer></script>
+  <!-- DRAFT: built from ContentHQ/03_Pieces on 22-11. Sync the final text before the site goes live. -->
+  <title>The train driver · Merge Notes</title>
+  <meta name="description" content="How a lead stopped waiting overnight, and the kind of work nobody sees until it stops.">
+  <!-- TODO domain: canonical and og:url -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The train driver">
+  <meta property="og:description" content="How a lead stopped waiting overnight, and the kind of work nobody sees until it stops.">
+  <meta property="article:published_time" content="2026-11-29">
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Merge Notes" href="../feed.xml">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="scene" aria-hidden="true">
+  <div class="art">
+    <div class="scene-fallback"></div>
+    <canvas class="city" width="480" height="270"></canvas>
+    <canvas class="city-glow" width="480" height="270"></canvas>
+  </div>
+</div>
+<div class="page">
+
+  <div class="strip">
+    <span>Sunday, 29 November 2026</span>
+    <span class="quick">
+      <a href="#newsletter">Newsletter</a><span class="sep">|</span><a href="../feed.xml">RSS</a><span class="sep">|</span><a href="../contact.html">Contact</a>
+    </span>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <a class="logo" href="../index.html">MERGE NOTES<span class="dot">.</span></a>
+      <p class="tagline">by Nihaal · notes from building with AI</p>
+    </div>
+    <a class="banner" href="https://YOUR-SUBSTACK.substack.com/subscribe">
+      <span>
+        <strong>The newsletter, every two weeks</strong>
+        <small>What broke, what worked, and what I'm building next.</small>
+      </span>
+      <span class="go">Join free &gt;&gt;</span>
+    </a>
+  </header>
+
+  <nav class="nav" aria-label="Main">
+    <ul>
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="index.html" aria-current="page">Articles</a></li>
+      <li><a href="../data/index.html">Dubai data</a></li>
+      <li><a href="../about.html">About</a></li>
+      <li><a href="../contact.html">Contact</a></li>
+      <li><a href="../feed.xml">RSS</a></li>
+    </ul>
+  </nav>
+
+  <div class="crumbs">
+    <a href="../index.html">Home</a><span class="sep">&gt;</span><a href="index.html">Articles</a><span class="sep">&gt;</span>The train driver
+  </div>
+
+  <div class="layout">
+
+    <main id="content">
+      <article class="box">
+        <div class="box-body article">
+
+          <h1>The train driver</h1>
+          <p class="standfirst">How a lead stopped waiting overnight, and the kind of work nobody sees.</p>
+          <p class="meta">29 November 2026 · <a href="index.html#where-leads-leak">Where leads leak</a> · 4 min read</p>
+
+          <p>A lead that came in at 7 PM used to wait until 10:30 the next morning.</p>
+          <p>Nobody planned it like that. It was just how things worked. Every morning someone would export the leads from a Google Sheet, import them into another one, check which agents had clocked in and were actually on the sales floor, and then hand the leads out. So if you filled in a form after work, you spent the whole night as a row in a spreadsheet. By the time someone called you, you'd probably already spoken to two other companies.</p>
+          <p>I'm a developer at a real-estate company in Dubai, and fixing this is the thing I'm most proud of.</p>
+
+          <h2>Finding where the time went</h2>
+          <p>My first instinct was to build something. That's always the first instinct, especially now, when building with AI is fast and easy. But I started by finding where the time was actually being lost. And it wasn't in any piece of software. It was in that morning routine. A person, a sheet, and a wait.</p>
+          <p>So there were really two problems. The lead had to reach an agent without someone in the middle. And that agent had to be someone who was actually working.</p>
+          <p>The second one sounds simple until you try it. You can't give a lead to someone who's on leave. But you also can't wait until 10:30 every morning to find out who came in. So I decided to use the clock-in from the day before. If you clock in today, you get leads tomorrow. It's not perfect, but it's simple, everyone understands it, and a lead that comes in at 7 PM can go to someone straight away instead of waiting for a person to check a list.</p>
+          <p>Then I built the system behind it. Leads come in from a lot of places: website forms, ads, WhatsApp, landing pages. Each one used to arrive in its own way. I pulled them all into one system, worked out which project each lead was about, found the agents working on that project, and pushed the lead into the CRM with the right person on it.</p>
+          <p>Today a lead reaches an agent instantly, and it gets a call back within minutes.</p>
+
+          <h2>The half nobody warns you about</h2>
+          <p>Getting the lead to the agent turned out to be the easy half.</p>
+          <p>Even after an agent was notified, sometimes nobody called back. So we gave each agent 30 minutes to respond. If they don't, the lead moves to the next agent on the list. That way every lead gets attended to within a set amount of time, whatever else is going on.</p>
+          <p>When it went live, a lot of things broke, or didn't work the way they were meant to. That part is normal. What I didn't expect was the change in people.</p>
+          <p>Before, agents were relaxed with their leads. A lead could sit there and nothing would happen. Now, when they saw a lead leave their list and go to someone else, everyone started paying attention. Nobody had to send a reminder. And that's what got fresh leads a call right away.</p>
+          <p>It's hard to make a system work well when the people using it don't have time for it. Salespeople want to sell. Updating a CRM feels like paperwork to them, and I understand that more than they'd think, because I did paperwork for a living before I ever built anything. That's why I keep saying the hard part isn't building. It's figuring out how people will actually use what you build.</p>
+
+          <h2>The train driver</h2>
+          <p>I honestly felt great when it started working. Then I realised that nobody was going to notice.</p>
+          <p>It's like being a train driver. He shows up every day. He makes sure everything is running and people get where they need to go. But nobody thanks the driver, or thinks about how much work goes into being that consistent and keeping things on schedule. When the train is on time, nobody thinks about the train at all.</p>
+          <p>That's what this kind of work feels like. When it works, it's invisible. When it doesn't, that's when you hear about it. And no matter how much you perfect a system, there will always be complaints.</p>
+          <p>Most days I feel a bit unseen and misunderstood. I don't expect that to change. That's the job. But if you're the person keeping the trains running where you work, I know what it takes. A train being on time is never an accident.</p>
+
+          <div class="end-box">
+            <p><strong>I write about what breaks and what works every two weeks.</strong> Get the next one by email.</p>
+            <form class="signup" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get">
+              <label class="visually-hidden" for="email-end">Your email</label>
+              <div class="row">
+                <input id="email-end" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                <button type="submit">Join</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </article>
+    </main>
+
+    <aside aria-label="Sidebar">
+
+      <section class="box" id="newsletter" aria-labelledby="h-news">
+        <div class="box-title"><h2 id="h-news">Newsletter</h2></div>
+        <div class="box-body">
+          <form class="signup" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get">
+            <label for="email">Every two weeks: what broke, what worked, and what I'm building next.</label>
+            <div class="row">
+              <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+              <button type="submit">Join</button>
+            </div>
+            <small>Free. Unsubscribe any time.</small>
+          </form>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-about">
+        <div class="box-title">
+          <h2 id="h-about">About me</h2>
+          <a class="more" href="../about.html">more &gt;&gt;</a>
+        </div>
+        <div class="box-body">
+          <p>I'm Nihaal, a developer at a real-estate company in Dubai. I build the systems that catch, route and follow up every lead, with Claude Code.</p>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-more">
+        <div class="box-title">
+          <h2 id="h-more">More articles</h2>
+          <a class="more" href="index.html">all &gt;&gt;</a>
+        </div>
+        <div class="box-body">
+          <ul class="links">
+            <li><a href="one-developer-eight-apps.html">One developer, eight apps</a></li>
+            <li><a href="where-leads-leak.html">Where leads leak</a></li>
+            <li><a href="ai-doesnt-build-the-wrong-thing.html">AI doesn't build the wrong thing</a></li>
+            <li><a href="making-calls-should-be-easy.html">Making calls should be easy</a></li>
+            <li><a href="rules-for-a-system-that-never-had-any.html">Adding rules to a system that never had any</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-topics">
+        <div class="box-title"><h2 id="h-topics">Topics</h2></div>
+        <div class="box-body">
+          <ul class="links">
+            <li><a href="index.html#where-leads-leak">Where leads leak</a></li>
+            <li><a href="index.html#building-with-ai">How I build with AI</a></li>
+            <li><a href="index.html#tools-for-people">Tools for people who aren't technical</a></li>
+            <li><a href="index.html#honest-lessons">Honest lessons</a></li>
+            <li><a href="../data/index.html">Dubai data, checked</a></li>
+          </ul>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    <a class="top-link" href="#content">Back to top ^</a>
+    <p>
+      <a href="../index.html">Home</a><span class="sep">|</span><a href="index.html">Articles</a><span class="sep">|</span><a href="../data/index.html">Dubai data</a><span class="sep">|</span><a href="../about.html">About</a><span class="sep">|</span><a href="../contact.html">Contact</a><span class="sep">|</span><a href="../feed.xml">RSS</a>
+    </p>
+    <p>&copy; 2026 Nihaal. Written by me, built with Claude Code.</p>
+    <p>Best viewed at any screen size.</p>
+  </footer>
+
+</div>
+</body>
+</html>

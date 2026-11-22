@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="../js/city-data.js" defer></script>
+  <script src="../js/city.js" defer></script>
+  <title>Dubai data · Merge Notes</title>
+  <meta name="description" content="Dubai property in numbers, from the Dubai Land Department's open data. Every figure is checked against the official indexes before it goes up.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Dubai data, checked · Merge Notes">
+  <meta property="og:description" content="Dubai property in numbers, from public data, checked against the official indexes.">
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Merge Notes" href="../feed.xml">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="scene" aria-hidden="true">
+  <div class="art">
+    <div class="scene-fallback"></div>
+    <canvas class="city" width="480" height="270"></canvas>
+    <canvas class="city-glow" width="480" height="270"></canvas>
+  </div>
+</div>
+<div class="page">
+
+  <div class="strip">
+    <span>Sunday, 29 November 2026</span>
+    <span class="quick">
+      <a href="#newsletter">Newsletter</a><span class="sep">|</span><a href="../feed.xml">RSS</a><span class="sep">|</span><a href="../contact.html">Contact</a>
+    </span>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <a class="logo" href="../index.html">MERGE NOTES<span class="dot">.</span></a>
+      <p class="tagline">by Nihaal · notes from building with AI</p>
+    </div>
+    <a class="banner" href="https://YOUR-SUBSTACK.substack.com/subscribe">
+      <span>
+        <strong>The newsletter, every two weeks</strong>
+        <small>What broke, what worked, and what I'm building next.</small>
+      </span>
+      <span class="go">Join free &gt;&gt;</span>
+    </a>
+  </header>
+
+  <nav class="nav" aria-label="Main">
+    <ul>
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="../articles/index.html">Articles</a></li>
+      <li><a href="index.html" aria-current="page">Dubai data</a></li>
+      <li><a href="../about.html">About</a></li>
+      <li><a href="../contact.html">Contact</a></li>
+      <li><a href="../feed.xml">RSS</a></li>
+    </ul>
+  </nav>
+
+  <div class="crumbs">
+    <a href="../index.html">Home</a><span class="sep">&gt;</span>Dubai data
+  </div>
+
+  <div class="layout">
+
+    <main id="content">
+
+      <section class="box" aria-labelledby="h-intro">
+        <div class="box-title"><h2 id="h-intro">Dubai data, checked</h2></div>
+        <div class="box-body prose">
+          <h1>Dubai property, from the official data</h1>
+          <p>Every sale and rent contract in Dubai is registered with the Dubai Land Department, and much of that data is public. I work through it with Claude Code, the same way I build software: one question at a time, with every step written down.</p>
+          <p>Then I check every figure against the official indexes before it goes up. When a number doesn't match an official source, it stays out until I've tested it and can explain the gap. I learned that the hard way, when an analysis passed two checks and still didn't hold up against the official index.</p>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-reports">
+        <div class="box-title"><h2 id="h-reports">Reports</h2></div>
+        <div class="box-body">
+          <h3 class="sub-head">Coming up</h3>
+          <ul class="links">
+            <li><span class="soon">Dubai property in 2026: what the official data says</span><span class="date">24-01</span></li>
+            <li><span class="soon">January 2027 in Dubai sales</span><span class="date">21-02</span></li>
+          </ul>
+          <p class="note">After that, one report a month, and a bigger review every quarter.</p>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-rules">
+        <div class="box-title"><h2 id="h-rules">How I check the numbers</h2></div>
+        <div class="box-body prose">
+          <ul>
+            <li><strong>Public data only.</strong> Never my employer's data, listings or projects.</li>
+            <li><strong>Every figure has a source and an exact period.</strong> If you can't see where a number came from, it doesn't go up.</li>
+            <li><strong>Like with like.</strong> Sales-only figures are never compared with totals that include mortgages and gifts.</li>
+            <li><strong>Checked against the official index.</strong> A finding that disagrees with it waits until I can test it.</li>
+            <li><strong>The numbers, not predictions.</strong> I report what the data shows. I don't tell anyone where or when to buy.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-sources">
+        <div class="box-title"><h2 id="h-sources">Sources</h2></div>
+        <div class="box-body">
+          <table class="numbers facts">
+            <tr><th scope="row">Sales and transactions</th><td>Dubai Land Department open data</td></tr>
+            <tr><th scope="row">Rent contracts</th><td>Dubai Land Department open data</td></tr>
+            <tr><th scope="row">New projects</th><td>Dubai Land Department open data</td></tr>
+            <tr><th scope="row">Rent levels, citywide</th><td>Official residential rent price index</td></tr>
+          </table>
+          <!-- TODO check: confirm this is the current DLD open data page -->
+          <p class="note"><a href="https://dubailand.gov.ae/en/open-data/real-estate-data/">Dubai Land Department open data &gt;&gt;</a></p>
+          <p class="note">Not financial advice.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <aside aria-label="Sidebar">
+
+      <section class="box" id="newsletter" aria-labelledby="h-news">
+        <div class="box-title"><h2 id="h-news">Newsletter</h2></div>
+        <div class="box-body">
+          <form class="signup" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get">
+            <label for="email">Every two weeks: what broke, what worked, and what I'm building next.</label>
+            <div class="row">
+              <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+              <button type="submit">Join</button>
+            </div>
+            <small>Free. Unsubscribe any time.</small>
+          </form>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-why">
+        <div class="box-title"><h2 id="h-why">Why I do this</h2></div>
+        <div class="box-body">
+          <p>Headlines about Dubai property often disagree, because they count different things over different periods. I want one place where the numbers are counted the same way every month, with the method in plain sight.</p>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-related">
+        <div class="box-title"><h2 id="h-related">Related</h2></div>
+        <div class="box-body">
+          <ul class="links">
+            <li><a href="../articles/index.html#building-with-ai">How I build with AI</a></li>
+            <li><a href="../articles/index.html">All articles</a></li>
+          </ul>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    <a class="top-link" href="#content">Back to top ^</a>
+    <p>
+      <a href="../index.html">Home</a><span class="sep">|</span><a href="../articles/index.html">Articles</a><span class="sep">|</span><a href="index.html">Dubai data</a><span class="sep">|</span><a href="../about.html">About</a><span class="sep">|</span><a href="../contact.html">Contact</a><span class="sep">|</span><a href="../feed.xml">RSS</a>
+    </p>
+    <p>&copy; 2026 Nihaal. Written by me, built with Claude Code.</p>
+    <p>Best viewed at any screen size.</p>
+  </footer>
+
+</div>
+</body>
+</html>

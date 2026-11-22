@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="../js/city-data.js" defer></script>
+  <script src="../js/city.js" defer></script>
+  <!-- DRAFT: built from the 22-11 draft in ContentHQ/03_Pieces. Sync the final text before publishing. -->
+  <title>One developer, eight apps: the rules that keep AI-built software under control · Merge Notes</title>
+  <meta name="description" content="Writing code fast with AI is easy. Code you can still trust in month six is not. The rules that keep eight apps under control.">
+  <!-- TODO domain: canonical and og:url -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="One developer, eight apps: the rules that keep AI-built software under control">
+  <meta property="og:description" content="Writing code fast with AI is easy. Code you can still trust in month six is not.">
+  <meta property="article:published_time" content="2026-11-29">
+  <link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Merge Notes" href="../feed.xml">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="scene" aria-hidden="true">
+  <div class="art">
+    <div class="scene-fallback"></div>
+    <canvas class="city" width="480" height="270"></canvas>
+    <canvas class="city-glow" width="480" height="270"></canvas>
+  </div>
+</div>
+<div class="page">
+
+  <div class="strip">
+    <span>Sunday, 29 November 2026</span>
+    <span class="quick">
+      <a href="#newsletter">Newsletter</a><span class="sep">|</span><a href="../feed.xml">RSS</a><span class="sep">|</span><a href="../contact.html">Contact</a>
+    </span>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <a class="logo" href="../index.html">MERGE NOTES<span class="dot">.</span></a>
+      <p class="tagline">by Nihaal · notes from building with AI</p>
+    </div>
+    <a class="banner" href="https://YOUR-SUBSTACK.substack.com/subscribe">
+      <span>
+        <strong>The newsletter, every two weeks</strong>
+        <small>What broke, what worked, and what I'm building next.</small>
+      </span>
+      <span class="go">Join free &gt;&gt;</span>
+    </a>
+  </header>
+
+  <nav class="nav" aria-label="Main">
+    <ul>
+      <li><a href="../index.html">Home</a></li>
+      <li><a href="index.html" aria-current="page">Articles</a></li>
+      <li><a href="../data/index.html">Dubai data</a></li>
+      <li><a href="../about.html">About</a></li>
+      <li><a href="../contact.html">Contact</a></li>
+      <li><a href="../feed.xml">RSS</a></li>
+    </ul>
+  </nav>
+
+  <div class="crumbs">
+    <a href="../index.html">Home</a><span class="sep">&gt;</span><a href="index.html">Articles</a><span class="sep">&gt;</span>One developer, eight apps
+  </div>
+
+  <div class="layout">
+
+    <main id="content">
+      <article class="box">
+        <div class="box-body article">
+
+          <h1>One developer, eight apps: the rules that keep AI-built software under control</h1>
+          <p class="meta">29 November 2026 · <a href="index.html#building-with-ai">How I build with AI</a> · 5 min read</p>
+
+          <p>I'm a developer at a real-estate company in Dubai. Between Claude Code and me, we look after eight apps:</p>
+          <ul>
+            <li>the lead dashboard</li>
+            <li>a calling app for the sales team</li>
+            <li>a lead router</li>
+            <li>an HR and admin portal</li>
+            <li>landing pages</li>
+            <li>a booking app for content creators</li>
+            <li>the company website</li>
+            <li>a CRM rebuild that's on the way</li>
+          </ul>
+          <p>In the last 26 days I sent Claude Code 1,307 prompts. They turned into more than 450 merged pull requests and 288 finished tasks.</p>
+          <p>Those numbers aren't the point. The point is that it isn't chaos, most days. Writing code fast with AI is easy. Code you can still trust in month six is not. These are the rules that made the difference for me.</p>
+
+          <h2>1. The project remembers, so I don't have to</h2>
+          <p>Every app has a memory file, <code>CLAUDE.md</code>, that Claude reads at the start of every session. The dashboard's file is now over 800 lines. It covers how dates are written, which roles see which pages, what is never touched, how tests are named and what "done" means.</p>
+          <p>When I explain something twice, it goes into the file. When Claude gets something wrong because it didn't know a rule, the rule goes into the file. Over time, the file becomes the senior engineer who's been there since day one.</p>
+
+          <h2>2. Every odd piece of data gets an ID</h2>
+          <p>Real lead data is messy:</p>
+          <ul>
+            <li>the same person under three phone numbers</li>
+            <li>a form with no project on it</li>
+            <li>a phone number that lost its country code on the way in</li>
+            <li>a reply that arrives seconds before the message it answers</li>
+          </ul>
+          <p>Each time we fix one of these, it gets four things:</p>
+          <ol>
+            <li>an ID, like IMP-123</li>
+            <li>a short entry in a registry: what happened, the rule we added, the edge cases</li>
+            <li>a comment with that ID at the exact line of code</li>
+            <li>a test named after it</li>
+          </ol>
+          <p>There are about 300 of them now.</p>
+          <p>Months later, "why does the code do this?" has an answer in seconds. That goes for me, and for the AI, which reads the same registry before it changes anything.</p>
+
+          <h2>3. A picture before any code</h2>
+          <p>Every new screen starts as a static HTML mock-up. I mark it up, we change it, I approve it, and only then does it get built. Moving a chart in a mock-up costs a minute. Moving it in code costs a release.</p>
+          <p>One rule came out of this: if a page needs a paragraph to explain itself, the page is wrong. Short tooltips only.</p>
+
+          <h2>4. Small changes, one at a time</h2>
+          <p>One pull request per change. A big feature becomes a stack of small pull requests, merged in order. Each one can be read in a few minutes and undone in one click. When something breaks on live, I know which change to look at.</p>
+
+          <h2>5. The tests are the gate</h2>
+          <p>There's no CI server. Instead, the full suite runs before every merge, every time; on the dashboard that's over 1,000 tests. A merge to main goes straight to production with zero downtime, so that test run is the last thing between a change and the sales team.</p>
+          <p>Every bug fix comes with the test that would have caught it. That's how the same bug doesn't come back three weeks later in a different shape.</p>
+
+          <h2>6. Live data is read-only while we investigate</h2>
+          <p>Much of my day is questions like:</p>
+          <ul>
+            <li>"Why didn't this agent get leads today?"</li>
+            <li>"Where did this lead go?"</li>
+          </ul>
+          <p>Claude can look at production to answer them. Those lookups run inside a transaction that is rolled back, with phone numbers masked in the output. Secrets are never printed, not even their first few characters: a check reports pass or fail, nothing else.</p>
+          <p>Fixing live data is a separate step that I decide on and approve.</p>
+
+          <h2>7. Never trust a silent success</h2>
+          <p>When you send data to another system, "200 OK" only means it heard you. Our CRM once accepted every lead we sent and quietly dropped the phone number, because it expected it in a different shape.</p>
+          <p>So after every write to another system, we read the record back and compare.</p>
+
+          <h2>8. Keep track of the work, not just the code</h2>
+          <p>The hardest part of looking after eight apps isn't writing code. It's the interruptions. A message from sales, a broken form, a question from a manager, and the thing I was doing an hour ago is gone.</p>
+          <p>So I built a small tracker. Every evening, a script reads the day's Claude Code chats and GitHub activity, and one AI run turns them into tasks with a status, a priority and a next step, in my notes app. It's how I know the 288. I'll write about it properly in the newsletter.</p>
+
+          <h2>Who does what</h2>
+          <p>Claude writes most of the code. It digs through logs and data, drafts plans and mock-ups, and runs the tests.</p>
+          <p>I decide what we build and why, what "done" means, which design is right and what goes live. I read every plan and I merge every pull request. When the AI is confidently wrong, and sometimes it is, that's where it gets caught.</p>
+
+          <h2>What still goes wrong</h2>
+          <ul>
+            <li><strong>It works in every test and fails on live,</strong> because the server is missing a setting that the tests never needed.</li>
+            <li><strong>The AI solves the problem you described, not the one you have.</strong> A vague prompt gets a confident, wrong answer.</li>
+            <li><strong>I build too much.</strong> I once spent a day making a landing-page builder simpler. Three days later I replaced it with a plain upload: designers send a finished page, and it goes live. The simple version was better.</li>
+            <li><strong>Long sessions lose the thread.</strong> The memory file and the registry are what bring a fresh session back up to speed.</li>
+          </ul>
+
+          <h2>If you're starting out</h2>
+          <p>If you're a developer looking after more apps than you'd like, or a marketer who has started building your own tools with AI, begin with two things: a memory file and a test gate. Everything else on this list grew out of those two.</p>
+
+          <div class="end-box">
+            <p><strong>I write about what breaks and what works every two weeks.</strong> Get the next one by email.</p>
+            <form class="signup" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get">
+              <label class="visually-hidden" for="email-end">Your email</label>
+              <div class="row">
+                <input id="email-end" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                <button type="submit">Join</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </article>
+    </main>
+
+    <aside aria-label="Sidebar">
+
+      <section class="box" id="newsletter" aria-labelledby="h-news">
+        <div class="box-title"><h2 id="h-news">Newsletter</h2></div>
+        <div class="box-body">
+          <form class="signup" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get">
+            <label for="email">Every two weeks: what broke, what worked, and what I'm building next.</label>
+            <div class="row">
+              <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+              <button type="submit">Join</button>
+            </div>
+            <small>Free. Unsubscribe any time.</small>
+          </form>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-about">
+        <div class="box-title">
+          <h2 id="h-about">About me</h2>
+          <a class="more" href="../about.html">more &gt;&gt;</a>
+        </div>
+        <div class="box-body">
+          <p>I'm Nihaal, a developer at a real-estate company in Dubai. I build the systems that catch, route and follow up every lead, with Claude Code.</p>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-more">
+        <div class="box-title">
+          <h2 id="h-more">More articles</h2>
+          <a class="more" href="index.html">all &gt;&gt;</a>
+        </div>
+        <div class="box-body">
+          <ul class="links">
+            <li><a href="where-leads-leak.html">Where leads leak</a></li>
+            <li><a href="the-train-driver.html">The train driver</a></li>
+            <li><a href="ai-doesnt-build-the-wrong-thing.html">AI doesn't build the wrong thing</a></li>
+            <li><a href="making-calls-should-be-easy.html">Making calls should be easy</a></li>
+            <li><a href="rules-for-a-system-that-never-had-any.html">Adding rules to a system that never had any</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="h-topics">
+        <div class="box-title"><h2 id="h-topics">Topics</h2></div>
+        <div class="box-body">
+          <ul class="links">
+            <li><a href="index.html#where-leads-leak">Where leads leak</a></li>
+            <li><a href="index.html#building-with-ai">How I build with AI</a></li>
+            <li><a href="index.html#tools-for-people">Tools for people who aren't technical</a></li>
+            <li><a href="index.html#honest-lessons">Honest lessons</a></li>
+            <li><a href="../data/index.html">Dubai data, checked</a></li>
+          </ul>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    <a class="top-link" href="#content">Back to top ^</a>
+    <p>
+      <a href="../index.html">Home</a><span class="sep">|</span><a href="index.html">Articles</a><span class="sep">|</span><a href="../data/index.html">Dubai data</a><span class="sep">|</span><a href="../about.html">About</a><span class="sep">|</span><a href="../contact.html">Contact</a><span class="sep">|</span><a href="../feed.xml">RSS</a>
+    </p>
+    <p>&copy; 2026 Nihaal. Written by me, built with Claude Code.</p>
+    <p>Best viewed at any screen size.</p>
+  </footer>
+
+</div>
+</body>
+</html>

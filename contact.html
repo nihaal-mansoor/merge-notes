@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="js/city-data.js" defer></script>
+  <script src="js/city.js" defer></script>
+  <title>Contact · Merge Notes</title>
+  <meta name="description" content="Write to Nihaal: questions about building tools for sales and marketing teams, or building real business systems with AI.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Contact Nihaal">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Merge Notes" href="feed.xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="scene" aria-hidden="true">
+  <div class="art">
+    <div class="scene-fallback"></div>
+    <canvas class="city" width="480" height="270"></canvas>
+    <canvas class="city-glow" width="480" height="270"></canvas>
+  </div>
+</div>
+<div class="page">
+
+  <div class="strip">
+    <span>Sunday, 29 November 2026</span>
+    <span class="quick">
+      <a href="#newsletter">Newsletter</a><span class="sep">|</span><a href="feed.xml">RSS</a><span class="sep">|</span><a href="contact.html">Contact</a>
+    </span>
+  </div>
+
+  <header class="masthead">
+    <div>
+      <a class="logo" href="index.html">MERGE NOTES<span class="dot">.</span></a>
+      <p class="tagline">by Nihaal · notes from building with AI</p>
+    </div>
+    <a class="banner" href="https://YOUR-SUBSTACK.substack.com/subscribe">
+      <span>
+        <strong>The newsletter, every two weeks</strong>
+        <small>What broke, what worked, and what I'm building next.</small>
+      </span>
+      <span class="go">Join free &gt;&gt;</span>
+    </a>
+  </header>
+
+  <nav class="nav" aria-label="Main">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="articles/index.html">Articles</a></li>
+      <li><a href="data/index.html">Dubai data</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html" aria-current="page">Contact</a></li>
+      <li><a href="feed.xml">RSS</a></li>
+    </ul>
+  </nav>
+
+  <div class="crumbs">
+    <a href="index.html">Home</a><span class="sep">&gt;</span>Contact
+  </div>
+
+  <div class="layout">
+
+    <main id="content">
+
+      <section class="box" aria-labelledby="h-write">
+        <div class="box-title"><h2 id="h-write">Contact</h2></div>
+        <div class="box-body prose">
+          <h1>Write to me</h1>
+          <p>Questions about something I wrote, tools for sales and marketing teams, or building with AI. I read everything and reply to most messages within a few days.</p>
+
+          <!-- TODO formspree: replace YOUR-FORM-ID with the ID from your Formspree form -->
+          <form id="contact-form" action="https://formspree.io/f/YOUR-FORM-ID" method="post">
+            <input type="hidden" name="_subject" value="New message from the website">
+
+            <div class="form-row">
+              <label for="name">Your name</label>
+              <input id="name" type="text" name="name" autocomplete="name" maxlength="100" required>
+            </div>
+
+            <div class="form-row">
+              <label for="reply-to">Your email</label>
+              <input id="reply-to" type="email" name="email" autocomplete="email" maxlength="200" required>
+              <small>Only used to reply to you.</small>
+            </div>
+
+            <div class="form-row">
+              <label for="message">Message</label>
+              <textarea id="message" name="message" maxlength="5000" required></textarea>
+            </div>
+
+            <!-- Spam trap: people never see or fill this, bots do -->
+            <div class="hp" aria-hidden="true">
+              <label for="gotcha">Leave this empty</label>
+              <input id="gotcha" type="text" name="_gotcha" tabindex="-1" autocomplete="off">
+            </div>
+
+            <button type="submit">Send message</button>
+            <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+
+    <aside aria-label="Sidebar">
+
+      <section class="box" aria-labelledby="h-other">
+        <div class="box-title"><h2 id="h-other">Other ways</h2></div>
+        <div class="box-body">
+          <ul class="links">
+            <li><a href="https://www.linkedin.com/in/YOUR-PROFILE/">Message me on LinkedIn</a></li>
+            <li><a href="https://YOUR-SUBSTACK.substack.com">Reply to any newsletter</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="box" id="newsletter" aria-labelledby="h-news">
+        <div class="box-title"><h2 id="h-news">Newsletter</h2></div>
+        <div class="box-body">
+          <form class="signup" action="https://YOUR-SUBSTACK.substack.com/subscribe" method="get">
+            <label for="email">Every two weeks: what broke, what worked, and what I'm building next.</label>
+            <div class="row">
+              <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+              <button type="submit">Join</button>
+            </div>
+            <small>Free. Unsubscribe any time.</small>
+          </form>
+        </div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <footer class="footer">
+    <a class="top-link" href="#content">Back to top ^</a>
+    <p>
+      <a href="index.html">Home</a><span class="sep">|</span><a href="articles/index.html">Articles</a><span class="sep">|</span><a href="data/index.html">Dubai data</a><span class="sep">|</span><a href="about.html">About</a><span class="sep">|</span><a href="contact.html">Contact</a><span class="sep">|</span><a href="feed.xml">RSS</a>
+    </p>
+    <p>&copy; 2026 Nihaal. Written by me, built with Claude Code.</p>
+    <p>Best viewed at any screen size.</p>
+  </footer>
+
+</div>
+<script src="js/forms.js" defer></script>
+</body>
+</html>

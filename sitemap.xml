@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TODO domain: replace https://YOUR-DOMAIN everywhere in this file -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://YOUR-DOMAIN/</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles/one-developer-eight-apps</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles/where-leads-leak</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles/the-train-driver</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles/ai-doesnt-build-the-wrong-thing</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles/making-calls-should-be-easy</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/articles/rules-for-a-system-that-never-had-any</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/data</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/about</loc><lastmod>2026-11-29</lastmod></url>
+  <url><loc>https://YOUR-DOMAIN/contact</loc><lastmod>2026-11-29</lastmod></url>
+</urlset>

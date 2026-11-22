@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TODO domain: replace https://YOUR-DOMAIN everywhere in this file -->
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Merge Notes</title>
+    <link>https://YOUR-DOMAIN/</link>
+    <atom:link href="https://YOUR-DOMAIN/feed.xml" rel="self" type="application/rss+xml"/>
+    <description>Notes from building with AI: a sales team's systems built with Claude Code, and what breaks and what works.</description>
+    <language>en</language>
+    <lastBuildDate>Sun, 29 Nov 2026 08:00:00 +0400</lastBuildDate>
+
+    <item>
+      <title>One developer, eight apps: the rules that keep AI-built software under control</title>
+      <link>https://YOUR-DOMAIN/articles/one-developer-eight-apps</link>
+      <guid isPermaLink="true">https://YOUR-DOMAIN/articles/one-developer-eight-apps</guid>
+      <pubDate>Sun, 29 Nov 2026 08:00:00 +0400</pubDate>
+      <category>How I build with AI</category>
+      <description>Writing code fast with AI is easy. Code you can still trust in month six is not. The rules that keep eight apps under control.</description>
+    </item>
+
+    <item>
+      <title>Where leads leak: six silent failures between the ad and the agent</title>
+      <link>https://YOUR-DOMAIN/articles/where-leads-leak</link>
+      <guid isPermaLink="true">https://YOUR-DOMAIN/articles/where-leads-leak</guid>
+      <pubDate>Sun, 29 Nov 2026 07:59:00 +0400</pubDate>
+      <category>Where leads leak</category>
+      <description>Leads rarely vanish with an error. Six silent failures between the ad and the agent, how each was fixed, and the checks I&apos;d run on any lead pipe.</description>
+    </item>
+
+    <item>
+      <title>The train driver</title>
+      <link>https://YOUR-DOMAIN/articles/the-train-driver</link>
+      <guid isPermaLink="true">https://YOUR-DOMAIN/articles/the-train-driver</guid>
+      <pubDate>Sun, 29 Nov 2026 07:58:00 +0400</pubDate>
+      <category>Where leads leak</category>
+      <description>How a lead stopped waiting overnight, and the kind of work nobody sees until it stops.</description>
+    </item>
+
+    <item>
+      <title>AI doesn&apos;t build the wrong thing</title>
+      <link>https://YOUR-DOMAIN/articles/ai-doesnt-build-the-wrong-thing</link>
+      <guid isPermaLink="true">https://YOUR-DOMAIN/articles/ai-doesnt-build-the-wrong-thing</guid>
+      <pubDate>Sun, 29 Nov 2026 07:57:00 +0400</pubDate>
+      <category>How I build with AI</category>
+      <description>When something I build with AI comes out wrong, it&apos;s almost never the AI. It builds what you didn&apos;t say.</description>
+    </item>
+
+    <item>
+      <title>Making calls should be easy</title>
+      <link>https://YOUR-DOMAIN/articles/making-calls-should-be-easy</link>
+      <guid isPermaLink="true">https://YOUR-DOMAIN/articles/making-calls-should-be-easy</guid>
+      <pubDate>Sun, 29 Nov 2026 07:56:00 +0400</pubDate>
+      <category>Tools for people who aren&apos;t technical</category>
+      <description>How I built a calling app around one sentence, and why simple is the hard version.</description>
+    </item>
+
+    <item>
+      <title>Imagine adding rules to a system that never had any</title>
+      <link>https://YOUR-DOMAIN/articles/rules-for-a-system-that-never-had-any</link>
+      <guid isPermaLink="true">https://YOUR-DOMAIN/articles/rules-for-a-system-that-never-had-any</guid>
+      <pubDate>Sun, 29 Nov 2026 07:55:00 +0400</pubDate>
+      <category>Honest lessons</category>
+      <description>What I learned from adding rules to a lead system that never had any, and why explaining them was harder than building them.</description>
+    </item>
+
+  </channel>
+</rss>
