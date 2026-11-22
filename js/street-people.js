@@ -42,6 +42,7 @@ window.StreetPeople = function (D) {
   var COUNTER = P.counter || 210;                     // top of the counter inside the windows (art pixels)
   var DINER_DEPTH = P.dinerDepth || 0.6, WORKER_DEPTH = P.workerDepth || 0.8, WORKER_Y = P.workerY || 253;
   var WAITER = P.waiter || { y: 226, x0: 250, x1: 456 };
+  var SHELTER = P.shelter || null;                     // [x0, x1]: where people without umbrellas wait out the rain
   var WIN = P.windows ? P.windows.slice() : [];
   if (!P.windows) for (var wi = 0; wi + 3 < D.windows.length; wi += 4) WIN.push({ x: D.windows[wi], y: D.windows[wi + 1], w: D.windows[wi + 2], h: D.windows[wi + 3] });
   var SPOTS = P.spots || [
@@ -845,7 +846,7 @@ window.StreetPeople = function (D) {
   }
 
   // ---------- Agents on the street ----------
-  var agents = [], exits = [], door = { open: 0 }, scooterTimer = rand(6, 18), puffs = [];
+  var thinned = false, agents = [], exits = [], door = { open: 0 }, scooterTimer = rand(6, 18), puffs = [];
   function sizeOf(a) { return Math.round(LANES[a.lane].h * S * (CAST[a.id].scale || 1)); }
   function makeAgent(id, lane, x, dir) {
     var sp = CAST[id];
@@ -860,6 +861,7 @@ window.StreetPeople = function (D) {
     agents.push(ag);
   }
   LANES.forEach(function (lane, li) { for (var i = 0; i < lane.max; i++) spawn(li, false); });
+  function sheltering() { var n = 0; agents.forEach(function (a) { if (a.shelter && a.active) n++; }); return n; }
   function laneCount(li) { var n = 0; agents.forEach(function (a) { if (a.active && a.lane === li && !a.follow) n++; }); return n; }
 
   // ---------- Standing about ----------
@@ -905,8 +907,14 @@ window.StreetPeople = function (D) {
   // seat BACK_SEAT higher). Otherwise (P.seats) they sit inside at the counter, side on.
   var STOOLS = P.stools || null, STOOL_FOOT = P.stoolFoot || 264, BACK_SEAT = P.stoolSeat || 11;
   var SEATS = STOOLS ? STOOLS.map(function (x) { return [x, 1]; }) : P.seats || [[214, 1], [226, -1], [256, 1], [270, -1], [288, 1], [358, 1], [370, -1], [434, 1], [450, -1]];
-  SEATS.forEach(function (seat) { if (Math.random() < (STOOLS ? 0.66 : 0.72)) diners.push({ x: seat[0], dir: seat[1], id: pick(DINERS), kind: pick(['eat', 'eat', 'drink', 'talk', 'phone']), clock: rand(0, 10), pace: rand(2.6, 4.2), pause: rand(0, 2), back: !!STOOLS }); });
-  if (STOOLS && !diners.length) diners.push({ x: STOOLS[1], dir: 1, id: pick(DINERS), kind: 'eat', clock: 0, pace: 3.2, pause: 1, back: true });
+  function diner(i, x, dir, id, kind, fresh) { return { stool: i, x: x, dir: dir, id: id, kind: kind, clock: rand(0, 10), pace: rand(2.6, 4.2), pause: rand(0, 2), back: !!STOOLS, alpha: fresh ? 0 : 1, state: fresh ? 'come' : 'sit', stay: fresh ? rand(70, 170) : rand(15, 160), served: !fresh }; }
+  SEATS.forEach(function (seat, i) { if (Math.random() < (STOOLS ? 0.6 : 0.72)) diners.push(diner(i, seat[0], seat[1], pick(DINERS), pick(['eat', 'eat', 'drink', 'talk', 'phone']), false)); });
+  if (STOOLS && !diners.length) diners.push(diner(1, STOOLS[1], 1, pick(DINERS), 'eat', false));
+  // The counter's life (with stools): people who go in through the door sit down a little later and order; a small
+  // printer prints the ticket, the server brings the food, and when they have eaten they come back out of the door.
+  var arrivals = [], orders = [];
+  function freeStool() { if (!STOOLS) return -1; var free = []; STOOLS.forEach(function (x, i) { if (!diners.some(function (d) { return d.stool === i; })) free.push(i); }); return free.length ? free[Math.floor(Math.random() * free.length)] : -1; }
+  function wantDiners(h) { return h >= 19 && h < 23 ? 7 : h >= 12 && h < 14.5 ? 5 : h >= 1 && h < 6 ? 1 : 3; }   // how full the counter is through the day
   var waiter = { x: WAITER.x0 + 12, dir: 1, dist: 0, state: 'walk', timer: 0, pose: 'idle' };
   var workers = P.workers || [{ id: 'workerA', x: 566, dir: 1, kind: 'talk' }, { id: 'workerB', x: 590, dir: -1, kind: 'shovel' }, { id: 'workerC', x: 626, dir: -1, kind: 'sign' }];
 
@@ -932,6 +940,10 @@ window.StreetPeople = function (D) {
         continue;
       }
       if (a.cooldown > 0) a.cooldown -= dt;
+      if ((a.state === 'walk' || a.state === 'run' || a.state === 'shield') && SHELTER && !a.umb && !a.follow && !a.dog && a.lane <= 1 && env.rain > 0.45 && a.cooldown <= 0 &&
+          a.x > SHELTER[0] && a.x < SHELTER[1] && Math.abs(a.x - (DOOR.x + DOOR.w / 2)) > DOOR.w * 0.7 && sheltering() < 4 && Math.random() < dt * 2) {
+        a.dir = a.walkDir; stopAgent(a, pick(['phone', 'look', 'idle']), 999, 'wait'); a.shelter = true; continue;
+      }
       if (a.state === 'walk' || a.state === 'run' || a.state === 'shield' || a.state === 'ride') {
         if (a.state !== 'ride') {
           if (env.rain > 0.5 && !sp.umbrella && sp.runs && a.state === 'walk') a.state = sp.bag === 'tote' ? 'shield' : 'run';
@@ -956,16 +968,17 @@ window.StreetPeople = function (D) {
         if (a.x < -60 || a.x > W + 60) a.active = false;
       } else if (a.state === 'look' || a.state === 'wait') {
         a.timer -= dt;
+        if (a.shelter && env.rain < 0.3 && a.timer > 8) a.timer = rand(1, 7);      // the rain eases: off they go, one by one
         // A glance one way and back while standing about
         if (!a.partner && a.idle !== 'phone' && a.idle !== 'smoke' && a.idle !== 'talk') {
           if (a.glance > 0) { a.glance -= dt; if (a.glance <= 0) a.dir = a.walkDir; }
           else if (Math.random() < dt * 0.18) { a.glance = rand(0.8, 1.8); a.dir = -a.walkDir; }
         }
         if (a.idle === 'smoke') smokeFrom(a, dt, t);
-        if (a.timer <= 0) { a.state = 'walk'; a.dir = a.walkDir; a.glance = 0; a.idle = null; a.cooldown = rand(5, 9); if (!a.partner && Math.random() < 0.25) a.dir = -a.dir; }
+        if (a.timer <= 0) { a.state = 'walk'; a.dir = a.walkDir; a.glance = 0; a.idle = null; a.cooldown = rand(5, 9); if (!a.partner && !a.shelter && Math.random() < 0.25) a.dir = -a.dir; a.shelter = false; }
       } else if (a.state === 'enter') {
         a.timer -= dt;
-        if (a.timer <= 0) { a.alpha -= dt / 0.7; if (a.alpha <= 0) { a.active = false; exits.push({ id: a.id, at: t + rand(10, 30) }); } }
+        if (a.timer <= 0) { a.alpha -= dt / 0.7; if (a.alpha <= 0) { a.active = false; if (STOOLS && freeStool() >= 0) arrivals.push({ id: a.id, at: t + rand(2, 4) }); else exits.push({ id: a.id, at: t + rand(10, 30) }); } }
       } else if (a.state === 'exit') {
         a.alpha += dt / 0.7;
         if (a.alpha >= 1) { a.alpha = 1; a.state = 'walk'; a.cooldown = 6; }
@@ -982,7 +995,17 @@ window.StreetPeople = function (D) {
         ex.state = 'exit'; ex.alpha = 0; ex.cooldown = 8; door.open = 1.8; agents.push(ex); exits.splice(e, 1);
       }
     }
-    for (var li = 0; li < LANES.length; li++) if (laneCount(li) < LANES[li].max && Math.random() < dt * 0.6) spawn(li, true);
+    var busy = env.crowd === undefined ? 1 : env.crowd;                           // how busy the street is at this hour
+    if (!thinned) {                                     // the first time the hour is known: start with the right crowd
+      thinned = true;
+      for (var tl = 0; tl < LANES.length; tl++) {
+        if (LANES[tl].ride) continue;
+        var keep = Math.max(1, Math.round(LANES[tl].max * busy)), mine = agents.filter(function (a) { return a.lane === tl && !a.follow; });
+        while (mine.length > keep) { var gone = mine.splice(Math.floor(Math.random() * mine.length), 1)[0]; gone.active = false; if (gone.partner) gone.partner.active = false; }
+      }
+      agents = agents.filter(function (a) { return a.active; });
+    }
+    for (var li = 0; li < LANES.length; li++) if (laneCount(li) < Math.max(LANES[li].max ? 1 : 0, Math.round(LANES[li].max * busy)) && Math.random() < dt * 0.6 * Math.max(0.4, busy)) spawn(li, true);
     scooterTimer -= dt;
     if (scooterTimer <= 0) {
       scooterTimer = rand(18, 40);
@@ -992,8 +1015,35 @@ window.StreetPeople = function (D) {
     // Cigarette smoke drifts with the wind and fades
     var drift = (env.wind || 6) * 0.25;
     for (var q = puffs.length - 1; q >= 0; q--) { var pf = puffs[q]; pf.age += dt; pf.x += (pf.vx + drift) * dt; pf.y += pf.vy * dt; pf.vx *= Math.pow(0.5, dt); pf.vy = pf.vy * Math.pow(0.6, dt) - 2 * dt; if (pf.age >= pf.life) puffs.splice(q, 1); }
+    if (STOOLS) {
+      var hour = env.hour === undefined ? 20 : env.hour;
+      if (diners.length + arrivals.length < wantDiners(hour) && Math.random() < dt * 0.02) { arrivals.push({ id: pick(DINERS), at: t + 1.5 }); door.open = 1.8; }   // someone slips in
+      for (var ar = arrivals.length - 1; ar >= 0; ar--) {
+        if (t < arrivals[ar].at) continue;
+        var si = freeStool(), nid = arrivals[ar].id; arrivals.splice(ar, 1);
+        if (si < 0) { exits.push({ id: nid, at: t + rand(4, 10) }); continue; }
+        var nd = diner(si, STOOLS[si], 1, DINERS.indexOf(nid) >= 0 ? nid : pick(DINERS), pick(['talk', 'phone']), true); diners.push(nd); orders.push(nd);
+      }
+      for (var di = diners.length - 1; di >= 0; di--) {
+        var d = diners[di];
+        if (d.state === 'come') { d.alpha = Math.min(1, d.alpha + dt / 0.8); if (d.alpha >= 1) d.state = 'sit'; }
+        else if (d.state === 'sit') { if (d.served) d.stay -= dt * (diners.length > wantDiners(hour) + 1 ? 2 : 1); if (d.stay <= 0) d.state = 'go'; }
+        else { d.alpha -= dt / 0.8; if (d.alpha <= 0) { diners.splice(di, 1); exits.push({ id: d.id, at: t + 0.6 }); } }
+      }
+      // The server takes the oldest ticket: walks to that customer, sets the food down, and goes back to wiping
+      if (orders.length && waiter.state !== 'serve') {
+        var od = orders[0], tx = Math.max(WAITER.x0, Math.min(WAITER.x1, od.x));
+        if (diners.indexOf(od) < 0) orders.shift();
+        else if (Math.abs(waiter.x - tx) < 1.5) { waiter.state = 'serve'; waiter.timer = 1.4; waiter.pose = 'idle'; }
+        else { waiter.state = 'walk'; waiter.dir = tx > waiter.x ? 1 : -1; waiter.x += waiter.dir * 14 * dt; waiter.dist += 14 * dt; }
+      } else if (waiter.state === 'serve') {
+        waiter.timer -= dt;
+        if (waiter.timer <= 0) { var sv = orders.shift(); if (sv) { sv.served = true; sv.kind = pick(['eat', 'eat', 'drink']); } waiter.state = 'walk'; }
+      }
+    }
     // The waiter walks behind the counter, stopping now and then to wipe it down or wait
-    if (waiter.state === 'walk') {
+    if (orders.length || waiter.state === 'serve') { /* serving, above */ }
+    else if (waiter.state === 'walk') {
       waiter.x += waiter.dir * 9 * dt; waiter.dist += 9 * dt;
       if (waiter.x > WAITER.x1) waiter.dir = -1;
       if (waiter.x < WAITER.x0) waiter.dir = 1;
@@ -1043,6 +1093,14 @@ window.StreetPeople = function (D) {
     var wS = (P.waiterSize || 36) * S, wsh = sheet('waiter', wS, waiter.state === 'walk' ? 'tray' : waiter.pose, false);
     var wf = waiter.state === 'walk' ? Math.floor(waiter.dist / (wS / S * strideOf(GAITS.walk)) * GAIT_FRAMES) % GAIT_FRAMES : Math.floor(env.t * 6) % 16;
     drawSprite(ctx, wsh, wf, Math.round(waiter.x * S + ox6), Math.round(WAITER.y * S), waiter.dir, 1, env);
+    if (STOOLS && WIN.length) {                         // order tickets on a rail, and the printer that prints them
+      var w0 = WIN[0], rx = (w0.x + env.offset(DINER_DEPTH)) * S, ry = (w0.y + 3) * S;
+      ctx.fillStyle = '#2a2a2e'; ctx.fillRect(rx + 4, ry, Math.min(orders.length + 2, 8) * 8 + 4, 1);
+      for (var oi = 0; oi < Math.min(orders.length, 7); oi++) { ctx.fillStyle = '#f2ece0'; ctx.fillRect(rx + 8 + oi * 8, ry + 1, 5, 8); ctx.fillStyle = '#9a8a7a'; ctx.fillRect(rx + 9 + oi * 8, ry + 3, 3, 1); ctx.fillRect(rx + 9 + oi * 8, ry + 5, 2, 1); }
+      var py = (COUNTER - 6) * S;
+      ctx.fillStyle = '#3a3a40'; ctx.fillRect(rx + 4, py, 14, 9); ctx.fillStyle = '#e8e4dc'; ctx.fillRect(rx + 7, py - 2 - (orders.length && (env.t % 2) < 1 ? 2 : 0), 8, 3);
+      ctx.fillStyle = orders.length && (env.t % 0.8) < 0.4 ? '#ff4a3a' : '#5a2a2a'; ctx.fillRect(rx + 14, py + 3, 2, 2);
+    }
     WIN.forEach(function (w) { ctx.fillStyle = 'rgba(170,225,235,0.06)'; ctx.fillRect((w.x + env.offset(DINER_DEPTH)) * S, w.y * S, w.w * S, (COUNTER - w.y) * S); });
     ctx.restore();
     // Outside: customers on the stools, backs to the street, facing the server. A phone lights up in front of
@@ -1052,8 +1110,8 @@ window.StreetPeople = function (D) {
       var sh = sheet(d.id, dS, 'back-' + d.kind, false);
       var cycle = (env.t + d.clock) % (d.pace + d.pause), frame = cycle < d.pace ? Math.floor(cycle / d.pace * 12) % 12 : 0;
       var bx = Math.round(d.x * S + ox6), fy = Math.round(STOOL_FOOT * S);
-      drawSprite(ctx, sh, frame, bx, fy, 1, 1, env);
-      if (d.kind !== 'eat') return;
+      drawSprite(ctx, sh, frame, bx, fy, 1, d.alpha === undefined ? 1 : d.alpha, env);
+      if (d.kind !== 'eat' || d.alpha < 1) return;
       var hy = fy - Math.round(BACK_SEAT * S + 0.46 * dS);
       ctx.fillStyle = 'rgba(230,235,240,0.3)';
       for (var k = 0; k < 3; k++) ctx.fillRect(bx + 4 + k * 2 + Math.round(Math.sin(env.t * 2 + k + d.x) * 1.5), hy - 2 - k * 3 - Math.floor((env.t * 6 + k * 4) % 6), 1, 2);
@@ -1084,8 +1142,10 @@ window.StreetPeople = function (D) {
     // (the clip is everything above the barrier's top, wherever the canvas has been moved to)
     ctx.save(); ctx.imageSmoothingEnabled = false; ctx.beginPath(); ctx.rect(-1e5, -1e5, 2e5, 1e5 + BARRIER.top * S); ctx.clip();
     var kS = (P.workerSize || 30) * S, ox8 = env.offset(WORKER_DEPTH) * S;
+    if (env.crewOff) { ctx.restore(); return; }                // nobody on the dig in the small hours
     workers.forEach(function (wk, i) {
-      var sh = sheet(wk.id, kS, 'work-' + wk.kind, false), fps = wk.kind === 'drill' ? 12 : 6;
+      var kind = env.tea ? 'talk' : wk.kind;                        // tea break: tools down, a chat
+      var sh = sheet(wk.id, kS, 'work-' + kind, false), fps = kind === 'drill' ? 12 : 6;
       drawSprite(ctx, sh, Math.floor(env.t * fps + i * 5) % 16, Math.round(wk.x * S + ox8), Math.round((wk.y || WORKER_Y) * S), wk.dir, 1, env);
       light(ctx, opts, workerGlow(wk, i, env));
     });
@@ -1164,6 +1224,7 @@ window.StreetPeople = function (D) {
   // Helmet lamps, blinking, where each worker's head is (leaning forward over a shovel or a drill)
   function workerGlow(wk, i, env) {
     var kh = P.workerSize || 30;
+    if (env.crewOff) return null;
     if (((env.t + i * 0.7) % 1.6) >= 1.1) return null;
     var ln = WORK_LEAN[wk.kind] || 0, wy = (wk.y || WORKER_Y) - Math.round(kh * (0.9 - (1 - Math.cos(ln)) * 0.5));
     if (wy >= BARRIER.top) return null;
@@ -1184,5 +1245,14 @@ window.StreetPeople = function (D) {
   // The same lights as dots, for a scene that blurs its own glow canvas (scene density)
   function drawGlow(g, env) { glowPoints(env).forEach(function (p) { g.fillStyle = p.c; g.fillRect(p.x, p.y, p.w || 1, 1); }); }
 
-  return { update: update, draw: draw, drawRiders: drawRiders, drawWorkers: drawWorkers, drawLight: drawLight, drawGlow: drawGlow, glowPoints: glowPoints, sheet: sheet, dogSheet: dogSheet, cast: Object.keys(CAST), scale: S };
+  // For the scene: open the bar's door (a sign pointed at), have the nearest walker stop and look up, and where the
+  // walkers are (in scene pixels, for the pigeons)
+  function openDoor() { door.open = Math.max(door.open, 1.2); }
+  function lookUp(x) {
+    var best = null;
+    agents.forEach(function (a) { if (a.active && !a.follow && a.state === 'walk' && LANES[a.lane] && !LANES[a.lane].ride && Math.abs(a.x - x) < 70 && (!best || Math.abs(a.x - x) < Math.abs(best.x - x))) best = a; });
+    if (best) { best.dir = x > best.x ? 1 : -1; stopAgent(best, 'look', rand(1.6, 3)); best.cooldown = 4; }
+  }
+  function walkers() { var out = []; agents.forEach(function (a) { if (a.active && LANES[a.lane] && !LANES[a.lane].ride) out.push({ x: a.x * S, lane: a.lane, dog: a.dog ? a.dog.x * S : null }); }); return out; }
+  return { update: update, draw: draw, openDoor: openDoor, lookUp: lookUp, walkers: walkers, drawRiders: drawRiders, drawWorkers: drawWorkers, drawLight: drawLight, drawGlow: drawGlow, glowPoints: glowPoints, sheet: sheet, dogSheet: dogSheet, cast: Object.keys(CAST), scale: S };
 };

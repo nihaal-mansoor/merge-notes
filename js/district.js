@@ -223,6 +223,7 @@
     G: '.XX X.. X.X X.X .XX', H: 'X.X X.X XXX X.X X.X', I: 'XXX .X. .X. .X. XXX', J: '..X ..X ..X X.X .X.', K: 'X.X X.X XX. X.X X.X', L: 'X.. X.. X.. X.. XXX',
     M: 'X.X XXX XXX X.X X.X', N: 'XX. X.X X.X X.X X.X', O: '.X. X.X X.X X.X .X.', P: 'XX. X.X XX. X.. X..', R: 'XX. X.X XX. X.X X.X', S: '.XX X.. .X. ..X XX.',
     T: 'XXX .X. .X. .X. .X.', U: 'X.X X.X X.X X.X XXX', V: 'X.X X.X X.X X.X .X.', W: 'X.X X.X XXX XXX X.X', Y: 'X.X X.X .X. .X. .X.',
+    '0': 'XXX X.X X.X X.X XXX', '1': '.X. XX. .X. .X. XXX', '3': 'XX. ..X .X. ..X XX.', '5': 'XXX X.. XX. ..X XX.', '6': '.XX X.. XXX X.X XXX', '8': 'XXX X.X XXX X.X XXX', '9': 'XXX X.X XXX ..X XX.', X: 'X.X X.X .X. X.X X.X', Z: 'XXX ..X .X. X.. XXX',
     '2': 'XX. ..X .X. X.. XXX', '4': 'X.X X.X XXX ..X ..X', '7': 'XXX ..X .X. .X. .X.', '/': '..X ..X .X. X.. X..', ',': '... ... ... .X. X..', '>': 'X.. .X. ..X .X. X..', '-': '... ... XXX ... ...', '·': '... ... .X. ... ...'
   };
   var FB = {};                                          // bold: every stroke one pixel wider
@@ -440,6 +441,7 @@
   function win(x, y, w, h, m, sill) {
     box(x - 2, y - 2, w + 4, h + 4, K.CONCD);
     box(x, y, w, h, m, y, h);
+    if ((m === K.WINW || m === K.WINC) && curPart !== 'far') LITWIN.push({ part: curPart, z: curZ, x: x, y: y, w: w, h: h, cold: m === K.WINC, s: rnd(), s2: rnd(), s3: rnd() });
     if (m !== K.GLASS && m !== K.WIND && rnd() < 0.34) { var r = rnd(); person(x + 6 + rnd() * (w - 12), y + h, Math.min(h * 0.62, 26), r < 0.3 ? 'cup' : r < 0.55 ? 'phone' : r < 0.75 ? 'hair' : ''); }
     box(x, y + Math.floor(h / 2), w, 1, K.METALD); box(x + Math.floor(w / 2), y, 1, h, K.METALD);
     if (sill !== false) box(x - 3, y + h + 2, w + 6, 2, K.CONC2);
@@ -567,14 +569,8 @@
     slab(420, 330, 120); slab(420, 416, 120);
     box(530, 250, 4, 280, K.METAL);
     box(486, 440, 40, 90, K.WIND, 440, 90); frame(484, 438, 44, 92, K.METALD, 2); box(505, 440, 1, 90, K.METALD);
-    ellipse(500, 234, 7, 5, K.CAT); ellipse(507, 228, 4, 4, K.CAT); poly([[504, 226], [505, 220], [507, 225]], K.CAT); poly([[508, 225], [510, 220], [511, 226]], K.CAT);
-    line(493, 235, 488, 238, K.CAT, 2); line(488, 238, 486, 246, K.CAT, 2);
-    [495, 498, 501, 504].forEach(function (sx) { box(sx, 230, 1, 3, K.CAT2); box(sx + 1, 233, 1, 2, K.CAT2); });   // tabby stripes over the back
-    for (var cf = 0; cf < 14; cf++) px(494 + Math.floor(rnd() * 12), 231 + Math.floor(rnd() * 6), rnd() < 0.5 ? K.CAT2 : K.CAT3);
-    box(505, 232, 3, 4, K.CAT3); px(506, 236, K.CAT3); px(509, 230, K.CAT3); px(510, 230, K.CAT3);                     // chest and muzzle
-    px(505, 222, K.CAT3); px(509, 222, K.CAT3);                                                                       // inside the ears
-    px(509, 227, K.CATEYE);                                                                                           // an eye
-    [[489, 238], [487, 242]].forEach(function (q) { box(q[0], q[1], 2, 1, K.CAT2); });                                 // rings on the tail
+    // (the cat on this roof is drawn live: see drawCat)
+
   }
 
   // D: the bar, OPEN KITCHEN (about me): a wooden house with a flat roof. Customers sit outside at the counter on
@@ -815,11 +811,12 @@
     // the works barrier, with a sign
     box(1000, 580, 172, 12, K.BAR1); for (var bx = 1000; bx < 1172; bx++) for (var by = 580; by < 592; by++) if ((((bx + by) / 8) % 2) < 1) px(bx, by, K.BAR2);
     frame(1000, 580, 172, 12, K.BAR2); [1004, 1084, 1166].forEach(function (p) { box(p, 592, 3, 16, K.BAR2); });
-    box(1058, 564, 56, 14, K.BOXY); frame(1058, 564, 56, 14, K.BAR2); centred('OPENING', 1086, 566, K.LETD, 1); centred('SOON', 1086, 572, K.LETD, 1);
+    box(1058, 564, 56, 14, K.BOXY); frame(1058, 564, 56, 14, K.BAR2);   // (its words are drawn live: a countdown to the next article)
     [988, 1178].forEach(function (cx2) { box(cx2 + 3, 592, 4, 4, K.CONE); box(cx2 + 2, 596, 6, 3, K.CONEW); box(cx2 + 1, 599, 8, 6, K.CONE); box(cx2, 605, 10, 3, K.BAR2); });
   }
   // ---------- Build the parts (each is coloured only when a time of day first needs it) ----------
-  function part(name, z, x0, y0, x1, y1, paint) { B = buffer(x0, y0, x1, y1); paint(); var p = { name: name, z: z, x0: x0, y0: y0, buf: B, c: {} }; B = null; return p; }
+  var curPart = '', curZ = 0, LITWIN = [];                      // lit flat windows, so they can keep their own hours
+  function part(name, z, x0, y0, x1, y1, paint) { B = buffer(x0, y0, x1, y1); curPart = name; curZ = z; paint(); var p = { name: name, z: z, x0: x0, y0: y0, buf: B, c: {} }; B = null; return p; }
   function canvasOf(p, kind) { if (!(kind in p.c)) p.c[kind] = colorize(p.buf, palOf(kind)); return p.c[kind]; }
   var FAR = part('far', 0.15, -M, 20, W + M, GROUND, paintFar);
   var PA = part('A', 0.43, -M, 90, 198, GROUND, paintA), PB = part('B', 0.47, 184, 262, 432, GROUND, paintB), PC = part('C', 0.44, 414, 214, 546, GROUND, paintC);
@@ -831,6 +828,7 @@
   var GROUNDP = part('ground', 0.45, -M, GROUND, W + M, H, paintGround);
   var SUBWAY = part('subway', HOLE_Z, 990, 504, 1182, 584, paintSubway);
   var NEAR = part('near', NEAR_Z, -M, 20, W + M, 616, paintNear);
+  TVWIN = LITWIN.filter(function (w) { return w.cold && (w.part === 'A' || w.part === 'E'); })[0] || LITWIN[0] || null;
   // The buildings in drawing order (far first), with the extent of their side walls
   var SA = { p: PA, xL: -M, xR: 196, top: 152, wall: 'CONC' }, SB = { p: PB, xL: 196, xR: 420, top: 330, wall: 'WOOD' }, SC = { p: PC, xL: 420, xR: 540, top: 240, wall: 'CONC2' },
     SD = { p: PD, xL: 540, xR: 800, top: 322, wall: 'WOOD' }, SE = { p: PE, xL: 800, xR: 990, top: 152, wall: 'CONC' }, SF = { p: PF, xL: 990, xR: 1170, top: 240, wall: 'BRICK' },
@@ -868,7 +866,7 @@
       ],
       door: { x: 322, w: 25, top: 226 }, counter: 246, dinerDepth: 0.5, workerDepth: HOLE_Z, workerY: 298,
       windows: [{ x: 278, y: 223, w: 42, h: 35 }, { x: 349, y: 223, w: 46, h: 35 }],
-      stools: STOOLS.map(function (x) { return x / 2; }), stoolFoot: 260, stoolSeat: 8.5,
+      stools: STOOLS.map(function (x) { return x / 2; }), stoolFoot: 260, stoolSeat: 8.5, shelter: [270, 402],
       waiter: { y: 260, x0: 280, x1: 393 }, dinerSize: 36, waiterSize: 36, workerSize: 30,
       barrier: { x0: 502, x1: 584, top: 290 },
       workers: [{ id: 'workerA', x: 515, y: 296, dir: 1, kind: 'drill' }, { id: 'workerB', x: 563, y: 304, dir: -1, kind: 'shovel' }, { id: 'workerC', x: 592, y: 296, dir: -1, kind: 'sign' }],
@@ -887,7 +885,7 @@
   // ---------- The links over the signs (placed by CSS; this lights the sign you point at) ----------
   var hover = null;
   Array.prototype.forEach.call(stage.querySelectorAll('[data-area]'), function (el) {
-    var set = function () { hover = el.getAttribute('data-area'); }, clear = function () { if (hover === el.getAttribute('data-area')) hover = null; };
+    var set = function () { var k = el.getAttribute('data-area'); if (hover !== k) { hoverAt = performance.now(); if (crowd && crowd.lookUp && SPILLS[k]) crowd.lookUp(SPILLS[k][0] / 2); } hover = k; }, clear = function () { if (hover === el.getAttribute('data-area')) hover = null; };
     el.addEventListener('mouseenter', set); el.addEventListener('mouseleave', clear); el.addEventListener('focusin', set); el.addEventListener('focusout', clear);
   });
   root.classList.add('is-live');
@@ -922,7 +920,7 @@
     var fr = clockSeconds() / 86400, d = keyframes(fr, PHASE.dusk), y = keyframes(fr, PHASE.day), s = d + y;
     if (s > 1) { d /= s; y /= s; }
     state.dusk = WEIGHTS.dusk = d; state.day = WEIGHTS.day = y; state.night = WEIGHTS.night = Math.max(0, 1 - d - y);
-    state.lights = keyframes(fr, PHASE.lights);
+    state.lights = keyframes(fr, PHASE.lights); state.hour = fr * 24;
   }
   // About ten minutes ahead, colour the parts for the coming time of day in spare moments (one part at a time),
   // so dusk or morning never arrives with a stall
@@ -970,7 +968,7 @@
   // ---------- The view: it stays still. Only ?cam=-1..1 (for checking the depth) sets it to one side. ----------
   var CAMX = 0, lastCam = null;
   function offset(depth) { return Math.round(CAMX * depth); }
-  function env() { return { t: state.t, lights: state.lights, day: state.day, rain: rainLevel, wind: wind(), wet: 0.3 + 0.7 * wet, offset: function (d) { return Math.round(CAMX * d) / 2; }, puddles: puddlesNear }; }
+  function env() { return { t: state.t, lights: state.lights, day: state.day, rain: rainLevel, wind: wind(), wet: 0.3 + 0.7 * wet, offset: function (d) { return Math.round(CAMX * d) / 2; }, puddles: puddlesNear, hour: state.hour, crowd: crowdAt(state.hour), tea: teaBreak(state.hour), crewOff: state.hour >= 1 && state.hour < 6.5 }; }
   function updateCamera() {
     CAMX = camFixed !== null && !reduceMotion ? camFixed * CAM : 0;
     var r = Math.round(CAMX * 2) / 2;
@@ -1198,9 +1196,9 @@
     g.fillRect(right ? x0 : x0 + w - 1, y0, 1, y1 - y0);
   }
   // Bulbs: letters never glow; only the border bulbs reach the halo layers
-  function bulb(g, x, y, s, on) {
+  function bulb(g, x, y, s, on, col) {
     if (!on) { g.fillStyle = css(mix([58, 50, 48], [176, 170, 160], state.day)); g.fillRect(x, y, s, s); return; }   // unlit bulbs: pale glass by day
-    g.fillStyle = '#ffb860'; g.fillRect(x, y, s, s);
+    g.fillStyle = col || '#ffb860'; g.fillRect(x, y, s, s);
     if (s > 2) { g.fillStyle = '#fff0c8'; g.fillRect(x + 1, y + 1, s - 2, Math.max(1, s - 3)); }
   }
   function bulbText(g, str, cx, y, c, gap, on) {
@@ -1221,14 +1219,15 @@
     var step = 10, run = Math.floor(t * 6);
     for (var bx = m.x + 6; bx < m.x + m.w - 6; bx += step) {
       var idx = Math.round((bx - m.x) / step), lamp = lit && ((idx + run) % 3 !== 0);
-      bulb(g, bx + ox, m.y + 3, 5, lamp); bulb(g, bx + ox, m.y + m.h - 8, 5, lamp);
+      var bc = XMAS ? ['#ff5a4a', '#6aff8a', '#fff0d8'][(idx + run) % 3] : null;
+      bulb(g, bx + ox, m.y + 3, 5, lamp, bc); bulb(g, bx + ox, m.y + m.h - 8, 5, lamp, bc);
     }
   }
   // The street, far to near: buildings with their side walls, signs, the ground, things on the footpath
   function drawStreet(t) {
     STREET.forEach(function (b) {
       if (b.wall) sideWall(ctx, b);
-      drawPart(ctx, b.p);
+      drawPart(ctx, b.p); drawWindowHours(ctx, b.p.name, t);
       if (b.marquee) drawMarquee(ctx, t, false);
     });
   }
@@ -1404,6 +1403,7 @@
         drops[d] = newDrop(false);
       }
     }
+    updateDrips(dt); updateCat(dt); updatePigeons(dt);
     for (var q = splashes.length - 1; q >= 0; q--) { splashes[q].age += dt; if (splashes[q].age > 0.14) splashes.splice(q, 1); }
     for (var z = ripples.length - 1; z >= 0; z--) { ripples[z].age += dt; if (ripples[z].age > 0.45) ripples.splice(z, 1); }
     var fn = Math.floor(flakes.length * snowLevel);
@@ -1420,9 +1420,10 @@
     drawStreet(t);
     if (state.lights > 0.01) { ctx.save(); ctx.globalCompositeOperation = 'screen'; drawHalos(ctx); ctx.restore(); }   // (before the footpath things, which stand in front)
     drawSmoke(ctx, 'mid');
-    drawGround(ctx); drawPuddles(ctx); drawPart(ctx, PROPS); drawReflections(t);
+    drawGround(ctx); drawPuddles(ctx); drawPart(ctx, PROPS); drawReflections(t); drawWetTrails(ctx, t);
     drawPart(ctx, PART_SIGN);                            // the sign hangs in front of the newsstand
-    drawLiveBits(ctx, t, false); drawGroundLight(ctx);
+    drawXmasStreet(ctx, t); drawCat(ctx, t); drawPigeons(ctx, t, true); drawDrips(ctx);
+    drawLiveBits(ctx, t, false); drawReactions(ctx, t); drawGroundLight(ctx);
     // The light round the signs and from the bar's door: laid on the street, behind the people
     ctx.save(); ctx.globalCompositeOperation = 'screen';
     drawSpillLights(ctx);
@@ -1431,7 +1432,7 @@
     // Front: the stairwell's railings, the railing, poles and wires, the lamp; steam, low fog, weather, grain
     ftx.clearRect(0, 0, W, H);
     if (!(crowd && crowd.drawWorkers)) drawPart(ftx, SUBWAY);   // (otherwise it goes between the walkers and the workers)
-    drawPart(ftx, NEAR); drawDropWires(ftx);
+    drawPart(ftx, NEAR); drawDropWires(ftx); drawCountdown(ftx); drawXmasFront(ftx, t); drawPigeons(ftx, t, false);
     drawSmoke(ftx, 'front');
     fogBand(ftx, 450, 4, 9, 0.16 * fogAmount, t, 0.5);
     fogBand(ftx, 540, 3, -6, 0.12 * fogAmount, t + 40, 0.7);
@@ -1462,7 +1463,7 @@
     gtx.clearRect(0, 0, W, H);
     if (state.lights > 0.01) {
       partLights(gtx, FAR, 0.6);
-      STREET.forEach(function (b) { partLights(gtx, b.p, 0.95); });
+      STREET.forEach(function (b) { partLights(gtx, b.p, 0.95); }); clearDarkWindows(gtx);
       gtx.save(); groundTransform(gtx); lights(gtx, GROUNDP, 0.8, function (c) { gtx.drawImage(c, 0, 0); }); gtx.restore();
       partLights(gtx, PROPS, 0.9); partLights(gtx, SUBWAY, 1); partLights(gtx, NEAR, 1);
       gtx.globalAlpha = state.lights;
@@ -1472,6 +1473,281 @@
     var src = gtx.canvas;
     GLOW.forEach(function (g) { g.clearRect(0, 0, g.canvas.width, g.canvas.height); g.imageSmoothingEnabled = true; g.drawImage(src, 0, 0, g.canvas.width, g.canvas.height); src = g.canvas; });
     mergeHalos();
+  }
+
+  // ---------- The street's hours ----------
+  function crowdAt(h) { return h < 5 ? 0.34 : h < 7 ? 0.5 : h < 10 ? 1 : h < 17 ? 0.72 : h < 22 ? 1 : 0.6; }   // how busy the footpath is
+  function teaBreak(h) { return (h >= 10.5 && h < 10.85) || (h >= 15.5 && h < 15.85); }                          // the road crew's tea
+  // A colour in today's light (for things drawn live)
+  var ambMemo = {}, ambKey = '';
+  function amb(hex) {
+    var key = Math.round(state.dusk * 64) + '|' + Math.round(state.day * 64);
+    if (key !== ambKey) { ambMemo = {}; ambKey = key; }
+    if (!ambMemo[hex]) { var A = rgbH(hex), c = [0, 0, 0]; ['night', 'dusk', 'day'].forEach(function (k) { var w = WEIGHTS[k], m = AMB[k]; c[0] += A[0] * m[0] * w; c[1] += A[1] * m[1] * w; c[2] += A[2] * m[2] * w; }); ambMemo[hex] = css(c); }
+    return ambMemo[hex];
+  }
+  // Windows keep their own hours, on the visitor's clock: they come on one by one as it gets dark, go dark as people
+  // go to bed (a few night owls stay up), early risers switch on before dawn, and now and then someone goes into
+  // another room. One flat has a TV on in the evening.
+  var TVWIN = null;
+  function windowOn(w, h) {
+    var hh = h < 12 ? h + 24 : h, bed = w.s < 0.12 ? 99 : 21.5 + w.s2 * 5, wake = 5 + w.s3 * 1.6;
+    var on = hh < bed || (h >= wake && h < 10);
+    var slot = Math.floor(Date.now() / 40000), r = Math.sin((slot + w.s * 977) * 12.9898) * 43758.5453; r -= Math.floor(r);
+    if (r < 0.05) on = !on;
+    return on && state.lights >= w.s * 0.85;
+  }
+  var winByPart = null, winAt = -1;
+  function windowsNow() {                              // each window's state, worked out once per frame
+    if (winAt === state.t) return; winAt = state.t;
+    if (!winByPart) { winByPart = {}; LITWIN.forEach(function (w) { (winByPart[w.part] = winByPart[w.part] || []).push(w); }); }
+    LITWIN.forEach(function (w) { w.on = windowOn(w, state.hour); });
+  }
+  function drawWindowHours(g, partName, t) {
+    var a = state.lights; if (a < 0.03) return;
+    windowsNow(); var list = winByPart[partName]; if (!list) return;
+    var off = css(litColor('GLASS'));
+    list.forEach(function (w) {
+      var x = w.x + offset(w.z);
+      if (!w.on) {
+        g.globalAlpha = Math.min(1, a * 1.15); g.fillStyle = off; g.fillRect(x, w.y, w.w, w.h);
+        g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x + 2, w.y + 2, Math.max(1, w.w - 10), 1); g.fillRect(x + 2, w.y + 3, 1, Math.max(1, w.h - 12));
+        g.globalAlpha = 1;
+      } else if (w === TVWIN && (state.hour >= 19 || state.hour < 1)) {
+        var fl = 0.16 + 0.1 * Math.sin(t * 13.1) * Math.sin(t * 3.7) + (Math.sin(t * 0.9) > 0.7 ? 0.08 : 0);
+        g.save(); g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(110,150,255,' + (fl * a).toFixed(3) + ')'; g.fillRect(x, w.y, w.w, w.h); g.restore();
+      }
+    });
+  }
+  function clearDarkWindows(g) { windowsNow(); LITWIN.forEach(function (w) { if (!w.on) g.clearRect(w.x + offset(w.z) - 2, w.y - 2, w.w + 4, w.h + 4); }); }
+
+  // ---------- Rain on things: light on the wet ground, drips off the eaves ----------
+  // Every light leaves a broken column on the wet footpath (and the tall ones on the road), shivering in the rain
+  var TRAILS = [];
+  function buildTrails() {
+    FRONTS.forEach(function (f) { TRAILS.push([f[0] + f[1] / 2, Math.min(8, Math.max(3, f[1] / 10)), f[2], FOOT - 3, f[3]]); });
+    LANTERNS.forEach(function (l) { TRAILS.push([l[0], 3, '255,110,60', FOOT - 3, AWNING_Z]); });
+    TRAILS.push([LAMPHEAD[0], 5, '210,220,255', 704, NEAR_Z], [670, 8, '255,190,110', 690, MARQUEE.z], [1189, 3, '255,120,200', FOOT - 3, 0.43]);
+  }
+  function drawWetTrails(g, t) {
+    var a = Math.min(1, wet * 1.4) * state.lights; if (a < 0.03) return;
+    if (!TRAILS.length) buildTrails();
+    g.save(); g.globalCompositeOperation = 'lighter';
+    TRAILS.forEach(function (s, i) {
+      var x0 = s[0] + offset(s[4]), y0 = GROUND + 3, y1 = s[3], w = s[1];
+      for (var y = y0; y < y1; y += 4) {
+        if (y > FOOT - 2 && y < ROAD + 2) continue;   // (not on the curb)
+        var k = (y - y0) / (y1 - y0), n = Math.sin(y * 0.9 + t * 7 + i * 3) + Math.sin(y * 0.37 - t * 4.3 + i);
+        if (n < -0.3) continue;
+        g.fillStyle = 'rgba(' + s[2] + ',' + (a * 0.2 * (1 - k * 0.85) * (0.55 + 0.2 * n)).toFixed(3) + ')';
+        g.fillRect(Math.round(x0 - w / 2 + Math.sin(y * 0.5 + t * 6 + i) * 1.5), y, w, 3);
+      }
+    });
+    g.restore();
+  }
+  // Water drips off the bar's awning and the bookshop's eaves while it rains, and for a while after
+  var EAVES = [[536, 806, 427, AWNING_Z], [204, 418, 331, 0.47]], drips = [];
+  function updateDrips(dt) {
+    var rate = 22 * Math.max(rainLevel, Math.min(1, Math.max(0, (wet - 0.45) * 1.6)));
+    EAVES.forEach(function (e) { e.acc = (e.acc || 0) + dt * rate * (e[1] - e[0]) / 270; while (e.acc >= 1) { e.acc -= 1; drips.push({ x: rand(e[0], e[1]), y: e[2], v: 0, z: e[3] }); } });
+    for (var i = drips.length - 1; i >= 0; i--) {
+      var d = drips[i]; d.v += 520 * dt; d.y += d.v * dt;
+      if (d.y >= GROUND + 3) { if (Math.random() < 0.6) splashes.push({ x: Math.round(d.x + offset(d.z)), y: GROUND + 3 + Math.floor(Math.random() * 6), age: 0 }); drips.splice(i, 1); }
+    }
+  }
+  function drawDrips(g) {
+    if (!drips.length) return;
+    g.fillStyle = css(mix(hazeColor(), [236, 236, 240], 0.7), 0.55);
+    drips.forEach(function (d) { g.fillRect(Math.round(d.x + offset(d.z)), Math.round(d.y), 1, d.v > 120 ? 3 : 2); });
+  }
+
+  // ---------- The roof cat ----------
+  // It lives on the walk-up's roof: sits and flicks its tail, grooms, wanders along the parapet, watches the
+  // pigeons, and curls up to sleep in the small hours.
+  var CAT = { x: 500, dir: 1, state: 'sit', timer: 6, to: 500, step: 0 };
+  function updateCat(dt) {
+    var c = CAT, sleepy = state.hour >= 1 && state.hour < 5.5;
+    c.timer -= dt;
+    if (c.state === 'walk') { var d = c.to - c.x; c.dir = d > 0 ? 1 : -1; c.x += c.dir * Math.min(Math.abs(d), 9 * dt); c.step += dt; if (Math.abs(d) < 0.5) { c.state = 'sit'; c.timer = rand(5, 12); } return; }
+    if (c.timer > 0) return;
+    if (sleepy) { c.state = 'sleep'; c.timer = 30; return; }
+    var r = Math.random();
+    if (r < 0.4) { c.state = 'walk'; c.to = rand(430, 532); }
+    else if (r < 0.7) { c.state = 'groom'; c.timer = rand(3, 6); }
+    else { c.state = 'sit'; c.timer = rand(6, 14); if (Math.random() < 0.3) c.dir = -c.dir; }
+  }
+  function drawCat(g, t) {
+    var c = CAT, x = Math.round(c.x + offset(0.44)), y = 240, d = c.dir;
+    var body = amb('#2a221c'), dark = amb('#141010'), light = amb('#6a5a4c');
+    var R = function (dx, dy, w, h, col) { g.fillStyle = col; g.fillRect(d > 0 ? x + dx : x - dx - w + 1, y + dy, w, h); };
+    if (c.state === 'sleep') {
+      R(-6, -5, 11, 4, body); R(-5, -6, 8, 1, body); R(-6, -2, 13, 1, dark); R(3, -6, 3, 3, body); R(-3, -5, 1, 2, dark); R(1, -5, 1, 2, dark);
+    } else if (c.state === 'walk') {
+      var ph = Math.floor(c.step * 8) % 2;
+      R(-6, -8, 11, 4, body); R(-4, -8, 1, 3, dark); R(-1, -8, 1, 3, dark); R(2, -8, 1, 3, dark);
+      R(-5, -4, 1, 4 - ph, body); R(-2, -4, 1, 3 + ph, body); R(1, -4, 1, 4 - ph, body); R(3, -4, 1, 3 + ph, body);
+      R(4, -11, 4, 4, body); R(4, -12, 1, 1, body); R(7, -12, 1, 1, body); R(6, -9, 2, 1, light);
+      R(-8, -11, 1, 4, body); R(-7, -12, 1, 1, body);
+    } else {
+      var groom = c.state === 'groom' && Math.sin(t * 5) > -0.3, flick = c.state === 'sit' && Math.sin(t * 1.7 + c.x) > 0.85 ? -1 : 0;
+      R(-6, -6, 8, 5, body); R(-5, -7, 6, 1, body); R(-7, -4, 2, 3, body); R(-4, -6, 1, 3, dark); R(-2, -6, 1, 3, dark);
+      R(1, -10, 3, 9, body); R(2, -8, 2, 6, light);
+      var hy = groom ? -9 : -14;
+      R(1, hy, 5, 4, body); R(1, hy - 1, 1, 1, body); R(5, hy - 1, 1, 1, body); R(4, hy + 2, 2, 1, light);
+      if (!groom && state.lights > 0.4) R(4, hy + 1, 1, 1, '#c8ff6a');                     // an eye catching the light
+      R(-9, -1, 4, 1, body); R(-10, -2 + flick, 1, 1, body); R(-9, -1, 1, 1, dark);
+      if (XMAS && !groom) { R(1, hy - 1, 6, 1, '#f0ece4'); R(2, hy - 3, 4, 2, amb('#c8282a')); R(4, hy - 4, 2, 1, amb('#c8282a')); R(6, hy - 5, 1, 1, '#f0ece4'); }   // a Santa hat
+    }
+  }
+
+  // ---------- Pigeons ----------
+  // A few peck about on the footpath by the shops; when someone walks close (or a dog trots by, or lightning
+  // flashes) they burst up to the poles' crossbars, and drift back down in ones and twos. At night they roost.
+  var PERCH = [[176, 76], [184, 76], [192, 76], [204, 76], [212, 76], [970, 76], [978, 76], [1006, 76], [1012, 76]];
+  var GROUNDS = [[236, 390], [560, 640], [820, 980]];
+  var pigeons = [];
+  for (var pg = 0; pg < 7; pg++) { var gr = GROUNDS[pg % 3]; pigeons.push({ x: rand(gr[0], gr[1]), y: 534 + Math.floor(Math.random() * 4), state: 'peck', dir: Math.random() < 0.5 ? 1 : -1, timer: rand(0, 3), f: 0, seed: Math.random() * 9 }); }
+  function freePerch() { var used = pigeons.map(function (p) { return p.perch; }); for (var k = 0; k < 20; k++) { var i = Math.floor(Math.random() * PERCH.length); if (used.indexOf(i) < 0) return i; } return 0; }
+  function flyTo(p, x, y, perch) { p.state = 'fly'; p.fx = p.x; p.fy = p.y; p.tx = x; p.ty = y; p.f = 0; p.dur = rand(0.9, 1.6); p.perch = perch; p.dir = x > p.x ? 1 : -1; }
+  function startle(p) { if (p.state !== 'peck') return; var i = freePerch(); flyTo(p, PERCH[i][0] + offset(NEAR_Z), PERCH[i][1], i); }
+  var lastFlash = -1;
+  function updatePigeons(dt) {
+    var roost = state.lights > 0.75 || rainLevel > 0.55, near = crowd && crowd.walkers ? crowd.walkers() : [], flashed = flash0();
+    pigeons.forEach(function (p) {
+      if (p.state === 'peck') {
+        p.timer -= dt;
+        if (p.timer <= 0) { p.timer = rand(0.5, 2); if (Math.random() < 0.4) { p.x += p.dir * rand(2, 6); } if (Math.random() < 0.2) p.dir = -p.dir; }
+        var scare = roost || flashed || near.some(function (w) { return Math.abs(w.x - p.x) < 24 || (w.dog !== null && Math.abs(w.dog - p.x) < 30); });
+        if (scare) { startle(p); pigeons.forEach(function (q) { if (q !== p && Math.abs(q.x - p.x) < 30 && Math.random() < 0.8) startle(q); }); }
+      } else if (p.state === 'fly') {
+        p.f += dt / p.dur;
+        if (p.f >= 1) { p.x = p.tx; p.y = p.ty; if (p.perch >= 0) { p.state = 'perch'; p.timer = rand(10, 26); } else { p.state = 'peck'; p.timer = rand(0.5, 2); } }
+      } else if (p.state === 'perch') {
+        p.timer -= dt;
+        if (p.timer <= 0 && !roost) { var gr2 = GROUNDS[Math.floor(Math.random() * 3)]; flyTo(p, rand(gr2[0], gr2[1]), 534 + Math.floor(Math.random() * 4), -1); p.perch = -1; }
+      }
+    });
+  }
+  function flash0() { var f = flash.start; if (f !== lastFlash && state.t - f < 0.2) { lastFlash = f; return true; } return false; }
+  function drawPigeon(g, p, t) {
+    var grey = amb('#8a8a94'), wing = amb('#62626c'), head = amb('#74747e'), neck = amb('#5a8a7a'), d = p.dir, x, y;
+    var R = function (dx, dy, w, h, col) { g.fillStyle = col; g.fillRect(d > 0 ? x + dx : x - dx - w + 1, y + dy, w, h); };
+    if (p.state === 'fly') {
+      var k = p.f, e = k * k * (3 - 2 * k); x = Math.round(p.fx + (p.tx - p.fx) * e); y = Math.round(p.fy + (p.ty - p.fy) * e - Math.sin(k * Math.PI) * 30);
+      var up = Math.floor(t * 14 + p.seed) % 2;
+      R(-2, -3, 5, 2, grey); R(2, -4, 2, 2, head); R(-1, up ? -6 : -1, 3, 3, wing);
+      return;
+    }
+    x = Math.round(p.x); y = p.y;
+    var hunch = p.state === 'perch' && (state.lights > 0.75 || rainLevel > 0.5), peck = p.state === 'peck' && ((t * 1.3 + p.seed) % 1) < 0.18 ? 2 : 0;
+    R(-3, -3, 5, 2, grey); R(-3, -4, 4, 1, wing); R(-4, -3, 1, 1, wing);
+    if (hunch) R(1, -4, 2, 2, head); else { R(2, -5 + peck, 2, 2, head); R(2, -3, 1, 1, neck); R(4, -4 + peck, 1, 1, amb('#c8b890')); }
+    if (p.state === 'peck') { g.fillStyle = amb('#b0605a'); g.fillRect(x - 1, y - 1, 1, 1); g.fillRect(x + 1, y - 1, 1, 1); }
+  }
+  function drawPigeons(g, t, onGround) { pigeons.forEach(function (p) { if ((p.state === 'peck') === onGround) drawPigeon(g, p, t); }); }
+
+  // ---------- Shops that react when their sign is pointed at (or reached with Tab) ----------
+  var hoverAt = 0;
+  function drawReactions(g, t) {
+    if (!hover) return;
+    var k = (performance.now() - hoverAt) / 1000, ease = Math.min(1, k / 0.35);
+    if (hover === 'about' && crowd && crowd.openDoor) crowd.openDoor();                       // the bar's door swings open
+    g.save();
+    if (hover === 'data') {                                                                  // the monitors sweep a big tick
+      var pts = [[848, 488], [878, 514], [960, 456]], o = offset(0.42);
+      g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(140,255,170,' + (0.75 * (k < 1.2 ? 1 : 0.55)) + ')'; g.lineWidth = 5; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(pts[0][0] + o, pts[0][1]);
+      var len1 = 0.4, p2 = Math.min(1, ease / len1), p3 = Math.max(0, (ease - len1) / (1 - len1));
+      g.lineTo(pts[0][0] + o + (pts[1][0] - pts[0][0]) * p2, pts[0][1] + (pts[1][1] - pts[0][1]) * p2);
+      if (p3 > 0) g.lineTo(pts[1][0] + o + (pts[2][0] - pts[1][0]) * p3, pts[1][1] + (pts[2][1] - pts[1][1]) * p3);
+      g.stroke();
+    }
+    if (hover === 'contact') {                                                               // a phone on the stand rings
+      var px0 = 1062 + offset(0.46), ring = (t % 0.5) < 0.25;
+      g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(200,236,255,0.7)'; g.fillRect(px0 + (ring ? 1 : 0), 476, 8, 12);
+      g.fillStyle = 'rgba(255,255,255,0.8)'; if (ring) { g.fillRect(px0 - 4, 474, 1, 4); g.fillRect(px0 + 11, 474, 1, 4); g.fillRect(px0 - 6, 472, 1, 7); g.fillRect(px0 + 13, 472, 1, 7); }
+    }
+    if (hover === 'books' || hover === 'articles') {                                         // a book slides up off the shelf
+      var bx = 288 + offset(0.47); g.fillStyle = amb('#b84a3a'); g.fillRect(bx, Math.round(486 - 12 * ease), 4, 13); g.fillStyle = amb('#e8c870'); g.fillRect(bx + 1, Math.round(489 - 12 * ease), 2, 1);
+    }
+    if (hover === 'feed') {                                                                  // a tin pops onto a shelf
+      var hop = Math.abs(Math.sin(Math.min(k, 0.9) * Math.PI * 2.2)) * 6 * Math.max(0, 1 - k / 0.9), fx = 124 + offset(0.43);
+      g.fillStyle = amb('#c83a2a'); g.fillRect(fx, Math.round(478 - hop), 5, 6); g.fillStyle = amb('#e8e0d0'); g.fillRect(fx, Math.round(480 - hop), 5, 1);
+    }
+    if (hover === 'kiosk') { g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(255,220,160,' + (0.3 * ease) + ')'; g.fillRect(446 + offset(0.47), 474, 64, 22); }
+    if (hover === 'linkedin') { g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(180,255,230,' + (0.22 * ease) + ')'; g.fillRect(108 + offset(0.43), 338, 80, 56); }
+    g.restore();
+  }
+
+  // ---------- The subway board counts down to the next article; the billboard's NEW turns into LATEST ----------
+  var subwayLink = stage.querySelector('[data-area=subway]'), NEXT = null;
+  function readNext() {
+    var list = ((subwayLink && subwayLink.getAttribute('data-next')) || '').split(';').map(function (s) { var p = s.split('|'); return { d: new Date((p[0] || '').trim() + 'T00:00:00'), title: (p[1] || '').trim() }; }).filter(function (n) { return !isNaN(n.d); });
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    NEXT = null; for (var i = 0; i < list.length; i++) if (list[i].d >= today) { NEXT = list[i]; break; }
+    if (NEXT) NEXT.days = Math.round((NEXT.d - today) / 86400000);
+    var tag = subwayLink && subwayLink.querySelector('.d-tag');
+    if (tag && NEXT) tag.textContent = 'Next: ' + NEXT.title + ', ' + NEXT.d.getDate() + ' ' + MONTHS[NEXT.d.getMonth()].charAt(0) + MONTHS[NEXT.d.getMonth()].slice(1).toLowerCase() + ' >>';
+    var bill = stage.querySelector('.d-bill'), when = bill && new Date((bill.getAttribute('data-date') || '') + 'T00:00:00'), kick = bill && bill.querySelector('.d-bill-k');
+    if (kick && !isNaN(when) && today - when > 14 * 86400000) kick.textContent = 'Latest article';
+  }
+  var MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  readNext(); window.setInterval(readNext, 60000);
+  function pixText(g, str, cx, y, col) {
+    var x = Math.round(cx - (str.length * 4 - 1) / 2); g.fillStyle = col;
+    for (var i = 0; i < str.length; i++) { var r = glyphRows(F3, str[i]); if (r) for (var yy = 0; yy < 5; yy++) for (var xx = 0; xx < 3; xx++) if (r[yy][xx] === 'X') g.fillRect(x + i * 4 + xx, y + yy, 1, 1); }
+  }
+  function drawCountdown(g) {
+    var cx = 1086 + offset(NEAR_Z), col = amb('#2a2018');
+    if (!NEXT) { pixText(g, 'OPENING', cx, 566, col); pixText(g, 'SOON', cx, 572, col); return; }
+    pixText(g, 'NEXT ' + NEXT.d.getDate() + ' ' + MONTHS[NEXT.d.getMonth()], cx, 566, col);
+    pixText(g, NEXT.days === 0 ? 'OUT TODAY' : NEXT.days === 1 ? 'TOMORROW' : 'IN ' + NEXT.days + ' DAYS', cx, 572, col);
+  }
+
+  // ---------- Christmas (20 Nov to 6 Jan; ?xmas=1 or ?xmas=0 to preview) ----------
+  var XMAS = (function () { var q = query.get('xmas'); if (q === '1') return true; if (q === '0') return false; var d = new Date(), m = d.getMonth(), day = d.getDate(); return (m === 10 && day >= 20) || m === 11 || (m === 0 && day <= 6); })();
+  var XCOL = ['#ff4a4a', '#5aff7a', '#ffd24a', '#5aa0ff', '#fff2dc'];
+  function twinkle(i, t) { return 0.55 + 0.45 * Math.sin(t * (1.3 + (i % 5) * 0.37) + i * 2.1); }
+  function bulbs(g, list, t, glow) {                    // list of [x, y]; lit at night, coloured glass by day
+    var a = state.lights;
+    list.forEach(function (b, i) {
+      var c = XCOL[i % XCOL.length], k = twinkle(i, t);
+      g.fillStyle = a > 0.05 ? c : amb(c); g.globalAlpha = a > 0.05 ? 0.45 + 0.55 * k : 1; g.fillRect(b[0], b[1], 2, 2);
+    });
+    g.globalAlpha = 1;
+    if (glow && a > 0.05) {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.imageSmoothingEnabled = true;
+      for (var i = 0; i < list.length; i += 2) { var b = list[i]; g.globalAlpha = a * 0.8 * twinkle(i, t); g.drawImage(glowDot(XCOL[i % XCOL.length]), b[0] - 6, b[1] - 6, 14, 14); }
+      g.restore();
+    }
+  }
+  var WIRE_BULBS = [], AWN_BULBS = [], TREE_BULBS = [];
+  (function () {
+    var x0 = 196 - 22, x1 = 992 - 22;
+    for (var x = x0 + 10; x < x1 - 6; x += 15) { var tt = (x - x0) / (x1 - x0); WIRE_BULBS.push([x, Math.round(71 + 40 * 4 * tt * (1 - tt)) + 2]); }
+    for (var ax = 538; ax < 806; ax += 9) AWN_BULBS.push([ax, 428 + ((ax / 9) % 2 ? 1 : 0)]);
+    [[412, 497, 9], [412, 507, 12], [412, 517, 15]].forEach(function (r) { for (var k = -r[2] + 2; k <= r[2] - 2; k += 5) TREE_BULBS.push([r[0] + k, r[1] + (k % 2 ? 2 : 0)]); });
+  })();
+  function drawXmasFront(g, t) { if (XMAS) bulbs(g, WIRE_BULBS.map(function (b) { return [b[0] + offset(NEAR_Z), b[1]]; }), t, true); }
+  function drawXmasStreet(g, t) {
+    if (!XMAS) return;
+    bulbs(g, AWN_BULBS.map(function (b) { return [b[0] + offset(AWNING_Z), b[1]]; }), t, true);
+    // a wreath on the bar's door
+    var wx = 669 + offset(0.5), wy = 494;
+    g.fillStyle = amb('#2e6a3a'); for (var a = 0; a < 24; a++) { var an = a / 24 * Math.PI * 2; g.fillRect(Math.round(wx + Math.cos(an) * 7) - 1, Math.round(wy + Math.sin(an) * 7) - 1, 3, 3); }
+    g.fillStyle = amb('#1e4a28'); for (var b2 = 0; b2 < 12; b2++) { var an2 = b2 / 12 * Math.PI * 2 + 0.3; g.fillRect(Math.round(wx + Math.cos(an2) * 7), Math.round(wy + Math.sin(an2) * 7), 1, 1); }
+    g.fillStyle = amb('#d02a2a'); [[wx - 5, wy - 4], [wx + 5, wy - 2], [wx - 2, wy + 6], [wx + 6, wy + 4]].forEach(function (p) { g.fillRect(Math.round(p[0]), Math.round(p[1]), 2, 2); });
+    g.fillRect(wx - 3, wy + 6, 7, 2); g.fillRect(wx - 1, wy + 8, 1, 3); g.fillRect(wx + 1, wy + 8, 1, 3);
+    // a small tree between the bookshop and the newsstand, with its own lights and a star
+    var tx = 412 + offset(0.47);
+    g.fillStyle = amb('#5a3a22'); g.fillRect(tx - 5, 524, 10, 6); g.fillStyle = amb('#3a2414'); g.fillRect(tx - 1, 519, 3, 5);
+    [[486, 9, 12], [495, 12, 13], [505, 15, 14]].forEach(function (r, i) {
+      g.fillStyle = amb(i % 2 ? '#2a5a32' : '#2e6a38'); pxPoly(g, [[tx, r[0]], [tx + r[1] + 0.5, r[0] + r[2] + 0.5], [tx - r[1] - 0.5, r[0] + r[2] + 0.5]]);
+      g.fillStyle = amb('#1e4026'); pxPoly(g, [[tx - 1, r[0] + 3], [tx - r[1] + 1, r[0] + r[2] + 0.5], [tx - r[1] * 0.4, r[0] + r[2] + 0.5]]);
+    });
+    bulbs(g, TREE_BULBS.map(function (b) { return [b[0] + offset(0.47), b[1]]; }), t, true);
+    g.fillStyle = state.lights > 0.05 ? '#ffe27a' : amb('#d8b040'); g.fillRect(tx - 1, 481, 3, 3); g.fillRect(tx, 480, 1, 5); g.fillRect(tx - 2, 482, 5, 1);
+    if (state.lights > 0.05) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = state.lights * 0.8; g.imageSmoothingEnabled = true; g.drawImage(glowDot('#ffd24a'), tx - 8, 474, 18, 18); g.restore(); }
   }
 
   // ---------- Traffic: cars, taxis, vans and now and then a bus, both ways on the road ----------
