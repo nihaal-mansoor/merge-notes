@@ -635,6 +635,67 @@ window.StreetPeople = function (D) {
     if (kind === 'phone') { g.fillStyle = '#101418'; g.fillRect(Math.round(hand[0]), Math.round(hand[1] - 0.03 * s), Math.max(1, Math.round(s * 0.016)), Math.max(2, Math.round(s * 0.04))); }
   }
 
+  // A customer on a stool at an open counter, seen from behind (facing into the bar). seatH: from the feet up
+  // to the seat. kind: eat (the head dips to the bowl), drink (a cup comes up), talk (turns to a neighbour), phone.
+  function drawSeatedBack(g, sp, s, kind, f, ox, footY, seatH) {
+    var u = f / 12, bw = sp.build || 1, seatY = footY - seatH;
+    var lift = kind === 'eat' ? Math.max(0, Math.sin(u * TAU)) : kind === 'drink' ? Math.max(0, Math.sin(clamp((u - 0.2) * 2.2, 0, 1) * Math.PI)) : 0;
+    var bow = kind === 'eat' ? 0.016 * s * (1 - lift) : kind === 'phone' ? 0.02 * s : 0;
+    var turn = kind === 'talk' ? 0.012 * s * Math.sin(u * TAU) : 0, breath = 0.004 * s * Math.sin(u * TAU * 2);
+    var wide = sp.coatType === 'puffer' ? 1.22 : sp.coatType === 'long' ? 1.06 : 1;
+    var hipW = 0.074 * s * bw * wide, shW = 0.098 * s * bw * wide * (sp.sex === 'f' ? 0.92 : 1);
+    var hipY = seatY - 0.012 * s, shY = hipY - 0.27 * s - breath;
+    anchor(ox, footY);
+    var pc = cloth(sp.pants || '#22222a', sp.pantsWeave || 'twill'), pd = cloth(shade(sp.pants || '#22222a', 0.62), sp.pantsWeave || 'twill'), cc = cloth(sp.coat, sp.weave), cd = cloth(shade(sp.coat, 0.74), sp.weave);
+    // Calves hanging from the seat's front edge to the stool's footrest, and the heels of the shoes
+    [-1, 1].forEach(function (sd) {
+      var lx = ox + sd * 0.042 * s;
+      fillPoly(g, [[lx - 0.02 * s, seatY + 0.03 * s], [lx + 0.02 * s, seatY + 0.03 * s], [lx + 0.017 * s, footY - 0.03 * s], [lx - 0.017 * s, footY - 0.03 * s]], pd);   // in the counter's shadow
+      fillEllipse(g, lx, footY - 0.02 * s, 0.026 * s, 0.017 * s, sp.shoes || '#1a1a1a');
+    });
+    fillEllipse(g, ox, hipY + 0.01 * s, hipW * 1.22, 0.034 * s, pc);                  // sitting on the stool (spread on the seat)
+    // Upper arms out to the elbows on the counter; for a drink, the right forearm comes up to the mouth
+    var eY = shY + 0.14 * s, rx = kind === 'drink' ? lerp(ox + shW * 1.18, ox + shW * 0.55, lift) : ox + shW * 1.18, ry = kind === 'drink' ? lerp(eY, shY - 0.03 * s, lift) : eY;
+    capsule(g, ox - shW * 0.86 + turn, shY + 0.03 * s, ox - shW * 1.18, eY, 0.027 * s, 0.023 * s, cd);
+    capsule(g, ox + shW * 0.86 + turn, shY + 0.03 * s, rx, ry, 0.027 * s, 0.023 * s, cd);
+    if (kind === 'drink' && lift > 0.2) fillEllipse(g, rx, ry - 0.02 * s, 0.02 * s, 0.026 * s, '#e8e0d0');   // the cup over the shoulder
+    // The back: a coat or top from the hips to the shoulders, shaded at the sides, a seam, a hem
+    var back = [[ox - hipW, hipY], [ox + hipW, hipY], [ox + shW + turn, shY + 0.03 * s], [ox + shW * 0.72 + turn, shY - 0.004 * s], [ox - shW * 0.72 + turn, shY - 0.004 * s], [ox - shW + turn, shY + 0.03 * s]];
+    fillPoly(g, back, cc);
+    fillPoly(g, [[ox - hipW, hipY], [ox - hipW * 0.55, hipY], [ox - shW * 0.55 + turn, shY + 0.03 * s], [ox - shW + turn, shY + 0.03 * s]], cd);
+    line(g, ox + turn * 0.6, shY + 0.03 * s, ox, hipY - 0.01 * s, shade(sp.coat, 0.7));
+    line(g, ox - hipW, hipY - 0.006 * s, ox + hipW, hipY - 0.006 * s, shade(sp.coat, 0.66));
+    if (sp.coatType === 'apron' || sp.coatType === 'vest') { line(g, ox - shW * 0.5 + turn, shY + 0.01 * s, ox - hipW * 0.6, hipY - 0.04 * s, sp.apron || '#f0c040'); line(g, ox + shW * 0.5 + turn, shY + 0.01 * s, ox + hipW * 0.6, hipY - 0.04 * s, sp.apron || '#f0c040'); }
+    if (sp.coatType === 'hoodie' && sp.head !== 'hood') fillEllipse(g, ox + turn, shY + 0.045 * s, shW * 0.55, 0.04 * s, cd);   // the hood, down
+    if (sp.bag === 'backpack') { fillPoly(g, [[ox - shW * 0.6 + turn, shY + 0.05 * s], [ox + shW * 0.6 + turn, shY + 0.05 * s], [ox + hipW * 0.75, hipY - 0.04 * s], [ox - hipW * 0.75, hipY - 0.04 * s]], cloth(sp.bagColor || '#1a1a1a', 'canvas')); }
+    // Collar, neck, and the head from behind (hair, or a hat or hood)
+    fillPoly(g, [[ox - 0.05 * s + turn, shY - 0.006 * s], [ox + 0.05 * s + turn, shY - 0.006 * s], [ox + 0.04 * s + turn, shY + 0.022 * s], [ox - 0.04 * s + turn, shY + 0.022 * s]], cd);
+    if (sp.scarf) fillPoly(g, [[ox - 0.056 * s + turn, shY - 0.012 * s], [ox + 0.056 * s + turn, shY - 0.012 * s], [ox + 0.05 * s + turn, shY + 0.024 * s], [ox - 0.05 * s + turn, shY + 0.024 * s]], cloth(sp.scarf, 'knit'));
+    var hry = 0.068 * s, hrx = 0.058 * s, hcx = ox + turn * 1.6, hcy = shY - 0.032 * s - hry + bow;
+    g.fillStyle = shade(sp.skin, 0.78); g.fillRect(Math.round(hcx - 0.017 * s), Math.round(hcy + hry * 0.4), Math.max(2, Math.round(0.034 * s)), Math.max(1, Math.round(shY - hcy - hry * 0.4) + 1));
+    fillEllipse(g, hcx, hcy, hrx, hry, shade(sp.skin, 0.82));                      // (only the ears and the nape show)
+    var hair = sp.hair || '#141010', hk = cloth(hair, 'strand'), style = sp.hairStyle || 'short', hc = sp.headColor || sp.coat;
+    if (sp.head === 'hood') {
+      fillEllipse(g, hcx, hcy - hry * 0.05, hrx * 1.28, hry * 1.22, cloth(hc, sp.weave));
+      line(g, hcx, hcy - hry * 1.1, hcx, hcy + hry * 0.9, shade(hc, 0.7));
+      fillPoly(g, [[hcx - hrx * 1.2, hcy + hry * 0.6], [hcx + hrx * 1.2, hcy + hry * 0.6], [hcx + shW * 0.7, shY + 0.02 * s], [hcx - shW * 0.7, shY + 0.02 * s]], cloth(hc, sp.weave));
+    } else {
+      if (style === 'long') fillPoly(g, [[hcx - hrx * 1.02, hcy - hry * 0.2], [hcx + hrx * 1.02, hcy - hry * 0.2], [hcx + hrx * 0.9, shY + 0.1 * s], [hcx - hrx * 0.9, shY + 0.1 * s]], hk);
+      if (style !== 'none') fillEllipse(g, hcx, hcy - hry * 0.1, hrx * 1.04, hry * (style === 'short' ? 0.86 : 0.98), style === 'short' ? hair : hk);
+      if (style === 'pony') capsule(g, hcx, hcy - hry * 0.2, hcx + turn, hcy + hry * 1.6, 0.022 * s, 0.012 * s, hk);
+      if (style === 'bun') fillEllipse(g, hcx, hcy - hry * 0.75, hrx * 0.46, hry * 0.4, hair);
+      if (style !== 'none') { g.fillStyle = mix(hair, '#ffffff', 0.16); span(g, Math.round(hcx - hrx * 0.4), Math.round(hcx + hrx * 0.3), Math.round(hcy - hry * 0.92)); }
+      if (sp.head === 'fedora') {
+        fillPoly(g, [[hcx - hrx * 0.95, hcy - hry * 0.35], [hcx - hrx * 0.75, hcy - hry * 1.3], [hcx + hrx * 0.75, hcy - hry * 1.3], [hcx + hrx * 0.95, hcy - hry * 0.35]], cloth(hc, 'canvas'));
+        line(g, hcx - hrx * 1.5, hcy - hry * 0.38, hcx + hrx * 1.5, hcy - hry * 0.38, shade(hc, 0.8), Math.max(1, Math.round(s * 0.014)));
+        line(g, hcx - hrx * 0.88, hcy - hry * 0.62, hcx + hrx * 0.88, hcy - hry * 0.62, '#4a2a22');
+      }
+      if (sp.head === 'cap') { fillEllipse(g, hcx, hcy - hry * 0.5, hrx * 1.06, hry * 0.6, cloth(hc, 'canvas')); line(g, hcx - hrx * 0.3, hcy - hry * 0.05, hcx + hrx * 0.3, hcy - hry * 0.05, shade(hc, 0.6)); }
+      if (sp.head === 'beanie') { fillEllipse(g, hcx, hcy - hry * 0.5, hrx * 1.1, hry * 0.76, cloth(hc, 'knit')); fillPoly(g, [[hcx - hrx * 1.1, hcy - hry * 0.36], [hcx + hrx * 1.1, hcy - hry * 0.36], [hcx + hrx * 1.08, hcy - hry * 0.06], [hcx - hrx * 1.08, hcy - hry * 0.06]], cloth(shade(hc, 0.8), 'knit')); }
+      if (sp.head === 'helmet') { fillEllipse(g, hcx, hcy - hry * 0.45, hrx * 1.2, hry * 0.82, hc); line(g, hcx - hrx * 0.5, hcy - hry * 1.05, hcx + hrx * 0.4, hcy - hry * 1.1, shade(hc, 1.25)); }
+    }
+  }
+
   // Road workers: talk, sign, shovel, drill (a jackhammer). 16 frames; the drill plays them fast.
   var WORK_LEAN = { shovel: 0.38, drill: 0.26 };
   function drawWorker(g, sp, s, kind, f, ox, oy) {
@@ -690,7 +751,7 @@ window.StreetPeople = function (D) {
 
   // ---------- Sprite sheets: drawn once on first use, then cached ----------
   var sheets = {}, SEAT_DROP = 4;                      // diners are placed SEAT_DROP scene pixels below the counter top
-  function frameCount(pose) { return gaitOf(pose) ? GAIT_FRAMES : /^sit-/.test(pose) ? 12 : /^work-/.test(pose) || IDLE_POSES[pose] ? 16 : 4; }
+  function frameCount(pose) { return gaitOf(pose) ? GAIT_FRAMES : /^(sit|back)-/.test(pose) ? 12 : /^work-/.test(pose) || IDLE_POSES[pose] ? 16 : 4; }
   // Canvases that are read back (getImageData) must say so, or the browser keeps them on the GPU and every
   // read stalls it
   function readableContext(c) { var g = null; try { g = c.getContext('2d', { willReadFrequently: true }); } catch (e) { g = null; } return g || c.getContext('2d'); }
@@ -731,6 +792,7 @@ window.StreetPeople = function (D) {
         paint: function (f) {
           var ox = f * fw + footX;
           if (/^sit-/.test(pose)) drawSeated(g, sp, s, pose.slice(4), f, ox, footY - SEAT_DROP * S);   // the counter's top
+          else if (/^back-/.test(pose)) drawSeatedBack(g, sp, s, pose.slice(5), f, ox, footY, BACK_SEAT * S);   // feet on the stool's rest
           else if (/^work-/.test(pose)) drawWorker(g, sp, s, pose.slice(5), f, ox, footY);
           else drawFigure(g, sp, s, pose, f, umb, ox, footY);
           finish(g, fw, fh, 1, f * fw);
@@ -839,8 +901,12 @@ window.StreetPeople = function (D) {
 
   // ---------- People inside the diner, and the road workers ----------
   var diners = [];
-  var SEATS = P.seats || [[214, 1], [226, -1], [256, 1], [270, -1], [288, 1], [358, 1], [370, -1], [434, 1], [450, -1]];
-  SEATS.forEach(function (seat) { if (Math.random() < 0.72) diners.push({ x: seat[0], dir: seat[1], id: pick(DINERS), kind: pick(['eat', 'eat', 'drink', 'talk', 'phone']), clock: rand(0, 10), pace: rand(2.6, 4.2), pause: rand(0, 2) }); });
+  // P.stools: customers sit outside on stools at an open counter, backs to the street (feet at P.stoolFoot, the
+  // seat BACK_SEAT higher). Otherwise (P.seats) they sit inside at the counter, side on.
+  var STOOLS = P.stools || null, STOOL_FOOT = P.stoolFoot || 264, BACK_SEAT = P.stoolSeat || 11;
+  var SEATS = STOOLS ? STOOLS.map(function (x) { return [x, 1]; }) : P.seats || [[214, 1], [226, -1], [256, 1], [270, -1], [288, 1], [358, 1], [370, -1], [434, 1], [450, -1]];
+  SEATS.forEach(function (seat) { if (Math.random() < (STOOLS ? 0.66 : 0.72)) diners.push({ x: seat[0], dir: seat[1], id: pick(DINERS), kind: pick(['eat', 'eat', 'drink', 'talk', 'phone']), clock: rand(0, 10), pace: rand(2.6, 4.2), pause: rand(0, 2), back: !!STOOLS }); });
+  if (STOOLS && !diners.length) diners.push({ x: STOOLS[1], dir: 1, id: pick(DINERS), kind: 'eat', clock: 0, pace: 3.2, pause: 1, back: true });
   var waiter = { x: WAITER.x0 + 12, dir: 1, dist: 0, state: 'walk', timer: 0, pose: 'idle' };
   var workers = P.workers || [{ id: 'workerA', x: 566, dir: 1, kind: 'talk' }, { id: 'workerB', x: 590, dir: -1, kind: 'shovel' }, { id: 'workerC', x: 626, dir: -1, kind: 'sign' }];
 
@@ -963,31 +1029,45 @@ window.StreetPeople = function (D) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.imageSmoothingEnabled = false;
     var ox6 = env.offset(DINER_DEPTH) * S;
-    // Inside the diner: customers and the waiter, cut off by the counter and the window frames
+    // Inside the bar, seen through its windows: the server (and, without stools, the customers at the counter)
     ctx.save(); ctx.beginPath();
     WIN.forEach(function (w) { ctx.rect((w.x + env.offset(DINER_DEPTH)) * S, w.y * S, w.w * S, (COUNTER - w.y) * S); });
     ctx.clip();
     var dS = (P.dinerSize || 36) * S;
-    diners.forEach(function (d) {
+    if (!STOOLS) diners.forEach(function (d) {
       var sh = sheet(d.id, dS, 'sit-' + d.kind, false);
       var cycle = (env.t + d.clock) % (d.pace + d.pause), frame = cycle < d.pace ? Math.floor(cycle / d.pace * 12) % 12 : 0;
       drawSprite(ctx, sh, frame, Math.round(d.x * S + ox6), Math.round((COUNTER + SEAT_DROP) * S), d.dir, 1, env);
+      light(ctx, opts, dinerGlow(d, env));
     });
     var wS = (P.waiterSize || 36) * S, wsh = sheet('waiter', wS, waiter.state === 'walk' ? 'tray' : waiter.pose, false);
     var wf = waiter.state === 'walk' ? Math.floor(waiter.dist / (wS / S * strideOf(GAITS.walk)) * GAIT_FRAMES) % GAIT_FRAMES : Math.floor(env.t * 6) % 16;
     drawSprite(ctx, wsh, wf, Math.round(waiter.x * S + ox6), Math.round(WAITER.y * S), waiter.dir, 1, env);
     WIN.forEach(function (w) { ctx.fillStyle = 'rgba(170,225,235,0.06)'; ctx.fillRect((w.x + env.offset(DINER_DEPTH)) * S, w.y * S, w.w * S, (COUNTER - w.y) * S); });
     ctx.restore();
+    // Outside: customers on the stools, backs to the street, facing the server. A phone lights up in front of
+    // its owner (so behind the head, from here), and steam rises from the bowls of those eating.
+    if (STOOLS) diners.forEach(function (d) {
+      light(ctx, opts, dinerGlow(d, env));
+      var sh = sheet(d.id, dS, 'back-' + d.kind, false);
+      var cycle = (env.t + d.clock) % (d.pace + d.pause), frame = cycle < d.pace ? Math.floor(cycle / d.pace * 12) % 12 : 0;
+      var bx = Math.round(d.x * S + ox6), fy = Math.round(STOOL_FOOT * S);
+      drawSprite(ctx, sh, frame, bx, fy, 1, 1, env);
+      if (d.kind !== 'eat') return;
+      var hy = fy - Math.round(BACK_SEAT * S + 0.46 * dS);
+      ctx.fillStyle = 'rgba(230,235,240,0.3)';
+      for (var k = 0; k < 3; k++) ctx.fillRect(bx + 4 + k * 2 + Math.round(Math.sin(env.t * 2 + k + d.x) * 1.5), hy - 2 - k * 3 - Math.floor((env.t * 6 + k * 4) % 6), 1, 2);
+    });
     // Bowls with a wisp of steam in front of the people eating
-    diners.forEach(function (d) {
+    if (!STOOLS) diners.forEach(function (d) {
       if (d.kind !== 'eat') return;
       var bx = Math.round((d.x + d.dir * 6) * S + ox6), by = COUNTER * S - 1;
       fillEllipse(ctx, bx, by - 2, 6, 3, '#e8e0d0'); ctx.fillStyle = '#b03a2a'; ctx.fillRect(bx - 5, by - 3, 10, 1);
       ctx.fillStyle = 'rgba(230,235,240,0.35)';
       for (var k = 0; k < 3; k++) ctx.fillRect(bx - 2 + k * 2 + Math.round(Math.sin(env.t * 2 + k + d.x) * 1.5), by - 7 - k * 3 - Math.floor((env.t * 6 + k * 4) % 6), 1, 2);
     });
-    if (!opts.skipWorkers) drawWorkers(ctx, env);
-    for (var li = 0; li < LANES.length; li++) { if (opts.skipRide && LANES[li].ride) continue; drawLane(ctx, li, env); }
+    if (!opts.skipWorkers) drawWorkers(ctx, env, opts);
+    for (var li = 0; li < LANES.length; li++) { if (opts.skipRide && LANES[li].ride) continue; drawLane(ctx, li, env, opts); }
     // Cigarette smoke, in soft little pixel clouds
     puffs.forEach(function (p) {
       var k = p.age / p.life, sz = Math.round((p.big ? 3 : 2) + k * (p.big ? 9 : 5)), al = (p.big ? 0.3 : 0.2) * (1 - k) * Math.min(1, k * 8);
@@ -1000,22 +1080,26 @@ window.StreetPeople = function (D) {
 
   // Road workers, hidden below the top of the barrier (each stands at its own depth wk.y, so one can be down
   // in a trench with only its shoulders showing). The jackhammer plays at 12 frames a second.
-  function drawWorkers(ctx, env) {
+  function drawWorkers(ctx, env, opts) {
     // (the clip is everything above the barrier's top, wherever the canvas has been moved to)
     ctx.save(); ctx.imageSmoothingEnabled = false; ctx.beginPath(); ctx.rect(-1e5, -1e5, 2e5, 1e5 + BARRIER.top * S); ctx.clip();
     var kS = (P.workerSize || 30) * S, ox8 = env.offset(WORKER_DEPTH) * S;
     workers.forEach(function (wk, i) {
       var sh = sheet(wk.id, kS, 'work-' + wk.kind, false), fps = wk.kind === 'drill' ? 12 : 6;
       drawSprite(ctx, sh, Math.floor(env.t * fps + i * 5) % 16, Math.round(wk.x * S + ox8), Math.round((wk.y || WORKER_Y) * S), wk.dir, 1, env);
+      light(ctx, opts, workerGlow(wk, i, env));
     });
     ctx.restore();
   }
   // The road's lanes only (scooters), without clearing the canvas
-  function drawRiders(ctx, env) {
+  function drawRiders(ctx, env, opts) {
     ctx.imageSmoothingEnabled = false;
-    for (var li = 0; li < LANES.length; li++) if (LANES[li].ride) drawLane(ctx, li, env);
+    for (var li = 0; li < LANES.length; li++) if (LANES[li].ride) drawLane(ctx, li, env, opts);
   }
-  function drawLane(ctx, li, env) {
+  // opts.light(ctx, point): called right after each person is drawn, with their own small light (see glowPoints),
+  // so a scene can add its glow there: in front of them, and behind anyone drawn later
+  function light(ctx, opts, p) { if (p && opts && opts.light) opts.light(ctx, p); }
+  function drawLane(ctx, li, env, opts) {
     var L = LANES[li], ox = env.offset(L.depth) * S;
     for (var i = 0; i < agents.length; i++) {
       var a = agents[i];
@@ -1027,7 +1111,14 @@ window.StreetPeople = function (D) {
       var x = Math.round(a.x * S) + ox, y = L.y * S, alpha = a.alpha * L.fade;
       ctx.fillStyle = 'rgba(0,0,0,' + (0.3 * alpha) + ')';
       var sw = Math.round(s * 0.2); ctx.fillRect(x - sw, y, sw * 2, 1); ctx.fillRect(x - Math.round(sw * 0.7), y + 1, Math.round(sw * 1.4), 1);
-      blit(ctx, sh, frame, 0, x, y + 2, a.dir, alpha * 0.2 * env.wet, true);
+      if (!env.puddles) blit(ctx, sh, frame, 0, x, y + 2, a.dir, alpha * 0.2 * env.wet, true);
+      else {                                          // mirrored only where they stand in a puddle
+        var pools = env.puddles(x, y);
+        if (pools.length) {
+          ctx.save(); ctx.beginPath(); pools.forEach(function (e) { ctx.moveTo(e[0] + e[2], e[1]); ctx.ellipse(e[0], e[1], e[2], e[3], 0, 0, TAU); }); ctx.clip();
+          blit(ctx, sh, frame, 0, x, y + 2, a.dir, alpha * 0.4, true); ctx.restore();
+        }
+      }
       drawSprite(ctx, sh, frame, x, y, a.dir, alpha, env);
       if (a.dog) {
         var Hd = Math.max(8, Math.round(s * 0.26)), ds = dogSheet(Hd), df = a.dog.still ? DOG_IDLE[Math.floor((env.t + a.phase) * 3) % DOG_IDLE.length] : Math.floor(a.dog.dist / (s / S * 0.25)) % 4, dx = Math.round(a.dog.x * S) + ox;
@@ -1040,6 +1131,7 @@ window.StreetPeople = function (D) {
         for (var st = 0; st <= 24; st++) { var tt = st / 24; ctx.fillRect(Math.round(hx + (ex2 - hx) * tt), Math.round(hy + (ey - hy) * tt + Math.sin(tt * Math.PI) * 4), 1, 1); }
       }
       if (pose === 'phone' && env.lights > 0.2) { ctx.fillStyle = 'rgba(127,243,255,' + (0.9 * alpha) + ')'; ctx.fillRect(x + a.dir * Math.round(s * 0.1), y - Math.round(s * 0.72), 2, 3); }
+      light(ctx, opts, agentGlow(a, env));
     }
   }
 
@@ -1062,23 +1154,31 @@ window.StreetPeople = function (D) {
   }
   // The people's own small lights, as points in these (half-size) units: phones, scooter lamps, cigarettes,
   // helmet lamps. kind: phone, lamp, ember or helmet; ride: on a scooter (the road); w: width in units
-  function glowPoints(env) {
-    var out = [];
-    agents.forEach(function (a) {
-      var L = LANES[a.lane], s = sizeOf(a) / S, x = Math.round(a.x + env.offset(L.depth)), pose = poseOf(a);
-      if (pose === 'phone') out.push({ x: x + a.dir * Math.round(s * 0.1), y: L.y - Math.round(s * 0.72), c: '#7ff3ff', kind: 'phone' });
-      if (pose === 'ride') out.push({ x: x + a.dir * Math.round(s * 0.3), y: L.y - Math.round(s * 0.4), c: '#fff3c4', kind: 'lamp', ride: true });
-      if (pose === 'smoke') { var sm = smokeSpot(a, env.t); if (!sm.exhale) out.push({ x: Math.round(sm.x + env.offset(L.depth)), y: Math.round(sm.y), c: sm.lit ? '#ffb050' : '#ff6a2a', kind: 'ember' }); }
-    });
-    // Helmet lamps, blinking, where each worker's head is (leaning forward over a shovel or a drill)
+  function agentGlow(a, env) {
+    var L = LANES[a.lane], s = sizeOf(a) / S, x = Math.round(a.x + env.offset(L.depth)), pose = poseOf(a);
+    if (pose === 'phone') return { x: x + a.dir * Math.round(s * 0.1), y: L.y - Math.round(s * 0.72), c: '#7ff3ff', kind: 'phone' };
+    if (pose === 'ride') return { x: x + a.dir * Math.round(s * 0.3), y: L.y - Math.round(s * 0.4), c: '#fff3c4', kind: 'lamp', ride: true };
+    if (pose === 'smoke') { var sm = smokeSpot(a, env.t); if (!sm.exhale) return { x: Math.round(sm.x + env.offset(L.depth)), y: Math.round(sm.y), c: sm.lit ? '#ffb050' : '#ff6a2a', kind: 'ember' }; }
+    return null;
+  }
+  // Helmet lamps, blinking, where each worker's head is (leaning forward over a shovel or a drill)
+  function workerGlow(wk, i, env) {
     var kh = P.workerSize || 30;
-    workers.forEach(function (wk, i) {
-      if (((env.t + i * 0.7) % 1.6) >= 1.1) return;
-      var ln = WORK_LEAN[wk.kind] || 0, wy = (wk.y || WORKER_Y) - Math.round(kh * (0.9 - (1 - Math.cos(ln)) * 0.5));
-      if (wy >= BARRIER.top) return;
-      out.push({ x: Math.round(wk.x + env.offset(WORKER_DEPTH) + wk.dir * kh * (0.04 + Math.sin(ln) * 0.34)), y: wy, w: 2, c: '#6dff8f', kind: 'helmet' });
-    });
-    diners.forEach(function (d) { if (d.kind === 'phone') out.push({ x: Math.round(d.x + d.dir * 3 + env.offset(DINER_DEPTH)), y: COUNTER - 8, c: '#7ff3ff', kind: 'phone' }); });
+    if (((env.t + i * 0.7) % 1.6) >= 1.1) return null;
+    var ln = WORK_LEAN[wk.kind] || 0, wy = (wk.y || WORKER_Y) - Math.round(kh * (0.9 - (1 - Math.cos(ln)) * 0.5));
+    if (wy >= BARRIER.top) return null;
+    return { x: Math.round(wk.x + env.offset(WORKER_DEPTH) + wk.dir * kh * (0.04 + Math.sin(ln) * 0.34)), y: wy, w: 2, c: '#6dff8f', kind: 'helmet' };
+  }
+  function dinerGlow(d, env) {
+    if (d.kind !== 'phone') return null;
+    if (d.back) return { x: Math.round(d.x + env.offset(DINER_DEPTH)), y: Math.round(STOOL_FOOT - BACK_SEAT - 0.4 * (P.dinerSize || 36)), c: '#7ff3ff', kind: 'phone' };
+    return { x: Math.round(d.x + d.dir * 3 + env.offset(DINER_DEPTH)), y: COUNTER - 8, c: '#7ff3ff', kind: 'phone' };
+  }
+  function glowPoints(env) {
+    var out = [], push = function (p) { if (p) out.push(p); };
+    agents.forEach(function (a) { push(agentGlow(a, env)); });
+    workers.forEach(function (wk, i) { push(workerGlow(wk, i, env)); });
+    diners.forEach(function (d) { push(dinerGlow(d, env)); });
     return out;
   }
   // The same lights as dots, for a scene that blurs its own glow canvas (scene density)

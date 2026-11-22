@@ -378,7 +378,7 @@
       still(); window.setInterval(still, 60000);
       return;
     }
-    window.addEventListener('mousemove', function (e) { parallaxTarget = -((e.clientX / window.innerWidth) - 0.5) * 2 * 8; }, { passive: true });
+
     window.requestAnimationFrame(loop);
   }
   var sources = {

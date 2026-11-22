@@ -35,8 +35,9 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; background: #0b0a1f; }
-/* Pages fade in from the navy the street dissolves into when one of its shops is clicked (see district.js) */
+html { -webkit-text-size-adjust: 100%; }
+/* Every page except the street fades in from its navy (the body's background), which is also what the street
+   dissolves into when one of its shops is clicked (see district.js) */
 @media (prefers-reduced-motion: no-preference) {
   body:not(.district-home) { animation: page-in 0.32s ease-out both; }
 }
@@ -549,7 +550,7 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
 .stage {
   position: absolute;
   left: 50%;
-  top: max(calc(var(--vh) - 720 * var(--px)), calc((var(--vh) - 720 * var(--px)) * 0.25));
+  top: max(calc(var(--vh) - 720 * var(--px)), calc((var(--vh) - 720 * var(--px)) * 0.6));   /* wide windows: trim more sky than road */
   width: calc(1280 * var(--px));
   height: calc(720 * var(--px));
   transform: translateX(-50%);
@@ -642,16 +643,17 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(2 * var(--px)), rgba(0, 0, 0, 0.3) calc(2 * var(--px)), rgba(0, 0, 0, 0.3) calc(3 * var(--px)));
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(2 * var(--px)), rgba(0, 0, 0, 0.14) calc(2 * var(--px)), rgba(0, 0, 0, 0.14) calc(3 * var(--px)));
   pointer-events: none;
 }
-.d-bill-k { color: var(--c-red); font-size: calc(12 * var(--px)); letter-spacing: 0.1em; text-transform: uppercase; }
-.d-bill-t { color: var(--c-ink); font-size: calc(21 * var(--px)); }
-.d-bill-s { color: #cdbfd0; font-size: calc(12 * var(--px)); line-height: 1.05; }
-.d-bill-m { color: var(--c-amber); font-size: calc(12 * var(--px)); }
+.d-bill-k { color: #ff7a82; font-size: calc(14 * var(--px)); letter-spacing: 0.08em; text-transform: uppercase; }
+.d-bill-t { color: var(--c-ink); font-size: calc(24 * var(--px)); line-height: 0.95; }
+.d-bill-s { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* (kept for screen readers; too small to read on the sign) */
+.d-bill-m { color: var(--c-amber); font-size: calc(15 * var(--px)); }
 .d-bill:visited { color: var(--c-amber); }
-/* Texture on the words: LED dots on the billboard and the ticker, worn print on the specials board (no glow) */
-.d-bill-k, .d-bill-t, .d-bill-s, .d-bill-m, .d-ticker-run {
+/* Texture on the words: LED dots on the ticker, worn print on the specials board (no glow). The billboard's words
+   stay plain, so they can be read */
+.d-ticker-run {
   -webkit-mask-image: radial-gradient(circle, #000 52%, rgba(0, 0, 0, 0.45) 64%, transparent 74%);
   mask-image: radial-gradient(circle, #000 52%, rgba(0, 0, 0, 0.45) 64%, transparent 74%);
   -webkit-mask-size: calc(2 * var(--px)) calc(2 * var(--px));
@@ -675,9 +677,9 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
   color: #3a1e12;
   line-height: 1;
 }
-.d-menu-h { margin: 0 0 calc(4 * var(--px)); color: #a8281a; font-size: calc(13 * var(--px)); letter-spacing: 0.12em; text-align: center; text-transform: uppercase; }
+.d-menu-h { margin: 0 0 calc(3 * var(--px)); color: #a8281a; font-size: calc(12 * var(--px)); letter-spacing: 0.12em; text-align: center; text-transform: uppercase; }
 .d-menu ol { margin: 0; padding: 0; list-style: none; counter-reset: dish; }
-.d-menu li { counter-increment: dish; margin: 0 0 calc(2 * var(--px)); font-size: calc(13 * var(--px)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-menu li { counter-increment: dish; margin: 0 0 calc(2 * var(--px)); font-size: calc(12.5 * var(--px)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .d-menu li::before { content: counter(dish) ". "; color: #a8281a; }
 .d-menu a, .d-menu a:visited { color: #3a1e12; text-decoration: underline dotted; text-underline-offset: 2px; }
 .d-menu a:hover, .d-menu a:focus-visible { color: #a8281a; text-decoration-style: solid; }

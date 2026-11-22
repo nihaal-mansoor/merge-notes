@@ -5,7 +5,7 @@
   crisp pixels, and adds what a still picture can't: the real time of day, rain, wet-street
   reflections and lightning, windows switching on and off, the scrolling billboard, a blimp with an ad,
   drones, the train, flying cars, people, steam, an arcade, a hologram, a traffic light,
-  searchlights and a little parallax when the mouse moves.
+  searchlights. (The view stays still: it no longer slides with the mouse.)
 
   Preview with ?time=23:00, ?weather=rain or ?weather=clear, and ?speed=600 to run the day fast.
   Without JavaScript, a still night picture shows instead.
@@ -637,7 +637,7 @@
       still(); window.setInterval(still, 60000);
       return;
     }
-    window.addEventListener('mousemove', function (e) { parallaxTarget = -((e.clientX / window.innerWidth) - 0.5) * 2 * 10; }, { passive: true });
+
     window.requestAnimationFrame(loop);
   }
 
