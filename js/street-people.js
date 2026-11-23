@@ -118,6 +118,7 @@ window.StreetPeople = function (D) {
   // The third style (street-body.js, the approved one): everyone on the footpath, at the bar and behind its counter,
   // each dressed for the weather they set out in (summer, rain or cold).
   var BODY = !!(window.StreetBody && !P.oldCast), SB = window.StreetBody, CLIM = 'summer';
+  var HD = P.hd || 1;                                   // the scene's people canvas is HD times its size: the third style is drawn that much finer
   var V2 = !BODY && !!(window.StreetWalk && !P.oldCast);
   if (BODY) {
     WALKERS = []; DINERS = [];
@@ -861,10 +862,10 @@ window.StreetPeople = function (D) {
     if (body) {
       var bkey = id + '|' + s + '|' + pose + '|' + (clim || 'summer'), bsh = sheets[bkey];
       if (!bsh) {
-        var bmk = SB.make(body, clim || 'summer', s / S, bodyOpts(pose)), bc = document.createElement('canvas');
+        var bmk = SB.make(body, clim || 'summer', s / S * HD, bodyOpts(pose)), bc = document.createElement('canvas');
         bc.width = bmk.fw * bmk.n; bc.height = bmk.fh * 2;
         var bg = readableContext(bc);
-        bsh = sheets[bkey] = { canvas: bc, g: bg, fw: bmk.fw, fh: bmk.fh, footX: bmk.footX, footY: bmk.footY, n: bmk.n, ready: new Uint8Array(bmk.n), cycle: bmk.cycle * S, v2: true, body: true,
+        bsh = sheets[bkey] = { canvas: bc, g: bg, fw: bmk.fw, fh: bmk.fh, footX: bmk.footX, footY: bmk.footY, n: bmk.n, ready: new Uint8Array(bmk.n), cycle: bmk.cycle * S / HD, v2: true, body: true, hd: HD,
           paint: function (f) { bmk.paint(bg, f, f * bmk.fw); finish(bg, bmk.fw, bmk.fh, 1, f * bmk.fw, true); } };
       }
       if (eager) for (var bf = 0; bf < bsh.n; bf++) ensureFrame(bsh, bf);
@@ -1175,7 +1176,8 @@ window.StreetPeople = function (D) {
     if (alpha <= 0.01) return;
     frame = frameFor(sh, frame);
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(dir, flipY ? -0.5 : 1);
-    ctx.drawImage(sh.canvas, frame * sh.fw, row * sh.fh, sh.fw, sh.fh, -sh.footX, -sh.footY, sh.fw, sh.fh);
+    var k = 1 / (sh.hd || 1);                         // (a sheet drawn at twice the density goes in at half size: one of its pixels per pixel of a 2x canvas)
+    ctx.drawImage(sh.canvas, frame * sh.fw, row * sh.fh, sh.fw, sh.fh, -sh.footX * k, -sh.footY * k, sh.fw * k, sh.fh * k);
     ctx.restore();
   }
   function drawSprite(ctx, sh, frame, x, y, dir, alpha, env) {

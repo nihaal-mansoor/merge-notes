@@ -110,7 +110,7 @@
       var dy = Math.round(L.dy * D * K) / (D * K);
       [L.n, L.f].forEach(function (g) { ['hip', 'knee', 'ank'].forEach(function (k) { g[k] = [g[k][0], g[k][1] + dy]; }); g.foot = g.foot.map(function (p) { return [p[0], p[1] + dy]; }); if (g.instep) g.instep = g.instep.map(function (p) { return [p[0], p[1] + dy]; }); });
       var nL = L.n, fL = L.f, pel = [CX, dy], sway = stand ? (f ? 0.9 : 0) : (f ? 0.5 : 0.15) * Math.sin(t * TAU * 2), shTw = stand ? 0 : -0.5 * tw;
-      var lean = elder ? 1.2 : 0;                        // (an upright back for everyone; the elderly just a touch forward)
+      var lean = elder ? 0.4 : 0;                        // (an upright back for everyone; the elderly just a touch forward)
       function T(p) { return [pel[0] + p[0] * XS + (p[1] < -10 ? shTw * (-p[1] - 10) / 12 : 0) + (p[1] < -8 ? lean * (-p[1] - 8) / 15 : 0), pel[1] + p[1]]; }
       var lag = stand ? 0 : 0.9 * Math.sin(t * TAU * 2 - 0.9);
       var bust = f && !kid ? (def.bust === undefined ? 1 : def.bust) : 0, hips = def.hips || (f ? 1 : 0.4), belly = def.belly || 0;
@@ -278,7 +278,8 @@
       // ----- the near arm, and an umbrella in its hand
       var ns = T([0.4, -21]), nA;
       if (AR && AR.n) nA = armPose(ns, AR.n);
-      else if (stand && f && !sit) { var hand = T([1.6, -7.2]), el = [ns[0] - 6.5, ns[1] + 8]; nA = { s: ns, e: el, w: hand, h: add(hand, [0.6, 0.4]) }; }
+      else if (stand && f && opts.hip) { var hand = T([1.6, -7.2]), el = [ns[0] - 6.5, ns[1] + 8]; nA = { s: ns, e: el, w: hand, h: add(hand, [0.6, 0.4]) }; }   // (a hand on the hip, when asked for)
+      else if (stand) nA = armPose(ns, [5, 12]);                                       // standing: the arm hangs easy
       else nA = armSwing(-tw, ns, !!outfit.umbrella);
       drawArm(nA, false);
       if (opts.tray) { var th0 = nA.h; B.poly([[th0[0] - 4.2, th0[1] - 1.2], [th0[0] + 5.2, th0[1] - 1.2], [th0[0] + 5.0, th0[1] - 0.2], [th0[0] - 4.0, th0[1] - 0.2]], '#b8b4ac'); B.ell(th0[0] + 1.2, th0[1] - 2.4, 2.2, 1.3, '#ece6dc'); B.seg([th0[0] - 0.4, th0[1] - 3.0], [th0[0] + 2.8, th0[1] - 3.0], 0.5, 0.5, '#c84a2a'); }   // a tray with a bowl

@@ -1149,7 +1149,7 @@
   // light), the people, and the front (railing, poles, weather, and the light in the air in front of the people).
   // No blended layers and no CSS filters: the glow and the soft reflections are made here by scaling pictures
   // down and up, which costs far less to show.
-  var ctx = canvasFor('d-scene', W, H), ptx = canvasFor('d-people', W, H), ftx = canvasFor('d-front', W, H);
+  var ctx = canvasFor('d-scene', W, H), ptx = canvasFor('d-people', W * 2, H * 2), ftx = canvasFor('d-front', W, H);   // (the people at twice the density: see renderPeople)
   var RW = W / 2, RH = (H - GROUND) / 2, xtx = offscreen(RW, RH);       // the puddles' mirror, at half size
   var WK = { x: 930, y: 500, w: 350, h: 140 }, wkx = offscreen(WK.w, WK.h);   // the road workers, tinted on their own
   var RIDE_TOP = 540, rtx = null;
@@ -1164,7 +1164,7 @@
         { y: 282, h: 36, depth: depthAt(564), max: 3, fade: 1 },
         { y: 316, h: 42, depth: depthAt(632), max: 0, fade: 1, ride: true }
       ],
-      door: { x: 322, w: 25, top: 226 }, counter: 246, dinerDepth: 0.5, workerDepth: HOLE_Z, workerY: 298,
+      hd: 2, door: { x: 322, w: 25, top: 226 }, counter: 246, dinerDepth: 0.5, workerDepth: HOLE_Z, workerY: 298,
       windows: [{ x: 278, y: 223, w: 42, h: 35 }, { x: 349, y: 223, w: 46, h: 35 }],
       stools: STOOLS.map(function (x) { return x / 2; }), stoolFoot: 260, stoolSeat: 8.5, shelter: [270, 402],
       waiter: { y: 260, x0: 280, x1: 393 }, dinerSize: 36, waiterSize: 36, workerSize: 30,
@@ -1752,6 +1752,7 @@
     drawPrecip(ftx); drawFrontLights(ftx); drawFinish(ftx, t);
   }
   function renderPeople() {
+    ptx.setTransform(2, 0, 0, 2, 0, 0);                // (the people's canvas is twice the size: everything else on it is drawn as before, doubled)
     if (!crowd) { ptx.clearRect(0, 0, W, H); return; }
     var e = env();
     // Walkers on the footpath, then the stairwell's railings (they are in front of the walkers), then the workers
