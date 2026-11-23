@@ -537,7 +537,7 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
   color: var(--c-ink);
 }
 .district {
-  --px: min(calc(100vw / 1280), calc(1.2 * 100vh / 720));
+  --px: min(calc(100vw / 1280), calc(1.1 * 100vh / 720));
   --vh: 100vh;
   position: fixed;
   inset: 0;
@@ -545,12 +545,12 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
   background: #2c1a28;
 }
 @supports (height: 100svh) {
-  .district { --px: min(calc(100vw / 1280), calc(1.2 * 100svh / 720)); --vh: 100svh; }
+  .district { --px: min(calc(100vw / 1280), calc(1.1 * 100svh / 720)); --vh: 100svh; }
 }
 .stage {
   position: absolute;
   left: 50%;
-  top: max(calc(var(--vh) - 720 * var(--px)), calc((var(--vh) - 720 * var(--px)) * 0.6));   /* wide windows: trim more sky than road */
+  top: calc(var(--vh) - 720 * var(--px));   /* on the bottom edge: wide windows trim sky, never the road or the dialogue box */
   width: calc(1280 * var(--px));
   height: calc(720 * var(--px));
   transform: translateX(-50%);
@@ -821,13 +821,28 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
 }
 .district.is-live:not(.is-broken) .d-ticker-run { animation: none; }
 .district.is-live:not(.is-broken) .d-sign .d-tag { opacity: 0 !important; }   /* the prompt and the dialogue box take over */
-.district.is-talking .d-hint, .district.is-title .d-hint { opacity: 0; }
-.district.is-title .d-overlays { pointer-events: none; }
+.district.is-talking .d-hint { opacity: 0; }
 /* The corner menu is the pause menu (Esc opens it), in the interface kit's frame */
 .hud .hud-toggle, .hud-panel { border: 2px solid var(--c-amber); border-radius: 0; background: #18111c; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45); }
 .hud-panel .links li::before { content: ""; }
 .hud-panel .links li:hover::before, .hud-panel .links li:focus-within::before { content: "\25B6"; color: var(--c-amber); font-size: 12px; }
 @media (hover: hover) { .hud-menu::after { content: " \00B7  Esc"; color: var(--c-muted); font-size: 15px; text-transform: none; } }
+
+/* The loading screen: part of the page, so it shows at once; it fades when the street is drawn (district.js) */
+.d-loading {
+  position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: #140e18; color: var(--c-ink); font-family: var(--pixel); transition: opacity 0.45s, visibility 0.45s;
+}
+.district.is-ready .d-loading { opacity: 0; visibility: hidden; }
+.district:not(.is-ready) ~ .hud { visibility: hidden; }
+.d-loading p { margin: 0; }
+.d-loading-name { font-size: 40px; letter-spacing: 3px; }
+.d-loading-name span { color: var(--c-red); }
+.d-loading-word { color: var(--c-muted); font-size: 18px; letter-spacing: 1px; }
+.d-loading-bar { width: 180px; height: 14px; padding: 2px; border: 2px solid var(--c-amber); }
+.d-loading-bar span { display: block; height: 100%; width: 100%; background: repeating-linear-gradient(90deg, var(--c-amber) 0 10px, transparent 10px 14px); transform-origin: left; animation: d-load 1.4s steps(12) infinite; }
+@keyframes d-load { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .d-loading-bar span { animation: none; } }
 
 /* Phones held upright: the side-scroller (district.js). It settles on each shop; arrows on the edges, a map of the
    street at the bottom, and an ENTER button for the shop in the middle */
@@ -858,7 +873,7 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
 }
 @keyframes d-nudge-l { 50% { transform: translateX(-5px); } }
 @keyframes d-nudge-r { 50% { transform: translateX(5px); } }
-.district.is-leaving ~ .d-enter, .district.is-leaving .d-enter, .district.is-title .d-enter, .district.is-title .d-arrow, .district.is-title .d-map { visibility: hidden; }
+.district.is-leaving ~ .d-enter, .district.is-leaving .d-enter { visibility: hidden; }
 
 /* Stepping into a shop (district.js): the street dissolves in big pixels into the other pages' navy */
 .d-wipe {

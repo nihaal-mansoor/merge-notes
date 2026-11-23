@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="js/street-walk.js" defer></script>
   <script src="js/street-people.js" defer></script>
   <script src="js/district.js" defer></script>
   <title>Merge Notes · by Nihaal</title>
@@ -10,11 +11,11 @@
   <!-- TODO domain: add <link rel="canonical"> and og:url once the domain is bought -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Merge Notes · by Nihaal">
-  <meta property="og:description" content="What breaks and what works when one developer builds a sales team's systems with AI.">
+  <meta property="og:description" content="What breaks and what works when a sales team's systems are built with AI.">
   <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
   <link rel="alternate" type="application/rss+xml" title="Merge Notes" href="feed.xml">
   <link rel="stylesheet" href="css/style.css">
-  <noscript><style>.stage { background-image: url(img/district/fallback.jpg); } .d-hint { display: none; }</style></noscript>
+  <noscript><style>.stage { background-image: url(img/district/fallback.jpg); } .d-hint, .d-loading { display: none; }</style></noscript>
 </head>
 <body class="district-home">
 <a class="skip" href="#hud">Skip to the menu</a>
@@ -64,9 +65,9 @@
         <span class="d-tag">Under construction: coming up next &gt;&gt;</span>
       </a>
 
-      <a class="d-area d-bill" data-area="billboard" data-name="NEW ARTICLE" data-say="" data-date="2026-11-29" href="articles/one-developer-eight-apps.html" style="--x:1000;--y:118;--w:160;--h:108;--z:.46">
+      <a class="d-area d-bill" data-area="billboard" data-name="NEW ARTICLE" data-say="" data-date="2026-11-29" href="articles/eight-apps-one-set-of-rules.html" style="--x:1000;--y:118;--w:160;--h:108;--z:.46">
         <span class="d-bill-k">New article</span>
-        <span class="d-bill-t">One developer, eight apps</span>
+        <span class="d-bill-t">Eight apps, one set of rules</span>
         <span class="d-bill-s">The rules that keep AI-built software under control</span>
         <span class="d-bill-m">29 Nov · 5 min read &gt;&gt;</span>
       </a>
@@ -95,6 +96,7 @@
       </form>
     </div>
   </div>
+  <div class="d-loading" aria-hidden="true"><p class="d-loading-name">MERGE NOTES<span>.</span></p><p class="d-loading-bar"><span></span></p><p class="d-loading-word">Loading the street</p></div>
   <p class="d-hint" aria-hidden="true">Every shop name is a link<span class="d-swipe"> · swipe to look around</span></p>
 </main>
 

@@ -112,6 +112,19 @@ window.StreetPeople = function (D) {
       CAST['g' + i] = p; WALKERS.push('g' + i); if (type !== 'cape' && p.head !== 'hood') DINERS.push('g' + i);
     }
   })();
+  // The second style (street-walk.js): flat colour, no outlines, one shared body and walk. When it is loaded,
+  // the people on the footpath are this cast. Their pace comes from their stride, so a walk plays at its
+  // own rhythm (about 65 ms a frame) and the planted foot stays put.
+  var V2 = !!(window.StreetWalk && !P.oldCast);
+  if (V2) {
+    WALKERS = [];
+    Object.keys(window.StreetWalk.CAST).forEach(function (k) {
+      var def = window.StreetWalk.CAST[k], mk = window.StreetWalk.make(def, Math.round(35 * S * def.s), false);
+      var pace = mk.cycle / S / (mk.n * (def.ms || 65) / 1000);
+      CAST['v_' + k] = { v2: def, scale: def.s, speed: [pace * 0.94, pace * 1.04], sex: def.bust ? 'f' : 'm' };
+      WALKERS.push('v_' + k);
+    });
+  }
 
   // ---------- Small helpers ----------
   var rgbCache = {};
@@ -310,6 +323,7 @@ window.StreetPeople = function (D) {
     if (style === 'long') fillPoly(g, [[hcx - hrx * 0.95, hcy - hry * 0.4], [hcx + hrx * 0.05, hcy - hry * 0.3], [hcx - hrx * 0.1 + sway * 0.3, shY + 0.08 * s], [hcx - hrx * 0.7 + sway * 0.3, shY + 0.095 * s], [hcx - hrx * 1.4 + sway * 0.3, shY + 0.07 * s]], hk);
     if (style === 'pony') { capsule(g, hcx - hrx * 0.8, hcy - hry * 0.3, hcx - hrx * 1.8 - sway * 0.6, hcy + hry * 1.15, 0.024 * s, 0.013 * s, hk); }
     face(g, skin, hcx, hcy, hrx, hry);
+    if (sp.beard) fillPoly(g, [[hcx + hrx * 0.88, hcy + hry * 0.12], [hcx + hrx * 0.62, hcy + hry * 0.98], [hcx - hrx * 0.15, hcy + hry * 1.02], [hcx - hrx * 0.32, hcy + hry * 0.35], [hcx + hrx * 0.1, hcy + hry * 0.45]], cloth(sp.beard, 'strand'));
     if (!hatted && style && style !== 'none') {
       var low = style === 'long' || style === 'bob' ? 0.95 : style === 'pony' || style === 'bun' ? 0.55 : 0.35;
       fillEllipse(g, hcx - hrx * 0.15, hcy - hry * 0.46, hrx * 1.0, hry * 0.64, style === 'short' ? hair : hk);
@@ -317,6 +331,11 @@ window.StreetPeople = function (D) {
       g.fillStyle = mix(hair, '#ffffff', 0.16); span(g, Math.round(hcx - hrx * 0.55), Math.round(hcx + hrx * 0.2), Math.round(hcy - hry * 0.98));  // a sheen
       if (style === 'bun') fillEllipse(g, hcx - hrx * 0.85, hcy - hry * 0.8, hrx * 0.44, hry * 0.38, hair);
       if (style === 'pony') dot(g, hcx - hrx * 0.95, hcy - hry * 0.3, shade(hair, 0.5), Math.max(1, Math.round(s * 0.016)));
+    }
+    if (sp.phones) {                                    // headphones: the band over the top, a cup over the ear
+      line(g, hcx - hrx * 0.25, hcy - hry * 1.08, hcx + hrx * 0.35, hcy - hry * 1.02, sp.phones, Math.max(1, Math.round(s * 0.016)));
+      line(g, hcx - hrx * 0.25, hcy - hry * 1.08, hcx - hrx * 0.3, hcy - hry * 0.15, sp.phones, Math.max(1, Math.round(s * 0.016)));
+      fillEllipse(g, hcx - hrx * 0.25, hcy + hry * 0.05, hrx * 0.32, hry * 0.36, shade(sp.phones, 0.8));
     }
     if (sp.head === 'hood') {
       var hc = sp.headColor || sp.coat, hood = [[hcx - hrx * 1.25, hcy + hry * 1.25], [hcx - hrx * 1.32, hcy - hry * 0.4], [hcx - hrx * 0.5, hcy - hry * 1.28], [hcx + hrx * 0.55, hcy - hry * 1.18], [hcx + hrx * 0.98, hcy - hry * 0.3], [hcx + hrx * 0.35, hcy - hry * 0.45], [hcx - hrx * 0.25, hcy + hry * 0.2], [hcx - hrx * 0.15, hcy + hry * 1.3]];
@@ -369,8 +388,8 @@ window.StreetPeople = function (D) {
     var hemY = hipY + hemLen, wide = type === 'puffer' ? 1.1 : type === 'long' ? 1.05 : 1;
     var sf = 0.062 * s * bw * wide, sb = 0.064 * s * bw * wide;
     var chest = (fem ? 0.088 : 0.08) * s * bw * wide, back = 0.085 * s * bw * wide;
-    var waistF = (fem ? 0.05 : 0.058) * s * bw * wide, waistB = (fem ? 0.058 : 0.064) * s * bw * wide;
-    var hipF = (fem ? 0.07 : 0.064) * s * bw * wide, hipB = (fem ? 0.088 : 0.078) * s * bw * wide;
+    var belly = sp.belly || 0, waistF = (fem ? 0.05 : 0.058) * s * bw * wide * (1 + belly * 0.75), waistB = (fem ? 0.058 : 0.064) * s * bw * wide * (1 + belly * 0.1);
+    var hipF = (fem ? 0.07 : 0.064) * s * bw * wide * (1 + belly * 0.3), hipB = (fem ? 0.088 : 0.078) * s * bw * wide;
     var skirt = type === 'long' && !seated;
     var flareF = skirt ? 0.1 * s : cape ? 0.16 * s : hipF, flareB = skirt ? 0.12 * s : cape ? 0.17 * s : hipB;
     var wY = shY + 0.17 * s;
@@ -592,6 +611,7 @@ window.StreetPeople = function (D) {
       line(g, nearHand[0] - 0.02 * s, nearHand[1] + 0.02 * s, nearHand[0], nearHand[1] - 0.01 * s, shade(sp.bagColor, 0.7));
     }
     if (sp.cane && !umb && pose !== 'shield') line(g, nearHand[0], nearHand[1], nearHand[0] + 0.05 * s, oy, '#3a2a1a', Math.max(1, Math.round(s * 0.014)));
+    if (sp.cup && !umb && !held && sp.bag !== 'tote' && pose !== 'shield') { fillPoly(g, [[nearHand[0] - 0.012 * s, nearHand[1] - 0.05 * s], [nearHand[0] + 0.03 * s, nearHand[1] - 0.05 * s], [nearHand[0] + 0.025 * s, nearHand[1] + 0.012 * s], [nearHand[0] - 0.008 * s, nearHand[1] + 0.012 * s]], '#e8e0d0'); line(g, nearHand[0] - 0.012 * s, nearHand[1] - 0.03 * s, nearHand[0] + 0.03 * s, nearHand[1] - 0.03 * s, '#8a5a3a'); }
     if (held === 'phone') { g.fillStyle = '#101418'; g.fillRect(Math.round(nearHand[0]), Math.round(nearHand[1] - 0.03 * s), Math.max(1, Math.round(s * 0.016)), Math.max(2, Math.round(s * 0.04))); }
     if (held === 'watch') { g.fillStyle = '#c8bca8'; g.fillRect(Math.round(nearHand[0] - 0.035 * s), Math.round(nearHand[1] - 0.012 * s), Math.max(1, Math.round(s * 0.018)), Math.max(1, Math.round(s * 0.022))); }
     if (held === 'cig' || held === 'cig-lit') {
@@ -780,14 +800,16 @@ window.StreetPeople = function (D) {
   // Canvases that are read back (getImageData) must say so, or the browser keeps them on the GPU and every
   // read stalls it
   function readableContext(c) { var g = null; try { g = c.getContext('2d', { willReadFrequently: true }); } catch (e) { g = null; } return g || c.getContext('2d'); }
-  function finish(g, fw, fh, n, x0) {
+  function finish(g, fw, fh, n, x0, plain) {
     // A soft dark outline (each edge pixel takes a darker copy of its neighbour), then the night row with its neon rim.
-    // x0: where this strip starts on the sheet (a single frame can be finished on its own)
+    // x0: where this strip starts on the sheet (a single frame can be finished on its own). plain: no outline
+    // (the second style has none)
     x0 = x0 || 0;
     var w = fw * n, src = g.getImageData(x0, 0, w, fh), d = src.data, out = g.createImageData(w, fh), o = out.data, x, y, i;
     for (y = 0; y < fh; y++) for (x = 0; x < w; x++) {
       i = (y * w + x) * 4;
       if (d[i + 3]) { o[i] = d[i]; o[i + 1] = d[i + 1]; o[i + 2] = d[i + 2]; o[i + 3] = 255; continue; }
+      if (plain) continue;
       var best = -1;
       if (x > 0 && d[i - 1]) best = i - 4; else if (x < w - 1 && d[i + 7]) best = i + 4; else if (y > 0 && d[i - w * 4 + 3]) best = i - w * 4; else if (y < fh - 1 && d[i + w * 4 + 3]) best = i + w * 4;
       if (best >= 0) { o[i] = d[best] * 0.35; o[i + 1] = d[best + 1] * 0.35; o[i + 2] = d[best + 2] * 0.4; o[i + 3] = 230; }
@@ -807,7 +829,16 @@ window.StreetPeople = function (D) {
   // A sheet is made empty, and each frame is drawn (and outlined) the first time it is shown. That spreads the
   // work over many frames, so a new pose never makes the animation stutter. eager: draw every frame now.
   function sheet(id, s, pose, umb, eager) {
+    var v2 = CAST[id] && CAST[id].v2, moving = pose === 'walk' || pose === 'run' || pose === 'shield';
+    if (v2) { pose = moving ? 'walk' : 'stand'; umb = false; }
     var key = id + '|' + s + '|' + pose + '|' + (umb ? 1 : 0), sh = sheets[key];
+    if (!sh && v2) {                                      // the second style: its own painter, no outline
+      var mk = window.StreetWalk.make(v2, s, pose === 'stand'), vc = document.createElement('canvas');
+      vc.width = mk.fw * mk.n; vc.height = mk.fh * 2;
+      var vg = readableContext(vc);
+      sh = sheets[key] = { canvas: vc, g: vg, fw: mk.fw, fh: mk.fh, footX: mk.footX, footY: mk.footY, n: mk.n, ready: new Uint8Array(mk.n), cycle: mk.cycle, v2: true,
+        paint: function (f) { mk.paint(vg, f, f * mk.fw); finish(vg, mk.fw, mk.fh, 1, f * mk.fw, true); } };
+    }
     if (!sh) {
       var sp = CAST[id], n = frameCount(pose);
       var fw = Math.ceil(s * 1.25) + 8, fh = Math.ceil(s * 1.5) + 8, footX = Math.round(fw * 0.5), footY = fh - 6;
@@ -878,9 +909,14 @@ window.StreetPeople = function (D) {
   }
   function spawn(lane, atEdge) {
     var dir = Math.random() < 0.5 ? 1 : -1, x = atEdge ? (dir > 0 ? -40 : W + 40) : rand(20, W - 20), r = Math.random(), h = LANES[lane].h;
-    if (r < 0.12) { var a = makeAgent('jacketWoman', lane, x, dir), b = makeAgent('coatMan', lane, x, dir); b.speed = a.speed; b.follow = a; b.gap = -h * 0.42; a.partner = b; agents.push(a, b); return; }
-    if (r < 0.2) { var pa = makeAgent('coatWoman', lane, x, dir), kd = makeAgent('kid', lane, x, dir); kd.speed = pa.speed; kd.follow = pa; kd.gap = h * 0.38; pa.partner = kd; agents.push(pa, kd); return; }
-    var ag = makeAgent(pick(WALKERS), lane, x, dir);
+    var taken = function (id) { return agents.some(function (o) { return o.active && o.id === id; }) || (diners || []).some(function (d) { return d.id === id; }); };
+    if (!V2 && r < 0.12 && !taken('jacketWoman') && !taken('coatMan')) { var a = makeAgent('jacketWoman', lane, x, dir), b = makeAgent('coatMan', lane, x, dir); b.speed = a.speed; b.follow = a; b.gap = -h * 0.42; a.partner = b; agents.push(a, b); return; }
+    if (!V2 && r < 0.2 && !taken('coatWoman') && !taken('kid')) { var pa = makeAgent('coatWoman', lane, x, dir), kd = makeAgent('kid', lane, x, dir); kd.speed = pa.speed; kd.follow = pa; kd.gap = h * 0.38; pa.partner = kd; agents.push(pa, kd); return; }
+    // No two identical people on screen: only someone who is not already out (on the footpath, at the counter, or
+    // about to come out of the bar)
+    var busy = {}; agents.forEach(function (o) { if (o.active) busy[o.id] = 1; }); (diners || []).forEach(function (d) { busy[d.id] = 1; }); exits.forEach(function (e) { busy[e.id] = 1; });
+    var free = WALKERS.filter(function (id) { return !busy[id]; }); if (!free.length) return;
+    var ag = makeAgent(pick(free), lane, x, dir);
     if (CAST[ag.id].dog) ag.dog = { x: ag.x + dir * h * 0.8, dist: 0, dir: dir };
     agents.push(ag);
   }
@@ -899,6 +935,7 @@ window.StreetPeople = function (D) {
     return pick(list);
   }
   function stopAgent(a, pose, time, state) {
+    if (CAST[a.id].v2) pose = 'idle';                   // the second style has one standing pose so far
     a.state = state || 'look'; a.timer = time; a.idle = pose; a.walkDir = a.dir; a.glance = 0;
     var p = a.partner;
     if (p && p.active) {
@@ -977,7 +1014,7 @@ window.StreetPeople = function (D) {
         a.x += a.dir * v * dt; a.dist += v * dt;
         if (a.state === 'walk' && a.cooldown <= 0) {
           var doorC = DOOR.x + DOOR.w / 2;
-          if (a.lane === 0 && !a.dog && Math.abs(a.x - doorC) < 2 && Math.random() < 0.35) { a.state = 'enter'; a.timer = 0.4; door.open = 1.8; a.cooldown = 99; }
+          if (a.lane === 0 && !a.dog && !sp.v2 && Math.abs(a.x - doorC) < 2 && Math.random() < 0.35) { a.state = 'enter'; a.timer = 0.4; door.open = 1.8; a.cooldown = 99; }
           for (var k = 0; k < SPOTS.length && a.state === 'walk' && a.lane <= 1; k++) {
             var spot = SPOTS[k];
             if (Math.abs(a.x - spot.x) < 1.5) {
@@ -1018,6 +1055,12 @@ window.StreetPeople = function (D) {
     agents = agents.filter(function (a) { return a.active; });
     for (var e = exits.length - 1; e >= 0; e--) {
       if (t >= exits[e].at) {
+        if (V2 && !CAST[exits[e].id].v2) {               // someone from the bar steps out: as one of the new cast
+          var out = {}; agents.forEach(function (o) { if (o.active) out[o.id] = 1; });
+          var freeV = WALKERS.filter(function (id) { return !out[id]; });
+          if (!freeV.length) { exits.splice(e, 1); continue; }
+          exits[e].id = pick(freeV);
+        }
         var ex = makeAgent(exits[e].id, 0, DOOR.x + DOOR.w / 2, Math.random() < 0.5 ? 1 : -1);
         ex.state = 'exit'; ex.alpha = 0; ex.cooldown = 8; door.open = 1.8; agents.push(ex); exits.splice(e, 1);
       }
@@ -1195,6 +1238,7 @@ window.StreetPeople = function (D) {
       // Walking and running frames follow the distance walked, so planted feet stay put on the pavement
       var gt = gaitOf(pose), stride = gt ? (s / S) * strideOf(gt) : 1;
       var frame = gt ? Math.floor(a.dist / stride * GAIT_FRAMES) % GAIT_FRAMES : sh.n === 16 ? Math.floor((env.t + a.phase) * 6) % 16 : Math.floor(env.t * 1.2 + i) % sh.n;
+      if (sh.v2) frame = sh.cycle ? Math.floor(a.dist / (sh.cycle / S) * sh.n) % sh.n : Math.floor((env.t + a.phase) * 3) % sh.n;
       var x = Math.round(a.x * S) + ox, y = L.y * S, alpha = a.alpha * L.fade;
       ctx.fillStyle = 'rgba(0,0,0,' + (0.3 * alpha) + ')';
       var sw = Math.round(s * 0.2); ctx.fillRect(x - sw, y, sw * 2, 1); ctx.fillRect(x - Math.round(sw * 0.7), y + 1, Math.round(sw * 1.4), 1);
@@ -1273,6 +1317,68 @@ window.StreetPeople = function (D) {
   // The same lights as dots, for a scene that blurs its own glow canvas (scene density)
   function drawGlow(g, env) { glowPoints(env).forEach(function (p) { g.fillStyle = p.c; g.fillRect(p.x, p.y, p.w || 1, 1); }); }
 
+  // ---------- People inside: backlit silhouettes, one activity per room, 4 frames each (also the bus passengers) ----------
+  // roomActor(g, kind, f, x, y, h, c, lc): x the middle, y the floor (or the seat for 'sit' kinds), h a standing
+  // person's height, c the silhouette colour, lc the colour of any light they hold (a screen, a stove's steam).
+  var ROOM_KINDS = ['water', 'iron', 'stretch', 'read', 'type', 'cook', 'pace', 'dance', 'fold', 'paint', 'bulb', 'guitar', 'tea',
+    'cashier', 'browse', 'vendor', 'tech', 'clerk', 'bus-read', 'bus-phone', 'bus-doze', 'bus-stand'];
+  function roomActor(g, kind, f, x, y, h, c, lc) {
+    var R = function (x0, y0, w, hh, col) { g.fillStyle = col || c; g.fillRect(Math.round(x0), Math.round(y0), Math.max(1, Math.round(w)), Math.max(1, Math.round(hh))); };
+    var L = function (x0, y0, x1, y1, w, col) { var n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); g.fillStyle = col || c; for (var i = 0; i <= n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n - w / 2), Math.round(y0 + (y1 - y0) * i / n), w, w); };
+    var D = function (cx, cy, r, col) { g.fillStyle = col || c; for (var yy = -r; yy <= r; yy++) { var w = Math.round(Math.sqrt(r * r - yy * yy + r * 0.5)); g.fillRect(Math.round(cx - w), Math.round(cy + yy), w * 2 + 1, 1); } };
+    var aw = Math.max(2, Math.round(h * 0.085)), hr = Math.max(3, Math.round(h * 0.1));
+    var sit = /^(read|type|guitar|bus-read|bus-phone|bus-doze)$/.test(kind);
+    var hipY = sit ? y - h * 0.08 : y - h * 0.47, shY = hipY - h * 0.3, shX = x, headY = shY - hr * 1.3;
+    // the body: legs, torso, head (arms come with each activity)
+    if (!sit) { var st = kind === 'pace' ? Math.round(Math.sin(f / 4 * Math.PI * 2) * h * 0.06) : 0; L(x - h * 0.03 - st, hipY, x - h * 0.05 - st, y, aw + 2); L(x + h * 0.03 + st, hipY, x + h * 0.05 + st, y, aw + 2); }
+    else { L(x, hipY, x + h * 0.22, hipY, aw + 1); L(x + h * 0.22, hipY, x + h * 0.24, hipY + h * 0.2, aw); }
+    var lean = kind === 'browse' || kind === 'tech' ? h * 0.04 : kind === 'bus-doze' ? -h * 0.02 : 0;
+    g.fillStyle = c; for (var ty = 0; ty <= hipY - shY; ty++) { var k = ty / (hipY - shY), wd = h * (0.24 - 0.05 * k) - (ty < 2 ? 2 - ty : 0) * 2; g.fillRect(Math.round(x - wd / 2 + lean * (1 - k)), Math.round(shY + ty), Math.round(wd), 1); }
+    var hx = x + lean + (kind === 'bus-doze' ? h * 0.03 : 0), hy = headY + (kind === 'bus-doze' ? hr * 0.6 : 0) + (kind === 'read' && f === 2 ? 1 : 0);
+    D(hx, hy, hr);
+    var sx = shX + lean, sy = shY + 2, u = f / 4, sw = Math.sin(u * Math.PI * 2);
+    var arm = function (dx, dy) { L(sx, sy, sx + dx * h, sy + dy * h, aw); return [sx + dx * h, sy + dy * h]; };
+    switch (kind) {
+      case 'water': { var hd = arm(0.22, 0.12); R(hd[0] - 1, hd[1] - 2, h * 0.12, h * 0.07); L(hd[0] + h * 0.1, hd[1], hd[0] + h * 0.2, hd[1] + h * 0.06 + (f % 2), 2); if (f % 2) R(hd[0] + h * 0.22, hd[1] + h * 0.14, 1, 2, lc); R(x + h * 0.26, y - h * 0.12, h * 0.1, h * 0.12); D(x + h * 0.31, y - h * 0.2, Math.round(h * 0.07)); break; }
+      case 'iron': { R(x + h * 0.05, hipY + h * 0.02, h * 0.4, 2); L(x + h * 0.4, hipY + 2, x + h * 0.35, y, 2); var ih = arm(0.18 + 0.08 * sw, 0.26); R(ih[0] - 2, ih[1] - 3, h * 0.1, h * 0.05); break; }
+      case 'stretch': { var up = f % 2 === 0; arm(up ? -0.06 : -0.2, up ? -0.42 : -0.3); arm(up ? 0.06 : 0.2, up ? -0.42 : -0.34); break; }
+      case 'read': { R(x - h * 0.14, y - h * 0.45, h * 0.08, h * 0.45); R(x - h * 0.12, y - h * 0.08, h * 0.42, h * 0.08); arm(0.2, 0.1); var bk = arm(0.24, 0.06); R(bk[0] - 2, bk[1] - h * 0.1, h * 0.06 + (f === 3 ? 2 : 0), h * 0.12, lc); break; }
+      case 'type': { R(x + h * 0.25, hipY - h * 0.02, h * 0.36, 2); L(x + h * 0.5, hipY, x + h * 0.5, y + h * 0.1, 2); R(x + h * 0.32, hipY - h * 0.15, h * 0.16, h * 0.13, lc); arm(0.28, 0.12 + (f % 2) * 0.02); break; }
+      case 'cook': { R(x + h * 0.18, hipY - h * 0.02, h * 0.3, h * 0.47 + 2); var sp2 = arm(0.22 + 0.04 * Math.cos(u * Math.PI * 2), 0.18 + 0.03 * sw); L(sp2[0], sp2[1], sp2[0] + 2, sp2[1] + h * 0.1, 1); R(x + h * 0.22, hipY - h * 0.1, h * 0.16, h * 0.08); for (var s2 = 0; s2 < 3; s2++) R(x + h * 0.26 + s2 * 3 + ((f + s2) % 2), hipY - h * 0.16 - s2 * 3 - f, 1, 2, lc); break; }
+      case 'pace': { arm(0.06, -0.08); R(hx + hr * 0.4, hy - 1, 2, 4, lc); arm(-0.06, 0.2); break; }
+      case 'dance': { arm(f % 2 ? 0.2 : -0.1, f % 2 ? -0.3 : -0.18); arm(f % 2 ? -0.12 : 0.22, f % 2 ? -0.1 : -0.3); break; }
+      case 'fold': { var o2 = f % 2 ? 0.2 : 0.1; arm(o2, 0.12); arm(-o2 * 0.4, 0.12); R(x + h * (o2 - 0.04), sy + h * 0.1, h * o2 * 0.9 + 2, h * 0.05, lc); break; }
+      case 'paint': { L(x + h * 0.3, y, x + h * 0.36, y - h * 0.7, 2); R(x + h * 0.22, y - h * 0.65, h * 0.2, h * 0.24, lc); arm(0.2 + 0.03 * sw, -0.02 + 0.04 * sw); break; }
+      case 'bulb': { L(x - h * 0.1, y, x, y - h * 0.3, 2); L(x + h * 0.1, y, x, y - h * 0.3, 2); var bh = arm(0.04, -0.36); D(bh[0], bh[1] - 2, 2, f % 2 ? lc : c); break; }
+      case 'guitar': { R(x - h * 0.14, y - h * 0.4, h * 0.08, h * 0.4); D(x + h * 0.14, hipY - h * 0.08, Math.round(h * 0.07)); L(x + h * 0.14, hipY - h * 0.08, x + h * 0.36, hipY - h * 0.26, 2); arm(0.14, 0.04 + 0.03 * sw); arm(0.3, -0.12); break; }
+      case 'tea': { var th = arm(f < 2 ? 0.1 : 0.14, f < 2 ? -0.08 : 0.06); R(th[0], th[1] - 3, 3, 3); if (f < 2) R(th[0] + 1, th[1] - 6 - f, 1, 2, lc); break; }
+      case 'cashier': { R(x - h * 0.2, hipY + h * 0.02, h * 0.62, h * 0.47, lc === c ? c : c); var ch = arm(0.18 + 0.1 * Math.abs(sw), 0.08); if (f % 2) R(ch[0], ch[1], 3, 1, '#ff4a3a'); break; }
+      case 'browse': { R(x + h * 0.24, y - h * 0.95, 2, h * 0.95); R(x + h * 0.26, y - h * 0.7, h * 0.12, 2); R(x + h * 0.26, y - h * 0.45, h * 0.12, 2); var bb = arm(0.24, -0.18 - (f === 2 ? 0.04 : 0)); if (f >= 2) R(bb[0] - 1, bb[1] - 4, 3, 7, lc); break; }
+      case 'vendor': { arm(0.18, 0.1); arm(0.2, 0.06); R(x + h * 0.14, sy + h * 0.02 - (f === 3 ? 2 : 0), h * 0.18, h * 0.16, lc); break; }
+      case 'tech': { R(x + h * 0.22, y - h * 0.8, h * 0.2, h * 0.16, lc); var th2 = arm(0.22, -0.14 + 0.03 * sw); R(th2[0], th2[1], 2, 2); break; }
+      case 'clerk': { R(x - h * 0.2, hipY + h * 0.02, h * 0.62, h * 0.47); arm(0.04, -0.06); R(hx + hr * 0.5, hy - 1, 2, 4, lc); arm(0.2 + 0.06 * sw, 0.02 - 0.06 * Math.abs(sw)); break; }
+      case 'bus-read': { var rb = arm(0.18, 0.08); R(rb[0] - 1, rb[1] - h * 0.1, h * 0.07, h * 0.1, lc); break; }
+      case 'bus-phone': { var pb = arm(0.14, 0.04); R(pb[0], pb[1] - 3, 2, 3, lc); break; }
+      case 'bus-doze': { arm(0.08, 0.2); break; }
+      case 'bus-stand': { arm(0.04, -0.4); R(sx + h * 0.02, sy - h * 0.42, 4, 1); break; }
+    }
+  }
+
+  // ---------- Proposed new people (shown on the character sheet; not on the street until approved) ----------
+  var PROPOSED = {
+    tallThin: { sex: 'm', scale: 1.14, build: 0.82, coat: '#2a3a4a', coatType: 'jacket', weave: 'twill', pants: '#1a1a22', shoes: '#2a1a14', skin: '#c89a80', hair: '#2a1a14', hairStyle: 'short', cup: true, speed: [10, 12] },
+    shortStout: { sex: 'm', scale: 0.86, build: 1.34, belly: 0.9, coat: '#6a4a2a', coatType: 'jacket', weave: 'cord', pants: '#2a2a30', pantsWeave: 'twill', shoes: '#1a1a1a', skin: '#a8765a', hair: '#141010', hairStyle: 'none', beard: '#2a1a14', head: 'cap', headColor: '#2a3a5a', speed: [6, 8] },
+    teen: { sex: 'f', scale: 0.86, build: 0.84, coat: '#c84a6a', coatType: 'hoodie', weave: 'fleece', pants: '#2a3448', pantsWeave: 'denim', shoes: '#e8e8e8', skin: '#e0b49a', hair: '#3a2010', hairStyle: 'pony', phones: '#e8e8e8', speed: [9, 11], runs: true },
+    elder: { sex: 'f', scale: 0.9, build: 0.96, stoop: 1, coat: '#5a4a6a', coatType: 'long', coatLen: 0.6, weave: 'tweed', pants: '#2a2a30', shoes: '#2a1a14', skin: '#d8b49a', hair: '#d8d0c8', hairStyle: 'bun', cane: true, speed: [4, 6] },
+    bigBeard: { sex: 'm', scale: 1.08, build: 1.26, belly: 0.4, coat: '#3a4a3a', coatType: 'puffer', weave: 'canvas', pants: '#2a2a2a', shoes: '#1a1a1a', skin: '#e0b49a', hair: '#6a4a2a', hairStyle: 'short', beard: '#6a4a2a', head: 'beanie', headColor: '#8a2a2a', speed: [8, 10] },
+    office: { sex: 'f', scale: 1.0, build: 0.9, coat: '#2e2e34', coatType: 'long', coatLen: 0.44, weave: 'twill', shirt: '#e8e0d8', pants: '#2e2e34', shoes: '#1a1a1a', skin: '#8a5a40', hair: '#141010', hairStyle: 'bun', cup: true, speed: [10, 12] },
+    courier: { sex: 'm', scale: 0.98, build: 1.02, coat: '#2a6a8a', coatType: 'jacket', weave: 'canvas', pants: '#2a2a30', shoes: '#e8e8e8', skin: '#6a4430', hair: '#141010', hairStyle: 'short', head: 'cap', headColor: '#2a6a8a', bag: 'box', bagColor: '#c8a060', speed: [10, 12] },
+    tourist: { sex: 'm', scale: 1.02, build: 1.1, belly: 0.3, coat: '#d8c8a0', coatType: 'jacket', weave: 'canvas', pants: '#6a6a5a', shoes: '#c8c8d0', skin: '#f0c8a8', hair: '#c8a060', hairStyle: 'short', head: 'cap', headColor: '#e8e0d0', bag: 'backpack', bagColor: '#3a5a6a', speed: [6, 8] },
+    jogger: { sex: 'f', scale: 1.0, build: 0.86, coat: '#2a8a7a', coatType: 'jacket', weave: 'fleece', pants: '#1a1a22', shoes: '#ff6a5a', skin: '#a8765a', hair: '#141010', hairStyle: 'pony', phones: '#1a1a1a', runs: true, speed: [14, 16] },
+    longHair: { sex: 'f', scale: 1.08, build: 0.88, coat: '#7a6a4a', coatType: 'long', coatLen: 0.56, belt: true, weave: 'check', pants: '#1a1a22', shoes: '#4a2a1a', skin: '#e0b49a', hair: '#6a3a1a', hairStyle: 'long', scarf: '#b8483a', umbrella: '#5a7a3a', speed: [9, 11] }
+  };
+  Object.keys(PROPOSED).forEach(function (id) { CAST[id] = PROPOSED[id]; });
+
   // For the scene: open the bar's door (a sign pointed at), have the nearest walker stop and look up, and where the
   // walkers are (in scene pixels, for the pigeons)
   function openDoor() { door.open = Math.max(door.open, 1.2); }
@@ -1282,5 +1388,5 @@ window.StreetPeople = function (D) {
     if (best) { best.dir = x > best.x ? 1 : -1; stopAgent(best, 'look', rand(1.6, 3)); best.cooldown = 4; }
   }
   function walkers() { var out = []; agents.forEach(function (a) { if (a.active && LANES[a.lane] && !LANES[a.lane].ride) out.push({ x: a.x * S, lane: a.lane, dog: a.dog ? a.dog.x * S : null }); }); return out; }
-  return { update: update, draw: draw, openDoor: openDoor, lookUp: lookUp, walkers: walkers, drawRiders: drawRiders, drawWorkers: drawWorkers, drawLight: drawLight, drawGlow: drawGlow, glowPoints: glowPoints, sheet: sheet, dogSheet: dogSheet, cast: Object.keys(CAST), scale: S };
+  return { update: update, draw: draw, openDoor: openDoor, lookUp: lookUp, walkers: walkers, roomActor: roomActor, roomKinds: ROOM_KINDS, proposed: Object.keys(PROPOSED), castOf: function (id) { return CAST[id]; }, drawRiders: drawRiders, drawWorkers: drawWorkers, drawLight: drawLight, drawGlow: drawGlow, glowPoints: glowPoints, sheet: sheet, dogSheet: dogSheet, cast: Object.keys(CAST), scale: S };
 };

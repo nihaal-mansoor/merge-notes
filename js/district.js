@@ -53,7 +53,7 @@
     var x = form.querySelector('.d-pop-x'); if (x) x.addEventListener('click', function () { closePop(true); });
   });
   document.addEventListener('keydown', function (ev) {
-    if (ev.key !== 'Escape' || root.classList.contains('is-title')) return;
+    if (ev.key !== 'Escape') return;
     if (pop) { closePop(true); return; }
     var open = hud && hud.classList.contains('is-open'); setHud(!open);                 // Esc: the pause menu, like a game
     if (!open && hud) { var first = hud.querySelector('.links a'); if (first) first.focus(); } else if (hudBtn) hudBtn.focus();
@@ -838,7 +838,7 @@
       [-22, 22].forEach(function (d) { box(x + d - 1, 71, 3, 5, K.METALHI); });
       for (var st = 120; st < 580; st += 26) box(x + (i ? -8 : 6), st, 3, 2, K.METALD);
       if (i === 1) { box(x + 6, 104, 20, 34, K.METAL, 104, 34); box(x + 8, 100, 16, 4, K.METALD); line(x + 16, 104, x + 16, 82, K.WIRE); }
-      if (i === 0) { box(x + 6, 92, 44, 9, K.SIGNGR); frame(x + 6, 92, 44, 9, K.LITTER); text('MERGE ST', x + 13, 94, K.LITTER, 1, F3); box(x + 6, 96, 1, 1, K.METALD); }
+      if (i === 0) { box(x + 6, 296, 44, 9, K.SIGNGR); frame(x + 6, 296, 44, 9, K.LITTER); text('MERGE ST', x + 13, 298, K.LITTER, 1, F3); box(x + 6, 300, 1, 1, K.METALD); }
       if (i === 1) { ellipse(x - 10, 322, 6, 6, K.SIGNRD); ellipse(x - 10, 322, 4.5, 4.5, K.SIGNBL); line(x - 14, 318, x - 6, 326, K.SIGNRD, 2); box(x - 6, 321, 4, 2, K.METALD); }
       box(x - 4, 300, 8, 18, K.LITTER); box(x - 4, 300, 8, 1, K.PAVED); for (var fl = 303; fl < 316; fl += 3) box(x - 3, fl, 6, 1, K.GRIME);   // an old flyer, peeling
     });
@@ -1909,7 +1909,7 @@
     var reduce = reduceMotion, el = UI.area, typing = false;
     var clock = (function () { var s = clockSeconds(), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60; return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; })();
     var wkNow = state.weather + (state.lights > 0.5 ? 'n' : 'd');
-    if (!UI.dirty && !el && !UI.title && clock + wkNow === UI.clockKey) return;
+    if (!UI.dirty && !el && clock + wkNow === UI.clockKey) return;
     UI.clockKey = clock + wkNow;
     var wk = state.weather === 'rain' ? 'rain' : state.weather === 'snow' ? 'snow' : state.lights > 0.5 ? 'moon' : 'sun';
     if (clock + wk !== UI.clock) {                     // the clock and the weather, top right, on their own small canvas
@@ -1919,11 +1919,11 @@
       for (var iy = 0; iy < 7; iy++) for (var ix = 0; ix < 5; ix++) if (ic[iy][ix] === 'X') ktx.fillRect(56 + ix * 2, 4 + iy * 2, 2, 2);
     }
     UI.dirty = false;
-    var show = !!((el && !root.classList.contains('is-leaving')) || UI.title);
+    var show = !!(el && !root.classList.contains('is-leaving'));
     if (uiCanvas.style.display !== (show ? '' : 'none')) uiCanvas.style.display = show ? '' : 'none';
     if (!show) return;
     utx.clearRect(0, 0, W, H);
-    if (el && !UI.title && !root.classList.contains('is-leaving')) {
+    if (el && !root.classList.contains('is-leaving')) {
       // the prompt, by the sign
       var b = UI.box && UI.area === el && !el.classList.contains('d-area') ? UI.box : areaBox(el), name = up(el.getAttribute('data-name') || '');
       var label = '▶ ENTER  ' + name, pw = pxWidth(F5, label) + 14, px0 = Math.max(6, Math.min(W - pw - 6, Math.round(b.x + b.w / 2 - pw / 2))), py0 = b.y > 40 ? b.y - 24 : b.y + b.h + 6;
@@ -1937,29 +1937,8 @@
       lines.forEach(function (ln) { var part = ln.slice(0, Math.max(0, left)); left -= ln.length + 1; pxText(utx, F5, part, bx + 12, yy, '#f2ece6', 2); yy += 17; });
       if (!typing && Math.floor(t * 2) % 2 === 0) pxText(utx, F5, '▶', bx + 718, by + bh - 14, '#ffcf70');
     }
-    if (UI.title) {
-      utx.fillStyle = 'rgba(12,8,16,0.72)'; utx.fillRect(0, 0, W, H);
-      var tw = pxWidth(FB, 'MERGE NOTES', 6); pxText(utx, FB, 'MERGE NOTES', Math.round((W - tw) / 2) + 4, 244, '#2a1020', 6); pxText(utx, FB, 'MERGE NOTES', Math.round((W - tw) / 2), 240, '#ffcf70', 6);
-      var by2 = pxWidth(F5, 'BY NIHAAL', 3); pxText(utx, F5, 'BY NIHAAL', Math.round((W - by2) / 2), 300, '#f2ece6', 3);
-      var line2 = 'NOTES FROM BUILDING A SALES TEAM' + "'" + 'S SYSTEMS WITH AI', l2 = pxWidth(F5, line2, 2); pxText(utx, F5, line2, Math.round((W - l2) / 2), 340, '#b4a6b4', 2);
-      if (reduce || Math.floor(t * 1.6) % 2 === 0) { var pk = 'PRESS ANY KEY', pkw = pxWidth(F5, pk, 3); pxText(utx, F5, pk, Math.round((W - pkw) / 2), 430, '#ff5a64', 3); }
-    }
-    if (typing || UI.title || el) UI.dirty = true;     // keep drawing while something moves
+    if (typing || el) UI.dirty = true;     // keep drawing while something moves
   }
-  // The title screen: the first visit only (remembered), and never when coming back from a page or in a picture
-  (function () {
-    var seen = false; try { seen = !!localStorage.getItem('mn-title'); } catch (err) { seen = true; }
-    if (seen || backAtLoad || shot || query.get('title') === '0') { if (query.get('title') !== '1') return; }
-    UI.title = true; UI.dirty = true; root.classList.add('is-title');
-    var close = function (ev) {
-      if (!UI.title) return; if (ev && ev.type !== 'keydown') ev.preventDefault();
-      UI.title = false; UI.dirty = true; root.classList.remove('is-title');
-      try { localStorage.setItem('mn-title', '1'); } catch (err) { /* fine */ }
-      window.removeEventListener('keydown', close, true); window.removeEventListener('pointerdown', close, true);
-    };
-    window.addEventListener('keydown', close, true); window.addEventListener('pointerdown', close, true);
-  })();
-
   // ---------- Traffic: cars, taxis, vans and now and then a bus, both ways on the road ----------
   // Each kind is drawn once (facing right) as a body picture and a lights picture (lamps, a taxi's roof sign, a
   // bus's lit windows); a car is two drawImage calls a frame, plus its beams at night.
@@ -2146,13 +2125,14 @@
     acc = Math.max(0, Math.min(acc - 13.9, 13.9));
     try { frameAt(now); } catch (err) { broken = true; fail(err); }
     if (stepOutPending && tick >= 9) stepOutPending();  // back from a shop: step out once the street and its halos are drawn
+    if (tick >= 2 && !root.classList.contains('is-ready')) root.classList.add('is-ready');   // the loading screen fades away
   }
   // Reduced motion: one still picture (redrawn each minute, and when a sign is pointed at), weather as it is now
   function still() {
     var t = (Date.now() - startedAt) / 1000; state.t = t; setTime();
     state.weather = weatherNow(); rainLevel = state.weather === 'rain' ? 1 : 0; snowLevel = state.weather === 'snow' ? 1 : 0; wet = rainLevel ? 1 : snowLevel ? 0.35 : 0;
     if (crowd) crowd.update(0.016, t, env());
-    eagerLights = true; renderGlow(t); renderScene(t); renderPeople(); UI.dirty = true; drawUI(t);
+    eagerLights = true; renderGlow(t); renderScene(t); renderPeople(); UI.dirty = true; drawUI(t); root.classList.add('is-ready');
   }
   function start() {
     if (reduceMotion) {
@@ -2214,6 +2194,9 @@
     if (n >= 1 && Math.abs(s - n) / n < 0.08) root.style.setProperty('--px', (n / dpr) + 'px');
   }
   snapPixels(); window.addEventListener('resize', snapPixels);
+  // Wide windows trim the sky: the clock corner moves down to stay on screen
+  function placeClock() { var r = stage.getBoundingClientRect(), k = r.height / H, top = Math.max(0, -r.top) / k; clockCanvas.style.top = 'calc(' + Math.round(top + 8) + ' * var(--px))'; }
+  placeClock(); window.addEventListener('resize', placeClock);
   // Phones held upright: start the panorama on the bar and its sign (or on the shop just stepped out of)
   function centre() { var sw = stage.offsetWidth; if (sw > root.clientWidth) root.scrollLeft = Math.round((backAtLoad ? backAtLoad.sx : 670) * sw / W - root.clientWidth / 2); }   // (offsetWidth: unzoomed)
   window.addEventListener('load', centre); centre();
@@ -2224,5 +2207,5 @@
   if (shot) document.body.classList.add('d-shot');
   start();
   } catch (err) { fail(err); }
-  function fail(err) { root.classList.add('is-broken'); if (window.console) console.error('district:', err); if (stepOutPending) stepOutPending(); }
+  function fail(err) { root.classList.add('is-broken', 'is-ready'); if (window.console) console.error('district:', err); if (stepOutPending) stepOutPending(); }
 })();

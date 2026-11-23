@@ -15,7 +15,7 @@
 
   // The billboard: a fixed top line and a scrolling bottom line. Update them when a new article goes up.
   var BILLBOARD_TOP = 'NEW ARTICLE';
-  var BILLBOARD = 'WHERE LEADS LEAK  +  THE TRAIN DRIVER  +  ONE DEVELOPER, EIGHT APPS  +  ';
+  var BILLBOARD = 'WHERE LEADS LEAK  +  THE TRAIN DRIVER  +  EIGHT APPS, ONE SET OF RULES  +  ';
   var BLIMP_AD = 'NIHAAL.  NOTES FROM BUILDING WITH AI  //  ';
 
   var D = window.CITY_DATA;
