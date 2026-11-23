@@ -870,7 +870,7 @@
   // ---------- Build the parts (each is coloured only when a time of day first needs it) ----------
   var curPart = '', curZ = 0, LITWIN = [];                      // lit flat windows, so they can keep their own hours
   function part(name, z, x0, y0, x1, y1, paint) { B = buffer(x0, y0, x1, y1); curPart = name; curZ = z; paint(); var p = { name: name, z: z, x0: x0, y0: y0, buf: B, c: {} }; B = null; return p; }
-  function canvasOf(p, kind) { if (!(kind in p.c)) p.c[kind] = colorize(p.buf, palOf(kind)); return p.c[kind]; }
+  function canvasOf(p, kind) { if (!(kind in p.c)) p.c[kind] = p.make ? p.make(kind) : colorize(p.buf, palOf(kind)); return p.c[kind]; }
   var FAR = part('far', 0.15, -M, 20, W + M, GROUND, paintFar);
   var PA = part('A', 0.43, -M, 90, 198, GROUND, paintA), PB = part('B', 0.47, 184, 262, 432, GROUND, paintB), PC = part('C', 0.44, 414, 214, 546, GROUND, paintC);
   var PD = part('D', 0.5, 528, 316, 812, GROUND, paintD), PE = part('E', 0.42, 792, 100, 998, GROUND, paintE), PF = part('F', 0.46, 984, 100, 1176, GROUND, paintF);
@@ -881,6 +881,83 @@
   var GROUNDP = part('ground', 0.45, -M, GROUND, W + M, H, paintGround);
   var SUBWAY = part('subway', HOLE_Z, 990, 504, 1182, 584, paintSubway);
   var NEAR = part('near', NEAR_Z, -M, 20, W + M, 616, paintNear);
+
+  // ---------- Props (street-props.js): shaded in 2.5D, so they bring their own tones ----------
+  // A prop names a material with a brightness ('WOOD*0.7'); darker tones drift cool, lighter ones warm, and each
+  // silhouette gets edge tones (darker below and right, lit above and left). They are coloured once per time of
+  // day like every other part, so they cost nothing per frame. inside: lit by the bar's own lamps, not the sky.
+  var PROP_LIGHT = { night: AMB.night, dusk: AMB.dusk, day: AMB.day }, PROP_INSIDE = { night: [1.0, 0.82, 0.64], dusk: [0.96, 0.86, 0.72], day: [0.92, 0.9, 0.86] };
+  function propTone(name, kind, inside) {
+    var i = name.indexOf('*'), f = i < 0 ? 1 : +name.slice(i + 1), m = window.StreetProps.mats[i < 0 ? name : name.slice(0, i)];
+    if (!m) return null;
+    var glow = kind === 'lightsNight' || kind === 'lightsDusk';
+    if (m.alpha) return glow ? null : 'rgba(0,0,0,' + (kind === 'night' ? m.alpha * 0.85 : m.alpha) + ')';
+    var c;
+    if (glow) { if (!m.e) return null; c = rgbH(m.e); var lv = kind === 'lightsDusk' ? 0.4 : 0.8; c = [c[0] * lv, c[1] * lv, c[2] * lv]; }
+    else {
+      var a = rgbH(m.a), amb = (inside ? PROP_INSIDE : PROP_LIGHT)[kind];
+      c = [a[0] * amb[0], a[1] * amb[1], a[2] * amb[2]];
+      if (m.e) c = mix(c, rgbH(m.e), kind === 'night' ? 1 : kind === 'dusk' ? 0.5 : 0);
+    }
+    c = [c[0] * f, c[1] * f, c[2] * f];
+    if (f < 1) { var t = (1 - f) * 40; c = [c[0] - t * 0.5, c[1] - t * 0.2, c[2] + t * 0.6]; }
+    if (f > 1) { var u = (f - 1) * 40; c = [c[0] + u * 0.5, c[1] + u * 0.3, c[2] - u * 0.3]; }
+    return css(c);
+  }
+  function propPainter(g, kind, inside) {
+    var cache = {};
+    var fill = function (m) { var s = cache[m]; if (s === undefined) s = cache[m] = propTone(m, kind, inside); if (s === null) return false; g.fillStyle = s; return true; };
+    var px2 = function (x, y, m) { if (fill(m)) g.fillRect(Math.round(x), Math.round(y), 1, 1); };
+    var box2 = function (x, y, w, h, m) { if (fill(m)) g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
+    return {
+      px: px2, box: box2,
+      frame: function (x, y, w, h, m) { box2(x, y, w, 1, m); box2(x, y + h - 1, w, 1, m); box2(x, y, 1, h, m); box2(x + w - 1, y, 1, h, m); },
+      line: function (x0, y0, x1, y1, m) { var n = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)))); for (var i = 0; i <= n; i++) px2(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, m); },
+      ellipse: function (cx, cy, rx, ry, m) { if (!fill(m)) return; for (var y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) { var dy = (y + 0.5 - cy) / ry; if (Math.abs(dy) > 1) continue; var hw = rx * Math.sqrt(1 - dy * dy), a = Math.round(cx - hw), b = Math.round(cx + hw); if (b > a) g.fillRect(a, y, b - a, 1); } },
+      poly: function (pts, m) { if (fill(m)) pxPoly(g, pts); }
+    };
+  }
+  function propEdges(g, w, h) {                         // edge tones round every silhouette
+    var im = g.getImageData(0, 0, w, h), d = im.data, src = new Uint8ClampedArray(d);
+    var solid = function (x, y) { return x >= 0 && y >= 0 && x < w && y < h && src[(y * w + x) * 4 + 3] > 200; };
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var i = (y * w + x) * 4; if (src[i + 3] <= 200) continue;
+      var f = !solid(x, y + 1) || !solid(x + 1, y) ? 0.74 : !solid(x, y - 1) || !solid(x - 1, y) ? 1.12 : 1;
+      if (f === 1) continue;
+      var t = (f < 1 ? 1 - f : 1 - f) * 40;
+      d[i] = clamp(src[i] * f - t * 0.5, 0, 255); d[i + 1] = clamp(src[i + 1] * f - t * 0.2, 0, 255); d[i + 2] = clamp(src[i + 2] * f + t * 0.6, 0, 255);
+    }
+    g.putImageData(im, 0, 0);
+  }
+  // A group of props as one part. items: [id, x, ground y, clip rect or null]
+  function propPart(name, z, items, inside) {
+    var SP = window.StreetProps; if (!SP) return null;
+    var byId = {}; SP.list.forEach(function (pr) { byId[pr.id] = pr; });
+    items = items.filter(function (it) { return byId[it[0]]; });
+    if (!items.length) return null;
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    items.forEach(function (it) { var pr = byId[it[0]]; x0 = Math.min(x0, it[1] - 10); x1 = Math.max(x1, it[1] + pr.w + 10); y0 = Math.min(y0, it[2] - pr.h - 14); y1 = Math.max(y1, it[2] + 6); });
+    x0 = Math.floor(x0); y0 = Math.floor(y0);
+    var w = Math.ceil(x1) - x0, h = Math.ceil(y1) - y0;
+    return { name: name, z: z, x0: x0, y0: y0, buf: null, c: {}, make: function (kind) {
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      var g = cv.getContext('2d', { willReadFrequently: true }), glow = kind === 'lightsNight' || kind === 'lightsDusk';
+      items.forEach(function (it) {
+        var t2 = document.createElement('canvas'); t2.width = w; t2.height = h; var tg = t2.getContext('2d');
+        byId[it[0]].paint(propPainter(tg, kind, inside), it[1] - x0, it[2] - y0);
+        g.save(); if (it[3]) { g.beginPath(); g.rect(it[3][0] - x0, it[3][1] - y0, it[3][2], it[3][3]); g.clip(); } g.drawImage(t2, 0, 0); g.restore();
+      });
+      if (!glow) propEdges(g, w, h);
+      return cv;
+    } };
+  }
+  // Where they stand. Back: against the shop fronts (behind the walkers). Front: at the curb (in front of them).
+  // Inside: through the bar's two windows, behind the server.
+  var BARWIN = [[556, 446, 84, 40], [698, 446, 92, 40]];
+  var PROPS_BACK = propPart('props-back', 0.47, [['shelter', 1180, 530], ['phonebox', 1086, 530], ['payphone', 806, 530], ['litter', 196, 548]], false);
+  var PROPS_FRONT = propPart('props-front', depthAt(598), [['pallets', 10, 598], ['drums', 904, 598], ['litter', 690, 604]], false);
+  var BARKIT = propPart('barkit', 0.5, [['menuboard', 562, 486, BARWIN[0]], ['fridge', 610, 488, BARWIN[0]], ['walltv', 702, 474, BARWIN[1]], ['grill', 732, 486, BARWIN[1]],
+    ['coffee', 764, 486, BARWIN[1]], ['condiments', 566, 492], ['condiments', 760, 492]], true);
   TVWIN = LITWIN.filter(function (w) { return w.cold && (w.part === 'A' || w.part === 'E'); })[0] || LITWIN[0] || null;
   // The buildings in drawing order (far first), with the extent of their side walls
   var SA = { p: PA, xL: -M, xR: 196, top: 152, wall: 'CONC' }, SB = { p: PB, xL: 196, xR: 420, top: 330, wall: 'WOOD' }, SC = { p: PC, xL: 420, xR: 540, top: 240, wall: 'CONC2' },
@@ -888,6 +965,8 @@
     SG = { p: PG, xL: 1170, xR: W + M, top: 66, wall: 'CONC2' };
   [[SA, SB], [SB, SC], [SC, SD], [SD, SE], [SE, SF], [SF, SG]].forEach(function (pair) { pair[0].right = pair[1]; pair[1].left = pair[0]; });   // neighbours
   var STREET = [SG, SE, SA, { p: PART_NET }, SC, { p: PART_MARQ, marquee: true }, SF, SB, SD, { p: PART_SIGN }, { p: PART_AWN }];
+  if (BARKIT) STREET.splice(STREET.indexOf(SD) + 1, 0, { p: BARKIT });   // the bar's kit, seen through its windows
+  var PROP_PARTS = [PROPS_BACK, PROPS_FRONT, BARKIT].filter(Boolean);
 
   if (PERF) PERF.paint = performance.now() - PERF.t0;
 
@@ -982,7 +1061,7 @@
     : function (fn) { window.setTimeout(function () { fn({ didTimeout: false, timeRemaining: function () { return 8; } }); }, 60); };
   function lookAhead() {
     var now = performance.now(); if (now - lastLook < 3000) return; lastLook = now;
-    if (!ALL_PARTS) ALL_PARTS = [FAR, PA, PB, PC, PD, PE, PF, PG, PART_SIGN, PART_NET, PART_MARQ, PART_AWN, PROPS, GROUNDP, SUBWAY, NEAR];
+    if (!ALL_PARTS) ALL_PARTS = [FAR, PA, PB, PC, PD, PE, PF, PG, PART_SIGN, PART_NET, PART_MARQ, PART_AWN, PROPS, GROUNDP, SUBWAY, NEAR].concat(PROP_PARTS);
     var fr = ((clockSeconds() + 600) % 86400) / 86400, d = keyframes(fr, PHASE.dusk), y = keyframes(fr, PHASE.day), s = d + y, need = [];
     if (s > 1) { d /= s; y /= s; }
     if (1 - d - y > 0.002) need.push('night', 'lightsNight');
@@ -1474,7 +1553,7 @@
     if (state.lights > 0.01) { ctx.save(); ctx.globalCompositeOperation = 'screen'; drawHalos(ctx); ctx.restore(); }   // (before the footpath things, which stand in front)
     drawBoards(ctx);                                    // the billboard, the specials and the ticker, in pixel letters
     drawSmoke(ctx, 'mid');
-    drawGround(ctx); drawPuddles(ctx); drawPart(ctx, PROPS); drawReflections(t); drawWetTrails(ctx, t);
+    drawGround(ctx); drawPuddles(ctx); drawPart(ctx, PROPS); if (PROPS_BACK) drawPart(ctx, PROPS_BACK); drawReflections(t); drawWetTrails(ctx, t);
     drawPart(ctx, PART_SIGN);                            // the sign hangs in front of the newsstand
     drawXmasStreet(ctx, t); drawCat(ctx, t); drawPigeons(ctx, t, true); drawDrips(ctx);
     drawLiveBits(ctx, t, false); drawReactions(ctx, t); drawGroundLight(ctx);
@@ -1486,6 +1565,7 @@
     // Front: the stairwell's railings, the railing, poles and wires, the lamp; steam, low fog, weather, grain
     ftx.clearRect(0, 0, W, H);
     if (!(crowd && crowd.drawWorkers)) drawPart(ftx, SUBWAY);   // (otherwise it goes between the walkers and the workers)
+    if (PROPS_FRONT) drawPart(ftx, PROPS_FRONT);            // things at the curb stand in front of the walkers
     drawPart(ftx, NEAR); drawDropWires(ftx); drawCountdown(ftx); drawXmasFront(ftx, t); drawPigeons(ftx, t, false);
     drawSmoke(ftx, 'front');
     fogBand(ftx, 450, 4, 9, 0.16 * fogAmount, t, 0.5);
@@ -1520,6 +1600,7 @@
       STREET.forEach(function (b) { partLights(gtx, b.p, 0.95); }); clearDarkWindows(gtx);
       gtx.save(); groundTransform(gtx); lights(gtx, GROUNDP, 0.8, function (c) { gtx.drawImage(c, 0, 0); }); gtx.restore();
       partLights(gtx, PROPS, 0.9); partLights(gtx, SUBWAY, 1); partLights(gtx, NEAR, 1);
+      if (PROPS_BACK) partLights(gtx, PROPS_BACK, 0.9); if (PROPS_FRONT) partLights(gtx, PROPS_FRONT, 0.9);
       gtx.globalAlpha = state.lights;
       drawMarquee(gtx, t, true); drawLiveBits(gtx, t, true); drawDrone(gtx, t, true);
       gtx.globalAlpha = 1;
@@ -1960,6 +2041,7 @@
   // A car drawn at scale f (all its numbers are in design units; every shape lands on whole pixels, so it stays crisp)
   function carSprite(kind, color, f) {
     var key = kind + color + f; if (carSprites[key]) return carSprites[key];
+    if (kind === 'suv') return (carSprites[key] = suvSprite());
     var bus = kind === 'bus', van = kind === 'van', pick = kind === 'pickup', L = bus ? 212 : van ? 108 : kind === 'hatch' ? 88 : pick ? 106 : 102, Hh = bus ? 56 : van ? 40 : 36, top = Hh - 32;
     var b = offscreen(Math.ceil(L * f), Math.ceil(Hh * f)), l = offscreen(Math.ceil(L * f), Math.ceil(Hh * f)), c = color, wheels = [], glass = '#1e2630', glassHi = '#56646e';
     var R = function (g, x, y, w, h) { g.fillRect(Math.round(x * f), Math.round(y * f), Math.max(1, Math.round((x + w) * f) - Math.round(x * f)), Math.max(1, Math.round((y + h) * f) - Math.round(y * f))); };
@@ -2025,13 +2107,23 @@
     var head = bus ? [L - 3, Hh - 18] : van ? [L - 3, 21] : [L - 3, top + 17], tail = bus ? [2, Hh - 19] : van ? [2, 15] : [2, top + 18];
     var sc = function (q) { return [q[0] * f, q[1] * f]; };
     return (carSprites[key] = { b: b.canvas, l: l.canvas, L: Math.ceil(L * f), H: Math.ceil(Hh * f), wheels: wheels.map(function (w) { return [w[0] * f, w[1] * f, w[2] * f]; }), head: sc(head), tail: sc(tail) });
-  }  function pickCar() {
+  }
+  // The SUV is a shaded prop (street-props.js), drawn at its own size, which is the near lane's scale
+  function suvSprite() {
+    var pr = null; window.StreetProps.list.forEach(function (q) { if (q.id === 'suv') pr = q; });
+    var L = pr.w, Hh = pr.h + 2, gy = Hh - 2, b = offscreen(L, Hh), l = offscreen(L, Hh);
+    pr.paint(propPainter(b, 'day', false), 0, gy); propEdges(b, L, Hh);
+    pr.paint(propPainter(l, 'lightsNight', false), 0, gy);
+    return { b: b.canvas, l: l.canvas, L: L, H: Hh, wheels: [[36, gy - 14, 14], [142, gy - 14, 14]], head: [173, gy - 35], tail: [5, gy - 52] };
+  }
+  function pickCar(li) {
     var r = Math.random();
+    if (li === 1 && window.StreetProps && (r > 0.86 || /[?&]suv\b/.test(location.search))) return { kind: 'suv', color: '' };   // the near lane only: it is drawn at that lane's size (?suv: always, to preview it)
     if (r < 0.08) return { kind: 'bus', color: '#c8c0a8' };
     if (r < 0.3) return { kind: 'taxi', color: '#e4d8b0' };
     return { kind: r < 0.4 ? 'van' : r < 0.52 ? 'pickup' : r < 0.7 ? 'hatch' : 'sedan', color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)] };
   }
-  function addCar(li, x) { var pk = pickCar(); cars.push({ lane: li, kind: pk.kind, color: pk.color, x: x, v: pk.kind === 'bus' ? rand(55, 70) : rand(75, 120), dist: 0 }); }
+  function addCar(li, x) { var pk = pickCar(li); cars.push({ lane: li, kind: pk.kind, color: pk.color, x: x, v: pk.kind === 'bus' ? rand(55, 70) : rand(75, 120), dist: 0 }); }
   function updateCars(dt) {
     CAR_LANES.forEach(function (ln, li) {
       ln.next -= dt; if (ln.next > 0) return;
