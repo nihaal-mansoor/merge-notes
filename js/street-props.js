@@ -30,7 +30,7 @@ window.StreetProps = (function () {
     FRIDGE: { a: '#3a4048' }, FRIDGEW: { a: '#5a7a8a', e: '#dff4ff' }, BOTR: { a: '#c8403a' }, BOTG: { a: '#3a9a5a' }, BOTB: { a: '#3a6ac8' }, BOTO: { a: '#e8902a' },
     STEEL: { a: '#9aa2a8' }, STEELD: { a: '#5a6268' }, KNOB: { a: '#c83a3a' }, HOTPLATE: { a: '#2a2a2e' }, SAUCER: { a: '#d8402a' }, MUSTARD: { a: '#e8c030' },
     TVF: { a: '#1a1a1e' }, TVS: { a: '#2a6a4a', e: '#7ae0a0' }, TVL: { a: '#e8e6e0', e: '#ffffff' },
-    BOOTH: { a: '#2a5a5e' }, BOOTHD: { a: '#1a3a3e' }, GLASS: { a: '#8eb4bc' }, GLASSD: { a: '#6a8e98' }, PHONE: { a: '#2a2a2e' }, BOOTHL: { a: '#e8e0c0', e: '#fff4d0' },
+    BOOTH: { a: '#2a5a5e' }, BOOTHD: { a: '#1a3a3e' }, GLASS: { a: '#8eb4bc', see: 0.38 }, GLASSD: { a: '#6a8e98', see: 0.5 }, PHONE: { a: '#2a2a2e' }, BOOTHL: { a: '#e8e0c0', e: '#fff4d0' },
     PAY: { a: '#2a5ab0' }, PAYD: { a: '#1a3a78' }, PAYS: { a: '#4a6a5a', e: '#a8ffd0' },
     DRUMG: { a: '#3a7a4a' }, DRUMGD: { a: '#24502e' }, DRUMB: { a: '#2e6aa8' }, DRUMBD: { a: '#1e4a78' }, RUST: { a: '#8a4a2a' },
     PAPER: { a: '#d8d4c8' }, CAN: { a: '#c83a3a' }, CANS2: { a: '#b8bcc0' }, BOTTLE: { a: '#4a8a5a' },
@@ -365,7 +365,7 @@ window.StreetProps = (function () {
       Q.cyl(x + 4, y, 5, 98, 0, 'POLE'); Q.cyl(x + 82, y, 5, 98, 0, 'POLE'); Q.cyl(x + 158, y, 5, 98, 0, 'POLE');
       // glass back panels, with a frosted band and the shop fronts reflected faintly
       [[x + 9, 73], [x + 87, 42]].forEach(function (g) {
-        Q.box(g[0], y - 94, g[1], 82, 'GLASS*0.88'); Q.grad(g[0], y - 94, g[1], 82, 'GLASS', 1.05, 0.85); Q.glass(g[0], y - 94, g[1], 82);
+        Q.box(g[0], y - 94, g[1], 82, 'GLASS*0.95'); Q.glass(g[0], y - 94, g[1], 82);   // (glass is see-through)
         Q.dither(g[0], y - 60, g[1], 5, 'GLASS*1.3'); Q.frame(g[0], y - 94, g[1], 82, 'POLE*0.9'); Q.box(g[0], y - 13, g[1], 1, 'POLE*0.7');
       });
       Q.block(x + 1, y - 64, 12, 14, 1, 'SIGNB'); Q.box(x + 3, y - 74, 8, 4, 'SIGNW'); Q.box(x + 4, y - 70, 1, 1, 'IRON'); Q.box(x + 9, y - 70, 1, 1, 'IRON'); Q.box(x + 3, y - 76, 8, 1, 'SIGNW*0.9');   // a route sign with a bus on it

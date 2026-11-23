@@ -328,6 +328,7 @@
     MOSS: { a: ['#5c6c3c', '#4e5e32'] }, RUSTST: { a: ['#8a5a3a', '#7a4e32'] }, SOOT: { a: ['#4c4640'] },
     GRAF1: { a: ['#c04a78'] }, GRAF2: { a: ['#3a86c0'] }, GRAF3: { a: ['#e0b83c'] }, PEEL: { a: ['#c0b292'] },
     BRICKR: { a: ['#a8644a'] }, BRICKO: { a: ['#7e4c38'] }, BRICKX: { a: ['#34241c'] }, GHOST: { a: ['#b8987a'] },
+    LAUNW: { a: ['#5e605c', '#525450'], e: ['#e8f4ec', '#cfe2d8'], k: 0.8, d: 0.45, noGlow: true }, WASHER: { a: ['#d8d8d2'], e: ['#f2f6f2'], k: 0.6, d: 0.3, noGlow: true },
     BAR1: { a: ['#d4ac40'] }, BAR2: { a: ['#2a2622'] }, CONE: { a: ['#d46c2a'] }, CONEW: { a: ['#ece8e0'] }, HYDRANT: { a: ['#a83a2a'] },
     // far away
     SKYB: { a: ['#706c74'], haze: 0.72 }, SKYB2: { a: ['#625e66'], haze: 0.55 },
@@ -481,27 +482,49 @@
     box(x - 2, y - 2, w + 4, h + 4, K.CONCD);
     box(x, y, w, h, m, y, h);
     var lit = (m === K.WINW || m === K.WINC) && curPart !== 'far', curtain = m !== K.GLASS && rnd() < 0.35, rec = null;
-    if (lit) { rec = { part: curPart, z: curZ, x: x, y: y, w: w, h: h, cold: m === K.WINC, s: rnd(), s2: rnd(), s3: rnd(), tone: pickTone(m), lamp: rnd(), blinds: rnd() < 0.22 }; LITWIN.push(rec); }
+    var open = lit && !curtain && rnd() < 0.16;           // an open window: its curtain stirs in the breeze (drawn live)
+    if (lit) { rec = { part: curPart, z: curZ, x: x, y: y, w: w, h: h, cold: m === K.WINC, s: rnd(), s2: rnd(), s3: rnd(), tone: pickTone(m), lamp: rnd(), blinds: !open && rnd() < 0.22, open: open }; LITWIN.push(rec); }
     if (lit && rnd() < 0.62) peep({ win: rec, x: x, y: y, w: w, h: h, left: curtain ? x + Math.floor(w / 3) : x, kind: HOME_KINDS[Math.floor(rnd() * HOME_KINDS.length)], mull: true });
+    if (m !== K.GLASS && rnd() < 0.22) for (var pp = 0; pp < 1 + Math.floor(rnd() * 2); pp++) {   // pot plants on the inner sill
+      var ppx = x + 3 + Math.floor(rnd() * (w - 10)); box(ppx, y + h - 4, 4, 4, K.POT); box(ppx, y + h - 4, 4, 1, K.POTD); ellipse(ppx + 2, y + h - 7, 3, 3, K.PLANT); px(ppx + 1, y + h - 9, K.PLANTHI); px(ppx + 3, y + h - 7, K.PLANTHI);
+    }
+    if (m !== K.GLASS && rnd() < 0.1) for (var hb = 0; hb < 3; hb++) { var hx = x + 4 + hb * 5; box(hx, y + 1, 1, 3, K.WIRE); ellipse(hx, y + 6, 1.6, 2.5, K.PLANT); px(hx, y + 8, K.LEAF2); }   // herbs hung up to dry
     box(x, y + Math.floor(h / 2), w, 1, K.METALD); box(x + Math.floor(w / 2), y, 1, h, K.METALD);
     if (sill !== false) {
       box(x - 3, y + h + 2, w + 6, 2, K.CONC2); box(x - 3, y + h + 2, w + 6, 1, K.CONCL); box(x - 3, y + h + 4, w + 6, 1, K.CONCD);
+      SILLS.push([x - 3, y + h + 2, w + 6, curZ]);
       for (var k = 0; k < w / 7; k++) { var sx = x - 2 + Math.floor(rnd() * (w + 4)), len = 5 + Math.floor(rnd() * 22); box(sx, y + h + 5, 1, len, K.STAIN, y + h + 5, len); if (rnd() < 0.4) box(sx + 1, y + h + 5, 1, Math.floor(len / 2), K.STAIN); }   // rain stains from the sill
+      if (rnd() < 0.14) {                                // a window box of flowers; someone waters it in the morning
+        box(x - 1, y + h + 5, w + 2, 6, K.WOOD); box(x - 1, y + h + 5, w + 2, 1, K.WOODL); box(x - 1, y + h + 10, w + 2, 1, K.WOODD);
+        for (var fl = x; fl < x + w; fl += 3) { ellipse(fl + 1, y + h + 3, 2, 2, K.PLANT); if (rnd() < 0.5) px(fl + 1, y + h + 1, rnd() < 0.5 ? K.FRUIT3 : K.FRUIT1); else px(fl, y + h + 2, K.PLANTHI); }
+        if (rec) peep({ win: rec, x: x, y: y, w: w, h: h, left: x, kind: 'water', mull: true, hours: [7, 9.3] });
+      }
     }
     if (curtain) box(x + 1, y + 1, Math.floor(w / 3), h - 2, K.CURT, y, h);
   }
+  var SILLS = [], SLABS = [], LAUNDRY = [], FAIRY = [], RUG = null;
   function ac(x, y) {
     box(x, y, 20, 13, K.AC); ellipse(x + 8, y + 6.5, 4, 4, K.ACD); box(x + 15, y + 2, 3, 9, K.ACD); box(x + 2, y + 13, 2, 3, K.METALD); box(x + 16, y + 13, 2, 3, K.METALD);
     box(x, y, 20, 1, K.CONCL); for (var gx = x + 3; gx < x + 13; gx += 2) px(gx, y + 6, K.ACD);
     for (var k = 0; k < 4; k++) { var rx = x + 3 + Math.floor(rnd() * 14), len = 6 + Math.floor(rnd() * 16); box(rx, y + 16, 1, len, K.RUSTST, y + 16, len); }   // rust run down from its brackets
   }
-  function balcony(x, y, w, laundry) {
-    box(x, y + 26, w, 3, K.CONC2); box(x, y + 29, w, 2, K.CONCD);
-    if (laundry) { box(x + 4, y - 18, w - 8, 1, K.METALD); [[8, K.LAUN1, 14], [22, K.LAUN2, 18], [38, K.LAUN3, 12], [52, K.LAUN1, 16]].forEach(function (l) { if (l[0] < w - 10) box(x + l[0], y - 17, 10, l[2], l[1]); }); }
-    for (var bx = x; bx < x + w; bx += 4) box(bx, y, 1, 26, K.LATT);
-    box(x, y, w, 2, K.LATT); box(x, y + 13, w, 1, K.LATT);
+  // extra: 'bike' (one parked behind the rails), 'fairy' (a string of little lights along the rail, drawn live),
+  // 'rug' (where someone shakes out a rug in the morning). Laundry hangs from its line live, and sways.
+  function balcony(x, y, w, laundry, extra) {
+    box(x, y + 26, w, 3, K.CONC2); box(x, y + 29, w, 2, K.CONCD); box(x, y + 26, w, 1, K.CONCL);
+    if (laundry) { box(x + 4, y - 18, w - 8, 1, K.METALD); LAUNDRY.push({ x: x, y: y - 17, z: curZ, items: [[8, 'LAUN1', 14], [22, 'LAUN2', 18], [38, 'LAUN3', 12], [52, 'LAUN1', 16], [66, 'LAUN2', 11], [80, 'LAUN3', 15]].filter(function (l) { return l[0] < w - 10; }) }); }
+    if (extra === 'bike') {
+      [x + 16, x + 38].forEach(function (wx) { ellipse(wx, y + 18, 7, 7, K.METALD); ellipse(wx, y + 18, 5.5, 5.5, K.DARK); px(wx, y + 18, K.METALHI); });
+      line(x + 16, y + 18, x + 26, y + 10, K.BIKE, 2); line(x + 26, y + 10, x + 38, y + 18, K.BIKE, 2); line(x + 24, y + 18, x + 36, y + 10, K.BIKE, 2); box(x + 22, y + 8, 5, 2, K.METALD); box(x + 35, y + 7, 4, 1, K.METALHI);
+    }
+    if (extra === 'fairy') FAIRY.push({ x: x, y: y + 1, w: w, z: curZ });
+    if (extra === 'rug') RUG = { x: x, y: y, w: w, z: curZ };
+    for (var bx = x; bx < x + w; bx += 4) { box(bx, y, 1, 26, K.LATT); if (rnd() < 0.3) px(bx, y + 18 + Math.floor(rnd() * 8), K.RUSTST); }
+    box(x, y, w, 2, K.LATT); box(x, y, w, 1, K.CONCL); box(x, y + 13, w, 1, K.LATT);
   }
-  function slab(x, y, w) { box(x, y, w, 2, K.CONCD); for (var mx = x; mx < x + w; mx++) if (rnd() < 0.08) px(mx, y - 1, K.MOSS); }   // (moss creeps along the ledges)
+  function slab(x, y, w) { box(x, y, w, 2, K.CONCD); SLABS.push([x, y, w, curZ]); for (var mx = x; mx < x + w; mx++) if (rnd() < 0.08) px(mx, y - 1, K.MOSS); }   // (moss creeps along the ledges)
+  // A conduit run down a wall, held by brackets, with a bend in at the top
+  function conduit(x, y0, y1) { box(x, y0, 2, y1 - y0, K.METALD); box(x, y0, 1, y1 - y0, K.METAL); box(x - 4, y0, 6, 2, K.METALD); for (var yy = y0 + 10; yy < y1; yy += 22) { box(x - 1, yy, 4, 2, K.METAL); px(x + 2, yy + 2, K.RUSTST); } }
   // ---------- Worn walls ----------
   // Big cast blocks in staggered courses: each block shaded from its lit top to its foot, joints between them, the
   // odd block a different pour or a patch, corners chipped back to the aggregate
@@ -596,14 +619,25 @@
     speckle(-M, 160, 196, 416, 0.015);
     blocks(-M, 160, 196, 416, 26, 13, K.CONC); soot(-M, 196, 160, 6);
     box(18, 120, 44, 30, K.TANK, 120, 30); box(22, 150, 3, 4, K.METALD); box(54, 150, 3, 4, K.METALD); box(16, 118, 48, 3, K.METAL);
+    box(18, 128, 44, 1, K.METALD); box(18, 140, 44, 1, K.METALD); box(18, 120, 2, 30, K.ROOFHI);   // the tank's bands and lit edge
+    box(64, 118, 1, 34, K.METALD); box(68, 118, 1, 34, K.METALD); for (var ld = 120; ld < 152; ld += 4) box(64, ld, 5, 1, K.METAL);   // a ladder up the tank
     line(160, 96, 160, 152, K.METAL); line(150, 108, 170, 108, K.METAL); line(152, 120, 168, 120, K.METAL);
+    for (var ae = 0; ae < 5; ae++) { box(155 - ae, 100 + ae * 4, 11 + ae * 2, 1, K.METALD); }   // an aerial's rods
+    ellipse(112, 144, 6, 5, K.AC); ellipse(113, 144, 4, 3, K.ACD); box(112, 146, 2, 6, K.METALD); line(112, 144, 118, 139, K.METALD);   // a satellite dish
+    // a rooftop garden: pots, a trellis, a striped deck chair and a little table
+    [[76, 7], [86, 9], [130, 6], [140, 8]].forEach(function (p) { box(p[0], 144, 8, 8, K.POT); box(p[0], 144, 8, 1, K.CRATE); ellipse(p[0] + 4, 140, p[1] * 0.6, p[1] * 0.55, K.PLANT); px(p[0] + 2, 137, K.PLANTHI); px(p[0] + 6, 139, K.FRUIT3); });
+    for (var tr = 0; tr < 4; tr++) { box(96 + tr * 4, 128, 1, 24, K.WOODD); } box(96, 132, 14, 1, K.WOODD); box(96, 140, 14, 1, K.WOODD); ellipse(100, 130, 4, 3, K.PLANT); ellipse(106, 137, 3, 3, K.PLANT);
+    poly([[112, 151], [116, 140], [126, 140], [121, 151]], K.LAUN3); for (var st = 0; st < 4; st++) line(114 + st * 2, 150, 118 + st * 2, 141, K.LAUN1);   // the deck chair's canvas
+    line(112, 151, 117, 139, K.WOODD); line(121, 151, 126, 139, K.WOODD); box(110, 146, 18, 1, K.WOODD);
+    box(122, 145, 7, 1, K.WOODL); box(124, 146, 1, 6, K.WOODD); box(123, 143, 2, 2, K.PAPER);
+    conduit(108, 176, 416);
     [160, 246, 332].forEach(function (fy, f) {
       slab(-M, fy + 84, 196 + M);
       win(-56, fy + 16, 30, 42, pickWin());
       var bigW = pickWin(), smallW = pickWin();
       box(-12, fy + 18, 46, 62, bigW, fy + 18, 62); box(40, fy + 24, 44, 40, smallW, fy + 24, 40);
       if (rnd() < 0.5 && (smallW === K.WINW || smallW === K.WINC)) peep({ win: null, x: 40, y: fy + 24, w: 44, h: 40, left: 40, kind: HOME_KINDS[Math.floor(rnd() * HOME_KINDS.length)] });
-      balcony(-16, fy + 54, 106, f !== 1);
+      balcony(-16, fy + 54, 106, f !== 1, f === 1 ? 'bike' : null);
       if (f < 2) { win(112, fy + 16, 72, 42, pickWin()); ac(140, fy + 64); }
     });
     box(108, 338, 80, 56, K.POSTER, 338, 56); frame(106, 336, 84, 60, K.METALD, 2);
@@ -618,6 +652,11 @@
     [462, 484, 506].forEach(function (sy) { box(0, sy, 182, 2, K.SHELF); for (var x = 2; x < 180; x += 4) if (rnd() < 0.8) box(x, sy - 6, 3, 6, rnd() < 0.4 ? K.SHELFR : rnd() < 0.5 ? K.SHELFY : K.SHELFB); });
     peep({ win: null, shop: true, x: -4, y: 444, w: 190, h: 84, left: 110, kind: 'browse', ah: 40 });   // someone filling the shelves
     frame(-4, 444, 190, 84, K.METAL, 2); box(60, 444, 2, 84, K.METAL); box(124, 444, 2, 84, K.METAL);
+    // sale stickers on the glass: a red starburst and a yellow disc, no words
+    [[30, 452, K.SIGNRD], [96, 456, K.BOXY], [160, 450, K.SIGNRD]].forEach(function (s, i) {
+      var sx = s[0], sy = s[1]; ellipse(sx, sy, 6, 6, s[2]); if (i !== 1) for (var a = 0; a < 8; a++) px(sx + Math.round(Math.cos(a * 0.785) * 7), sy + Math.round(Math.sin(a * 0.785) * 7), s[2]);
+      box(sx - 3, sy - 1, 7, 1, K.SNOW); box(sx - 2, sy + 2, 5, 1, K.SNOW); px(sx - 2, sy - 3, K.SNOW);
+    });
   }
 
   // B: an old wooden shop-house with a tiled roof: a bookshop, ARTICLES
@@ -663,12 +702,25 @@
     speckle(420, 246, 540, 416, 0.015);
     blocks(420, 246, 540, 416, 20, 10, K.CONC2); soot(420, 540, 246, 5);
     win(436, 262, 34, 46, pickWin()); win(490, 262, 34, 46, pickWin());
-    win(436, 348, 34, 46, pickWin()); box(490, 348, 34, 28, pickWin()); balcony(482, 376, 54, false);
+    win(436, 348, 34, 46, pickWin()); box(490, 348, 34, 28, pickWin()); balcony(482, 376, 54, false, 'fairy');
     slab(420, 330, 120); slab(420, 416, 120);
     box(530, 250, 4, 280, K.METAL);
     box(486, 440, 40, 90, K.WIND, 440, 90); frame(484, 438, 44, 92, K.METALD, 2); box(505, 440, 1, 90, K.METALD);
     cracks(420, 250, 540, 410, 3); bareBrick(468, 322, 6, 5);
     tag(424, 470, 24, K.GRAF1); tag(440, 500, 18, K.GRAF2); crust(420, 484, 528, 7);   // tags and salt low on the wall
+    // a torn poster: old layers showing through, one corner peeled down
+    box(422, 442, 20, 24, K.PAPER); box(424, 444, 16, 8, K.MAG1); box(424, 454, 12, 2, K.LETD); box(424, 458, 9, 2, K.LETD); box(434, 456, 5, 6, K.MAG3);
+    poly([[436, 442], [442, 442], [442, 452]], K.CONC2); poly([[436, 442], [442, 452], [437, 450]], K.PAPER); px(438, 449, K.CONCD);
+    for (var tp = 0; tp < 9; tp++) px(422 + Math.floor(rnd() * 20), 465 + Math.floor(rnd() * 2), K.PAPER);   // ragged foot
+    // the building's electricity: a meter box with its dial, a junction box, conduit up the wall
+    box(448, 446, 14, 18, K.METAL); frame(448, 446, 14, 18, K.METALD); box(450, 448, 10, 7, K.GLASS); ellipse(455, 451, 2.5, 2.5, K.PAPER); px(455, 450, K.LETD); box(452, 458, 6, 1, K.METALD);
+    box(466, 450, 10, 12, K.METALD); box(466, 450, 10, 1, K.METALHI); px(468, 455, K.SIGNRD);
+    conduit(455, 424, 446); conduit(471, 432, 450);
+    // cracked tiles round the door, and a worn tiled step
+    for (var ty = 440; ty < 528; ty += 5) for (var tx = 476; tx < 484; tx += 4) { box(tx, ty, 3, 4, K.CONCL); if (rnd() < 0.15) px(tx + 1, ty + 1 + Math.floor(rnd() * 2), K.CRACK); }
+    for (var ty2 = 440; ty2 < 528; ty2 += 5) { box(528, ty2, 3, 4, K.CONCL); if (rnd() < 0.15) px(529, ty2 + 2, K.CRACK); }
+    for (var sx3 = 476; sx3 < 532; sx3 += 4) { box(sx3, 527, 3, 3, K.CONC2); if (rnd() < 0.3) px(sx3 + 1, 528, K.CRACK); }
+    ellipse(516, 238, 3, 1.4, K.METALHI); box(514, 237, 5, 1, K.FRUIT1);   // a dish out for the roof cat
     // (the cat on this roof is drawn live: see drawCat)
 
   }
@@ -733,10 +785,20 @@
     [160, 246, 332].forEach(function (fy, f) {
       slab(800, fy + 84, 190);
       [812, 870, 928].forEach(function (wx) { win(wx, fy + 18, 40, 44, pickWin()); });
-      if (f === 1) balcony(806, fy + 40, 104, true);
+      if (f === 1) balcony(806, fy + 40, 104, true, 'rug');
       if (f !== 1) ac(822 + f * 40, fy + 66);
     });
     stains(800, 990, 170, 400); cracks(800, 990, 170, 404, 5); bareBrick(918, 234, 7, 5); bareBrick(860, 400, 5, 4);
+    conduit(862, 166, 412);
+    box(976, 118, 1, 34, K.METALD); box(980, 118, 1, 34, K.METALD); for (var ld2 = 120; ld2 < 152; ld2 += 4) box(976, ld2, 5, 1, K.METAL);   // a ladder up the tank
+    line(900, 108, 900, 152, K.METAL); for (var ae2 = 0; ae2 < 4; ae2++) box(894 + ae2, 112 + ae2 * 4, 12 - ae2 * 2, 1, K.METALD);   // an aerial
+    box(856, 126, 2, 26, K.METALD); box(886, 126, 2, 26, K.METALD); box(854, 150, 36, 2, K.METALD);   // the frame for a rooftop neon (lit live)
+    // ivy up the left corner: thick at the foot, thinning as it climbs
+    for (var iy = 410; iy > 196; iy -= 1) {
+      var reach = Math.round(2 + 10 * (iy - 196) / 214 + Math.sin(iy * 0.21) * 2);
+      for (var ix = 0; ix < reach; ix++) if (rnd() < 0.55 - ix * 0.03) px(800 + ix, iy, rnd() < 0.25 ? K.PLANTHI : rnd() < 0.5 ? K.PLANT : K.MOSS);
+      if (iy % 9 === 0) px(800 + Math.floor(rnd() * reach), iy, K.WOODD);   // a woody stem showing
+    }
     box(800, 412, 190, 30, K.BOXB, 412, 30); frame(800, 412, 190, 30, K.METALD, 2);
     sign('DATA', 868, 416, { font: FB, scale: 3, fill: K.LETD, shade: K.BOXBD });
     centred('DUBAI', 950, 419, K.LETD, 1); centred('NUMBERS', 950, 427, K.LETD, 1);
@@ -792,9 +854,13 @@
     speckle(1170, 74, W + M, 418, 0.015);
     blocks(1170, 74, W + M, 418, 22, 11, K.CONC2); soot(1170, W + M, 74, 7);
     [74, 160, 246, 332].forEach(function (fy) { slab(1170, fy + 84, 134 + M); win(1214, fy + 20, 34, 44, pickWin()); win(1262, fy + 20, 34, 44, pickWin()); win(1310, fy + 20, 30, 44, pickWin()); });
-    box(1170, 418, 134 + M, 112, K.CONCD); box(1180, 430, 120, 100, K.SHUT, 430, 100); for (var sy2 = 432; sy2 < 520; sy2 += 4) box(1180, sy2, 120, 1, K.METAL);
-    box(1180, 520, 120, 10, K.SHOPW);
-    tag(1194, 468, 30, K.GRAF2); tag(1236, 488, 26, K.GRAF1); tag(1262, 456, 20, K.GRAF3);   // tags on the shutter
+    box(1170, 418, 134 + M, 112, K.CONCD);
+    // behind the shutter: a laundromat (the shutter itself is its own part, rolled up by day: see SHUTTER)
+    box(1180, 430, 120, 100, K.LAUNW, 430, 100);
+    box(1182, 438, 116, 2, K.WOODD); for (var dx2 = 1184; dx2 < 1296; dx2 += 6) box(dx2, 432 + (dx2 % 4), 4, 6 - (dx2 % 4), dx2 % 12 ? K.MAG2 : K.MAG3);   // soap on a shelf
+    for (var wm = 0; wm < 5; wm++) { var wx2 = 1184 + wm * 23; box(wx2, 484, 20, 44, K.WASHER); box(wx2, 484, 20, 4, K.METAL); ellipse(wx2 + 10, 505, 7, 7, K.METALD); ellipse(wx2 + 10, 505, 5.5, 5.5, wm % 2 ? K.LAUN2 : K.GLASS); px(wx2 + 7, 502, K.SNOW); px(wx2 + 3, 486, K.LEDG); }
+    box(1182, 460, 40, 3, K.WOODL); box(1184, 455, 10, 5, K.LAUN1); box(1198, 456, 8, 4, K.LAUN3);   // a folding table with a folded pile
+    box(1176, 424, 128, 7, K.METALD); box(1176, 424, 128, 1, K.METALHI);   // the shutter's roller box
     stains(1170, W + M, 90, 410); cracks(1170, W + M, 90, 410, 5); bareBrick(1300, 300, 8, 6);
     [74, 160, 246].forEach(function (fy) {                                     // a fire escape: landings, rails, and stairs between
       box(1206, fy + 66, 96, 2, K.METALD); box(1206, fy + 56, 96, 1, K.METALD);
@@ -802,8 +868,17 @@
       if (fy < 246) { line(1214, fy + 68, 1290, fy + 152, K.METALD, 2); for (var st = 0; st < 12; st++) box(1218 + st * 6, fy + 72 + st * 7, 5, 1, K.METAL); }
     });
     line(1230, 400, 1230, 418, K.METALD, 2); box(1222, 398, 18, 2, K.METALD);   // the drop ladder, pulled up
+    [74, 160, 246].forEach(function (fy) { for (var rr = 0; rr < 7; rr++) { var rxx = 1208 + Math.floor(rnd() * 92), rl = 4 + Math.floor(rnd() * 14); box(rxx, fy + 68, 1, rl, K.RUSTST, fy + 68, rl); } for (var rp = 1206; rp < 1302; rp += 3) if (rnd() < 0.3) px(rp, fy + 66, K.RUSTST); });   // rust bleeding from the landings
     ellipse(1262, 58, 7, 5, K.AC); box(1262, 60, 2, 6, K.METALD); line(1262, 58, 1268, 54, K.METALD);   // a satellite dish
     box(1172, 74, 3, 456, K.METAL); [140, 260, 380].forEach(function (y) { box(1171, y, 5, 2, K.METALD); });   // a downpipe
+  }
+  // The laundromat's roller shutter, with its tags: a part of its own, so it can roll up in the morning
+  function paintShutter() {
+    seed = 717;
+    box(1180, 430, 120, 100, K.SHUT, 430, 100); for (var sy2 = 432; sy2 < 526; sy2 += 4) { box(1180, sy2, 120, 1, K.METAL); box(1180, sy2 + 1, 120, 1, K.SHUT); }
+    box(1180, 526, 120, 4, K.METALD); box(1236, 522, 8, 4, K.METAL);   // the bottom bar and its handle
+    tag(1194, 468, 30, K.GRAF2); tag(1236, 488, 26, K.GRAF1); tag(1262, 456, 20, K.GRAF3);
+    for (var r = 0; r < 30; r++) px(1180 + Math.floor(rnd() * 120), 430 + Math.floor(rnd() * 96), rnd() < 0.5 ? K.RUSTST : K.STAIN);
   }
   function paintNetworkSign() {
     box(1170, 130, 6, 3, K.METAL); box(1170, 308, 6, 3, K.METAL);
@@ -966,6 +1041,7 @@
   var PA = part('A', 0.43, -M, 90, 198, GROUND, paintA), PB = part('B', 0.47, 184, 262, 432, GROUND, paintB), PC = part('C', 0.44, 414, 214, 546, GROUND, paintC);
   var PD = part('D', 0.5, 528, 316, 812, GROUND, paintD), PE = part('E', 0.42, 792, 100, 998, GROUND, paintE), PF = part('F', 0.46, 984, 100, 1176, GROUND, paintF);
   var PG = part('G', 0.4, 1162, 56, W + M, GROUND, paintG);
+  var SHUTTER = part('shutter', 0.4, 1180, 430, 1300, 530, paintShutter);
   var PART_SIGN = part('articles', 0.53, 388, 196, 442, 432, paintArticlesSign), PART_NET = part('network', 0.43, 1166, 116, 1206, 324, paintNetworkSign);
   var PART_MARQ = part('marquee', MARQUEE.z, 506, 134, 834, 334, paintMarquee), PART_AWN = part('awning', AWNING_Z, 528, 400, 812, 470, paintAwning);
   var PROPS = part('props', 0.47, 0, 398, W + M, GROUND + 2, paintProps);
@@ -993,7 +1069,7 @@
     c = [c[0] * f, c[1] * f, c[2] * f];
     if (f < 1) { var t = (1 - f) * 40; c = [c[0] - t * 0.5, c[1] - t * 0.2, c[2] + t * 0.6]; }
     if (f > 1) { var u = (f - 1) * 40; c = [c[0] + u * 0.5, c[1] + u * 0.3, c[2] - u * 0.3]; }
-    return css(c);
+    return m.see && !glow ? css(c, m.see) : css(c);     // glass lets what is behind it show through
   }
   function propPainter(g, kind, inside) {
     var cache = {};
@@ -1057,6 +1133,7 @@
   [[SA, SB], [SB, SC], [SC, SD], [SD, SE], [SE, SF], [SF, SG]].forEach(function (pair) { pair[0].right = pair[1]; pair[1].left = pair[0]; });   // neighbours
   var STREET = [SG, SE, SA, { p: PART_NET }, SC, { p: PART_MARQ, marquee: true }, SF, SB, SD, { p: PART_SIGN }, { p: PART_AWN }];
   if (BARKIT) STREET.splice(STREET.indexOf(SD) + 1, 0, { p: BARKIT });   // the bar's kit, seen through its windows
+  STREET.splice(STREET.indexOf(SG) + 1, 0, { p: SHUTTER, roll: true });   // the laundromat's shutter, rolled by the clock
   var PROP_PARTS = [PROPS_BACK, PROPS_FRONT, BARKIT].filter(Boolean);
 
   if (PERF) PERF.paint = performance.now() - PERF.t0;
@@ -1152,7 +1229,7 @@
     : function (fn) { window.setTimeout(function () { fn({ didTimeout: false, timeRemaining: function () { return 8; } }); }, 60); };
   function lookAhead() {
     var now = performance.now(); if (now - lastLook < 3000) return; lastLook = now;
-    if (!ALL_PARTS) ALL_PARTS = [FAR, PA, PB, PC, PD, PE, PF, PG, PART_SIGN, PART_NET, PART_MARQ, PART_AWN, PROPS, GROUNDP, SUBWAY, NEAR].concat(PROP_PARTS);
+    if (!ALL_PARTS) ALL_PARTS = [FAR, PA, PB, PC, PD, PE, PF, PG, SHUTTER, PART_SIGN, PART_NET, PART_MARQ, PART_AWN, PROPS, GROUNDP, SUBWAY, NEAR].concat(PROP_PARTS);
     var fr = ((clockSeconds() + 600) % 86400) / 86400, d = keyframes(fr, PHASE.dusk), y = keyframes(fr, PHASE.day), s = d + y, need = [];
     if (s > 1) { d /= s; y /= s; }
     if (1 - d - y > 0.002) need.push('night', 'lightsNight');
@@ -1269,6 +1346,9 @@
     { x: 1110, y: 180, rate: 3, life: [8, 11], vy: [-12, -18], vx: [-1, 2], r: [8, 44], a: 0.1, layer: 'back', z: 0.15 },
     { x: 255, y: 268, rate: 6, life: [4, 6.5], vy: [-14, -20], vx: [-2, 2], r: [4, 30], a: 0.16, layer: 'mid', z: 0.47 },
     { x: 966, y: 118, rate: 4, life: [4, 6], vy: [-12, -18], vx: [-2, 2], r: [4, 26], a: 0.13, layer: 'mid', z: 0.42 },
+    { x: 150, y: 146, rate: 3, life: [3, 5], vy: [-10, -16], vx: [-2, 2], r: [3, 20], a: 0.1, layer: 'mid', z: 0.43, cold: true },    // roof vents, steaming
+    { x: 1150, y: 236, rate: 3, life: [3, 5], vy: [-10, -16], vx: [-2, 2], r: [3, 18], a: 0.1, layer: 'mid', z: 0.46, cold: true },
+    { x: 1244, y: 62, rate: 3, life: [4, 6], vy: [-10, -16], vx: [-2, 2], r: [4, 24], a: 0.1, layer: 'mid', z: 0.4, cold: true },
     { x: 900, y: 694, rate: 11, life: [3.5, 5.5], vy: [-28, -44], vx: [-4, 4], r: [6, 50], a: 0.2, layer: 'front', z: depthAt(694) },
     { x: 300, y: 590, rate: 4, life: [2, 3.2], vy: [-18, -28], vx: [-3, 3], r: [5, 24], a: 0.09, layer: 'front', z: depthAt(590) },
     { x: 1060, y: 596, rate: 5, life: [1.2, 2.2], vy: [-10, -18], vx: [-6, 6], r: [3, 16], a: 0.16, layer: 'front', z: HOLE_Z }
@@ -1449,6 +1529,11 @@
   // The street, far to near: buildings with their side walls, signs, the ground, things on the footpath
   function drawStreet(t) {
     STREET.forEach(function (b) {
+      if (b.roll) {                                    // the shutter, rolled up as far as the clock says
+        var open = shutterOpen(); if (open > 0.995) return;
+        var lift = Math.round(100 * open); ctx.save(); ctx.beginPath(); ctx.rect(1180 + offset(b.p.z), 430, 120, 100 - lift); ctx.clip();
+        blend(ctx, b.p, b.p.x0 + offset(b.p.z), b.p.y0 - lift); ctx.restore(); return;
+      }
       if (b.wall) sideWall(ctx, b);
       drawPart(ctx, b.p); drawWindowHours(ctx, b.p.name, t);
       if (b.marquee) drawMarquee(ctx, t, false);
@@ -1616,7 +1701,9 @@
     snowLevel += ((state.weather === 'snow' ? 1 : 0) - snowLevel) * Math.min(1, dt / 8);
     var target = rainLevel > 0.5 ? 1 : snowLevel > 0.5 ? 0.35 : 0;
     wet = wet < target ? Math.min(target, wet + dt / 45) : Math.max(target, wet - dt / 150);   // dry about two and a half minutes after the rain
-    EMITTERS.forEach(function (e) { e.acc += dt * e.rate; while (e.acc >= 1) { e.acc -= 1; smoke.push(emit(e)); } });
+    var cold = Math.max(snowLevel, state.night * 0.8, rainLevel * 0.5);   // vents only steam when the air is cold
+    EMITTERS.forEach(function (e) { e.acc += dt * e.rate * (e.cold ? cold : 1); while (e.acc >= 1) { e.acc -= 1; smoke.push(emit(e)); } });
+    updateSnowCover(dt);
     for (var s = smoke.length - 1; s >= 0; s--) { var p = smoke[s]; p.age += dt; stepSmoke(p, dt); if (p.age >= p.life) smoke.splice(s, 1); }
     var n = Math.floor(drops.length * rainLevel);
     for (var d = 0; d < n; d++) {
@@ -1693,7 +1780,7 @@
       gtx.save(); groundTransform(gtx); lights(gtx, GROUNDP, 0.8, function (c) { gtx.drawImage(c, 0, 0); }); gtx.restore();
       partLights(gtx, PROPS, 0.9); partLights(gtx, SUBWAY, 1); partLights(gtx, NEAR, 1);
       if (PROPS_BACK) partLights(gtx, PROPS_BACK, 0.9); if (PROPS_FRONT) partLights(gtx, PROPS_FRONT, 0.9);
-      smokerGlow(gtx, state.t);
+      smokerGlow(gtx, state.t); outsideGlow(gtx, state.t);
       gtx.globalAlpha = state.lights;
       drawMarquee(gtx, t, true); drawLiveBits(gtx, t, true); drawDrone(gtx, t, true);
       gtx.globalAlpha = 1;
@@ -1720,6 +1807,8 @@
   var TVWIN;                                            // (chosen when the parts are built; not reset here)
   function windowOn(w, h) {
     if (w.smoker) return false;                         // the smoker keeps the light off
+    if (w.party && partyNow()) return true;             // the party flat stays lit
+    if (w.kid && (h >= 20 || h < 7)) return false;      // a child's bedtime: just the night-light
     var hh = h < 12 ? h + 24 : h, bed = w.s < 0.12 ? 99 : 21.5 + w.s2 * 5, wake = 5 + w.s3 * 1.6;
     var on = hh < bed || (h >= wake && h < 10);
     var slot = Math.floor(Date.now() / 40000), r = Math.sin((slot + w.s * 977) * 12.9898) * 43758.5453; r -= Math.floor(r);
@@ -1747,6 +1836,7 @@
           g.globalAlpha = Math.min(1, a * 1.15); g.fillStyle = off; g.fillRect(x, w.y, w.w, w.h);
           g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x + 2, w.y + 2, Math.max(1, w.w - 10), 1); g.fillRect(x + 2, w.y + 3, 1, Math.max(1, w.h - 12));
           g.globalAlpha = 1;
+          if (w.kid && a > 0.3) nightLight(g, w, x, t);
         } else if (w === TVWIN && (state.hour >= 19 || state.hour < 1)) {
           var fl = 0.16 + 0.1 * Math.sin(t * 13.1) * Math.sin(t * 3.7) + (Math.sin(t * 0.9) > 0.7 ? 0.08 : 0);
           g.save(); g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(110,150,255,' + (fl * a).toFixed(3) + ')'; g.fillRect(x, w.y, w.w, w.h); g.restore();
@@ -1760,6 +1850,7 @@
           g.globalCompositeOperation = 'screen'; g.globalAlpha = 1; g.fillStyle = gr; g.fillRect(x, w.y, w.w, w.h);
           g.restore();
         }
+        windowExtras(g, w, x, t, a);
       });
     }
   }
@@ -1767,12 +1858,13 @@
   // (the glow would otherwise light them up). The newsagent goes with the footpath things (see renderScene).
   function drawHomes(g, t) {
     STREET.forEach(function (b) { drawPeeps(g, b.p.name, t); });
-    var a = state.lights; if (a < 0.03) return;
-    LITWIN.forEach(function (w) {
+    var a = state.lights;
+    if (a >= 0.03) LITWIN.forEach(function (w) {
       if (!w.blinds || !w.on) return;
       var x = w.x + offset(w.z); g.fillStyle = 'rgba(24,16,14,' + (0.42 * a).toFixed(3) + ')';
       for (var by = w.y + 1; by < w.y + w.h; by += 3) g.fillRect(x, by, w.w, 1);
     });
+    drawOutside(g, t);
   }
   // People at home and in the shops: each has something to do, wanders a little, now and then steps out of the
   // room and comes back. Seen as dark shapes against their light; faint by day, gone when their room is dark.
@@ -1787,6 +1879,7 @@
         sw.smoker = true; WINPEEPS = WINPEEPS.filter(function (p) { return p.win !== sw; });
         SMOKER = { smoker: true, part: sw.part, z: sw.z, x: sw.x, y: sw.y, w: sw.w, h: sw.h, seed: 0.37, win: sw }; WINPEEPS.push(SMOKER);
       }
+      pickSpecialWindows();
       peepsByPart = {}; WINPEEPS.forEach(function (p) { (peepsByPart[p.part] = peepsByPart[p.part] || []).push(p); });
     }
     var list = peepsByPart[partName]; if (!list) return;
@@ -1794,6 +1887,9 @@
     list.forEach(function (p) {
       var ox = offset(p.z), x = p.x + ox;
       if (p.smoker) { drawSmoker(g, p, x, t, a); return; }
+      if (p.partyOnly && !partyNow()) return;              // the party's guests come and go with the party
+      if (p.hours && !between(state.hour, p.hours[0], p.hours[1])) return;   // only at their hour (watering the window box)
+      if (p.win && p.win.party && partyNow() && !p.partyOnly) return;
       var lit = p.shop || p.screen || !p.win || p.win.on;
       if (!lit && a > 0.25) return;                       // a dark room at night: nobody to see
       var per = 50 + p.seed * 70, ph = ((t + p.seed * 300) / per) % 1;
@@ -1834,6 +1930,183 @@
       g.fillStyle = 'rgba(206,200,192,' + al.toFixed(3) + ')'; g.fillRect(Math.round(sx - sz / 2), Math.round(sy), sz, Math.max(1, sz - 1));
     }
   }
+  // ---------- The buildings' day: the shutter, the party flat, the child's night-light, deliveries, signs ----------
+  function between(h, a, b) { return a <= b ? h >= a && h < b : h >= a || h < b; }
+  function ease(h, at, mins) { return clamp((h - at) * 60 / mins, 0, 1); }        // 0 before at, 1 a few minutes after
+  // The laundromat opens at 8 and shuts at 20: the shutter takes a minute to roll
+  function shutterOpen() { var h = state.hour; return h < 12 ? ease(h, 8, 1) : 1 - ease(h, 20, 1); }
+  // A party on Friday and Saturday nights (?party to see it any night)
+  var PARTY_Q = /[?&]party\b/.test(location.search);
+  function partyNow() {
+    var h = state.hour, d = new Date().getDay();
+    if (PARTY_Q) return h >= 19 || h < 3;
+    return ((d === 5 || d === 6) && h >= 21) || ((d === 6 || d === 0) && h < 2.5);
+  }
+  var PARTYWIN = null, KIDWIN = null;
+  function pickSpecialWindows() {                       // (once): the party flat in G, a child's room in A
+    PARTYWIN = LITWIN.filter(function (w) { return w.part === 'G' && !w.smoker; })[1] || null;
+    KIDWIN = LITWIN.filter(function (w) { return w.part === 'A' && !w.smoker && w !== PARTYWIN && w !== TVWIN; })[0] || null;
+    if (PARTYWIN) { PARTYWIN.party = true; for (var k = 0; k < 3; k++) WINPEEPS.push({ part: PARTYWIN.part, z: PARTYWIN.z, win: PARTYWIN, x: PARTYWIN.x, y: PARTYWIN.y, w: PARTYWIN.w, h: PARTYWIN.h, left: PARTYWIN.x, kind: 'dance', seed: 0.2 + k * 0.3, roam: true, mull: true, partyOnly: true }); }
+    if (KIDWIN) KIDWIN.kid = true;
+  }
+  // Snow settles on sills, ledges and roof edges while it snows, and melts slowly after
+  var snowCover = state.weather === 'snow' ? 0.6 : 0;
+  function updateSnowCover(dt) { snowCover = snowLevel > 0.2 ? Math.min(1, snowCover + dt * 0.01 * snowLevel) : Math.max(0, snowCover - dt * 0.004); }
+  var ROOFLINES = [[-M, 196, 152, 0.43], [420, 540, 240, 0.44], [536, 806, 322, 0.5], [796, 994, 152, 0.42], [986, 1174, 240, 0.46], [1166, W + M, 66, 0.4], [198, 418, 297, 0.47]];
+
+  // A window's live extras, drawn with the rest of its light (before the glow): the party's colours, the night-light,
+  // and the light that spills from the window onto the wall below it
+  function windowExtras(g, w, x, t, a) {
+    if (w.party && partyNow()) {
+      var hue = (t * 40 + w.s * 360) % 360, beat = 0.7 + 0.3 * Math.abs(Math.sin(t * 6.2));
+      g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.7 * beat; g.fillStyle = 'hsl(' + hue.toFixed(0) + ',90%,62%)'; g.fillRect(x, w.y, w.w, w.h);
+      g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.5;
+      for (var d = 0; d < 6; d++) { g.fillStyle = 'hsl(' + ((hue + d * 60) % 360).toFixed(0) + ',100%,70%)'; g.fillRect(Math.round(x + ((t * 9 + d * 13) % w.w)), Math.round(w.y + 2 + ((d * 7 + t * 3) % (w.h - 4))), 2, 2); }   // a mirror ball's spots
+      g.restore();
+    }
+    if (w.on && a > 0.05) {                             // light spilling onto the wall under the window
+      var T = TONES[w.tone] || TONES.warm, gr = g.createLinearGradient(0, w.y + w.h + 4, 0, w.y + w.h + 22);
+      gr.addColorStop(0, 'rgba(' + T.glow + ',' + (0.2 * a).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + T.glow + ',0)');
+      g.save(); g.globalCompositeOperation = 'screen'; g.fillStyle = gr; g.fillRect(x - 6, w.y + w.h + 4, w.w + 12, 18); g.restore();
+    }
+  }
+  function nightLight(g, w, x, t) {                     // a child's room after bedtime: a dim lamp and stars turning on the walls
+    g.fillStyle = 'rgba(70,90,170,0.32)'; g.fillRect(x, w.y, w.w, w.h);
+    g.fillStyle = 'rgba(190,210,255,0.8)';
+    for (var s = 0; s < 9; s++) { var sx = ((s * 11 + t * 2.2) % (w.w - 2)), sy = (s * 7 + Math.sin(s) * 5 + 40) % (w.h - 4); g.fillRect(Math.round(x + 1 + sx), Math.round(w.y + 2 + sy), 1, 1); }
+    g.fillStyle = 'rgba(255,214,140,0.7)'; g.fillRect(x + w.w - 6, w.y + w.h - 5, 3, 3);   // the lamp itself
+  }
+
+  // The outside of the buildings, live: curtains in open windows, laundry, fairy lights, a rug being shaken, the
+  // rooftop neon, wet walls and shining ledges in the rain, snow on the ledges, the low sun, shop signs, the awning,
+  // the morning's deliveries
+  var WETMASK = null;
+  function buildWetMask() {                             // dark streaks under the ledges and sills, where rain soaks in
+    var c = document.createElement('canvas'); c.width = W; c.height = GROUND; var g = c.getContext('2d'), s0 = seed; seed = 4711;
+    SILLS.concat(SLABS).forEach(function (s) {
+      for (var k = 0; k < s[2] / 5; k++) {
+        var x = s[0] + rnd() * s[2], len = 10 + rnd() * 50, gr = g.createLinearGradient(0, s[1] + 3, 0, s[1] + 3 + len);
+        gr.addColorStop(0, 'rgba(14,16,30,0.55)'); gr.addColorStop(1, 'rgba(14,16,30,0)'); g.fillStyle = gr; g.fillRect(Math.round(x), s[1] + 3, 1 + Math.floor(rnd() * 3), len);
+      }
+    });
+    ROOFLINES.forEach(function (r) { var gr = g.createLinearGradient(0, r[2], 0, r[2] + 40); gr.addColorStop(0, 'rgba(14,16,30,0.45)'); gr.addColorStop(1, 'rgba(14,16,30,0)'); g.fillStyle = gr; g.fillRect(r[0], r[2], r[1] - r[0], 40); });
+    seed = s0; return c;
+  }
+  function hexOf(name) { return MATS[name].a[0]; }
+  function drawOutside(g, t) {
+    var a = state.lights, h = state.hour, wnd = wind();
+    // curtains stirring in the open windows (lit from behind when the room is lit)
+    LITWIN.forEach(function (w) {
+      if (!w.open) return;
+      var x = w.x + offset(w.z), cw = Math.floor(w.w / 3), col = w.on && a > 0.2 ? 'rgba(236,196,140,0.9)' : amb('#a89070');
+      g.fillStyle = col;
+      for (var r = 1; r < w.h - 1; r++) { var bil = Math.sin(t * 1.9 + r * 0.22 + w.s * 9) * (1.5 + wnd * 0.18) * (r / w.h); g.fillRect(x + 1, w.y + r, Math.max(2, Math.round(cw + bil)), 1); }
+      g.fillStyle = 'rgba(0,0,0,0.18)'; for (var f2 = 3; f2 < cw; f2 += 4) g.fillRect(x + 1 + f2, w.y + 1, 1, w.h - 2);   // folds
+    });
+    // laundry on the lines, swaying with the wind; brought in when it rains
+    if (rainLevel < 0.3) LAUNDRY.forEach(function (l) {
+      var ox = offset(l.z);
+      l.items.forEach(function (it, i) {
+        var col = amb(hexOf(it[1])), sw = Math.sin(t * 1.6 + i * 1.3) * (1 + wnd * 0.12), x0 = l.x + it[0] + ox;
+        for (var r = 0; r < it[2]; r++) { g.fillStyle = col; g.fillRect(Math.round(x0 + sw * r / it[2]), l.y + r, 10, 1); }
+        g.fillStyle = amb('#2e2c2a'); g.fillRect(x0 + 1, l.y - 1, 1, 2); g.fillRect(x0 + 8, l.y - 1, 1, 2);   // pegs
+      });
+    });
+    // fairy lights along a balcony rail
+    FAIRY.forEach(function (fy) {
+      var ox = offset(fy.z), on = a > 0.15;
+      for (var bx = 2; bx < fy.w - 2; bx += 4) {
+        var sag = Math.round(Math.sin((bx / fy.w) * Math.PI) * 3), i = bx / 4, c = XCOL[i % 4], tw = 0.55 + 0.45 * Math.sin(t * 1.4 + i * 1.7);
+        g.fillStyle = amb('#221e1c'); g.fillRect(fy.x + bx + ox, fy.y + sag, 4, 1);
+        g.globalAlpha = on ? tw : 0.6; g.fillStyle = on ? c : amb('#9a9488'); g.fillRect(fy.x + bx + 1 + ox, fy.y + sag + 1, 1, 2); g.globalAlpha = 1;
+      }
+    });
+    // someone shaking a rug out over the balcony rail, mid-morning
+    if (RUG && between(h, 8.5, 10.5) && ((t / 30) % 1) < 0.5) {
+      var rx = RUG.x + 70 + offset(RUG.z), ry = RUG.y, flap = Math.sin(t * 9), body = amb('#4a3e5a'), skin = amb('#c89a80');
+      g.fillStyle = body; g.fillRect(rx - 5, ry - 14, 10, 14); g.fillStyle = skin; for (var yy = -4; yy <= 4; yy++) { var hw = Math.round(Math.sqrt(16 - yy * yy + 2)); g.fillRect(rx - hw, ry - 19 + yy, hw * 2 + 1, 1); }
+      g.fillStyle = body; g.fillRect(rx + 4, ry - 10, 10, 3);
+      g.fillStyle = amb('#a8402a');
+      for (var c2 = 0; c2 < 18; c2++) { var dy = Math.round(Math.sin(c2 * 0.45 - t * 9) * 2 * (c2 / 18) + flap * c2 * 0.15); g.fillRect(rx + 13 + c2, ry - 11 + dy, 1, 7); }
+      g.fillStyle = amb('#e8d8b0'); g.fillRect(rx + 14, ry - 9, 16, 1);
+      g.fillStyle = 'rgba(200,190,170,0.35)'; for (var dp = 0; dp < 6; dp++) { var age = (t * 1.3 + dp / 6) % 1; g.fillRect(Math.round(rx + 22 + dp * 3 + age * 8), Math.round(ry - 6 + age * 18), 2, 2); }   // dust
+    }
+    // the rooftop neon: a crescent moon and a star, buzzing on and off now and then
+    var nx = 856 + offset(0.42), nOn = a > 0.08 && !(Math.sin(t * 7.3) > 0.93 || (Math.floor(t * 3) % 23 === 0));
+    neonShape(g, nx, nOn ? 1 : 0.2);
+    // wet walls while it rains, drying slowly after
+    if (wet > 0.04) { if (!WETMASK) WETMASK = buildWetMask(); g.save(); g.globalAlpha = Math.min(1, wet * 0.9); g.drawImage(WETMASK, 0, 0); g.restore(); }
+    // ledges and sills shining in the rain
+    if (wet > 0.15) {
+      g.fillStyle = 'rgba(210,220,240,' + (0.35 * wet).toFixed(3) + ')';
+      SILLS.concat(SLABS).forEach(function (s, i) { var ox = offset(s[3]); g.fillRect(s[0] + ox, s[1], s[2], 1); if (((t * 2 + i) % 3) < 0.15) { g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(s[0] + ox + Math.floor((i * 37 + t * 20) % s[2]), s[1], 2, 1); g.fillStyle = 'rgba(210,220,240,' + (0.35 * wet).toFixed(3) + ')'; } });
+    }
+    // snow on the sills, ledges and roof edges
+    if (snowCover > 0.03) {
+      var snow = amb('#f0f0ec'), d2 = 1 + Math.round(snowCover * 2);
+      g.fillStyle = snow;
+      SILLS.concat(SLABS).forEach(function (s, i) { var ox = offset(s[3]); g.fillRect(s[0] + ox, s[1] - d2 + 1, s[2], d2); for (var k = 0; k < s[2]; k += 5) if ((k + i) % 3 === 0) g.fillRect(s[0] + ox + k, s[1] - d2, 3, 1); });
+      ROOFLINES.forEach(function (r) { g.fillRect(r[0] + offset(r[3]), r[2] - d2 - 1, r[1] - r[0], d2 + 1); });
+    }
+    // the low sun: facades warm up at the start and end of the day, and the poles throw long shadows up the walls
+    var low = state.dusk * (between(h, 5, 9) || between(h, 15.5, 20) ? 1 : 0);
+    if (low > 0.03) {
+      var evening = h > 12, gr = g.createLinearGradient(evening ? 0 : W, 0, evening ? W : 0, 0);
+      gr.addColorStop(0, 'rgba(255,170,90,' + (0.26 * low).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,150,80,' + (0.06 * low).toFixed(3) + ')');
+      g.save(); g.globalCompositeOperation = 'soft-light'; g.fillStyle = gr; g.fillRect(0, 0, W, GROUND); g.restore();
+      g.fillStyle = 'rgba(20,10,30,' + (0.22 * low).toFixed(3) + ')';
+      [205, 1000].forEach(function (px0) {             // the poles' shadows, slanting up the facades away from the sun
+        var dir = evening ? 1 : -1; g.beginPath(); g.moveTo(px0, GROUND); g.lineTo(px0 + 7, GROUND); g.lineTo(px0 + 7 + dir * 150, 120); g.lineTo(px0 + dir * 150, 120); g.closePath(); g.fill();
+      });
+    }
+    drawShopSigns(g, t); drawAwning(g, t); drawDeliveries(g, h);
+  }
+  function neonShape(g, x, k) {                         // tubes: a crescent (cut from a disc) and a five-point star
+    var pink = 'rgba(255,110,200,' + k + ')', cyan = 'rgba(140,240,255,' + k + ')';
+    g.fillStyle = pink;
+    for (var a2 = 0; a2 < 40; a2++) { var an = a2 / 40 * Math.PI * 2, px1 = x + 10 + Math.cos(an) * 8, py1 = 136 + Math.sin(an) * 8, dx = px1 - (x + 13), dy = py1 - 133; if (dx * dx + dy * dy > 49) g.fillRect(Math.round(px1), Math.round(py1), 1, 1); }
+    g.fillStyle = cyan;
+    for (var s = 0; s < 10; s++) { var r1 = s % 2 ? 2.5 : 6, an2 = -Math.PI / 2 + s * Math.PI / 5, r2 = (s + 1) % 2 ? 2.5 : 6, an3 = -Math.PI / 2 + (s + 1) * Math.PI / 5;
+      for (var u = 0; u <= 1; u += 0.15) g.fillRect(Math.round(x + 24 + (Math.cos(an2) * r1) * (1 - u) + Math.cos(an3) * r2 * u), Math.round(134 + (Math.sin(an2) * r1) * (1 - u) + Math.sin(an3) * r2 * u), 1, 1); }
+  }
+  // OPEN / CLOSED boards on the doors, turning over when the hours change
+  var SHOPSIGNS = [{ x: 352, y: 444, open: [9, 21] }, { x: 658, y: 478, open: [17, 2] }, { x: 1110, y: 454, open: [10, 22] }];
+  function drawShopSigns(g, t) {
+    SHOPSIGNS.forEach(function (s) {
+      var on = between(state.hour, s.open[0], s.open[1]);
+      if (s.was === undefined) s.was = on;
+      if (s.was !== on) { s.flip = t; s.was = on; }
+      var k = s.flip !== undefined && t - s.flip < 0.5 ? Math.abs(Math.cos((t - s.flip) / 0.5 * Math.PI)) : 1, w = Math.max(1, Math.round(27 * k)), x = s.x + 13 - Math.round(w / 2);
+      g.fillStyle = amb('#2a2018'); g.fillRect(s.x + 12, s.y - 4, 1, 4); g.fillRect(x, s.y, w, 9);
+      if (k > 0.6) pxText(g, F3, on ? 'OPEN' : 'CLOSED', s.x + (on ? 6 : 2), s.y + 2, on ? (state.lights > 0.3 ? '#7aff9a' : '#3a9a5a') : (state.lights > 0.3 ? '#ff7a6a' : '#b83a2a'), 1);
+    });
+  }
+  // The bookshop's striped awning: out by day, rolled in for the night
+  function drawAwning(g, t) {
+    var h = state.hour, ext = h < 12 ? ease(h, 8.5, 1) : 1 - ease(h, 20.5, 1), x0 = 204, y0 = 421, w = 124, drop = Math.round(15 * ext);
+    var red = amb('#b8483a'), cream = amb('#ece6d8'), dark = amb('#5a2e26');
+    g.fillStyle = amb('#3a3632'); g.fillRect(x0, y0 - 1, w, 3);                 // the roller
+    if (drop < 1) return;
+    for (var r = 0; r < drop; r++) for (var sx = 0; sx < w; sx += 8) { g.fillStyle = (sx / 8) % 2 ? cream : red; g.fillRect(x0 + sx, y0 + 2 + r, 8, 1); }
+    for (var sc = 0; sc < w; sc += 8) { g.fillStyle = (sc / 8) % 2 ? cream : red; g.fillRect(x0 + sc + 1, y0 + 2 + drop, 6, 2); g.fillRect(x0 + sc + 2, y0 + 4 + drop, 4, 1); }   // the scalloped edge
+    g.fillStyle = dark; g.fillRect(x0, y0 + 2 + drop, w, 1); g.globalAlpha = 0.25; g.fillStyle = '#000'; g.fillRect(x0, y0 + 5 + drop, w, 3); g.globalAlpha = 1;   // its shade on the glass
+  }
+  // Boxes left outside FEED before it opens its stock room, taken in one by one through the morning
+  function drawDeliveries(g, h) {
+    if (!between(h, 5.5, 10)) return;
+    var n = Math.max(0, Math.ceil(5 * (10 - h) / 4.5)), card = amb('#b8946a'), top = amb('#d0ae84'), dark = amb('#8a6a44'), tape = amb('#d8c898');
+    for (var i = 0; i < Math.min(5, n); i++) {
+      var bx = 112 + (i % 3) * 12, by = 530 - (i < 3 ? 0 : 12) - 12, bw = 11;
+      if (i >= 3) bx += 6;
+      g.fillStyle = card; g.fillRect(bx, by, bw, 12); g.fillStyle = top; g.fillRect(bx, by, bw, 2); g.fillStyle = dark; g.fillRect(bx + bw - 1, by, 1, 12); g.fillStyle = tape; g.fillRect(bx + 4, by, 2, 12);
+    }
+  }
+  function outsideGlow(g, t) {                          // fairy lights, the neon and the party in the glow layer
+    if (state.lights < 0.1) return;
+    FAIRY.forEach(function (fy) { for (var bx = 2; bx < fy.w - 2; bx += 4) { var i = bx / 4; g.fillStyle = XCOL[i % 4]; g.fillRect(fy.x + bx + offset(fy.z), fy.y + Math.round(Math.sin((bx / fy.w) * Math.PI) * 3), 3, 3); } });
+    neonShape(g, 856 + offset(0.42), 1);
+    if (PARTYWIN && partyNow()) { g.fillStyle = 'hsl(' + ((t * 40) % 360).toFixed(0) + ',90%,55%)'; g.fillRect(PARTYWIN.x + offset(PARTYWIN.z), PARTYWIN.y, PARTYWIN.w, PARTYWIN.h); }
+  }
   function smokerGlow(g, t) {                           // the cigarette tip, in the glow layer
     if (!SMOKER || state.lights < 0.1) return;
     var p = SMOKER, s = smokerPose(p, p.x + offset(p.z), t);
@@ -1866,7 +2139,7 @@
     g.restore();
   }
   // Water drips off the bar's awning and the bookshop's eaves while it rains, and for a while after
-  var EAVES = [[536, 806, 427, AWNING_Z], [204, 418, 331, 0.47]], drips = [];
+  var EAVES = [[536, 806, 427, AWNING_Z], [204, 418, 331, 0.47], [1206, 1302, 140, 0.4], [1206, 1302, 226, 0.4], [1206, 1302, 312, 0.4], [982, 988, 412, 0.42], [1170, 1176, 418, 0.4]], drips = [];   // (and off the fire escape's landings, and out of the downpipes)
   function updateDrips(dt) {
     var rate = 22 * Math.max(rainLevel, Math.min(1, Math.max(0, (wet - 0.45) * 1.6)));
     EAVES.forEach(function (e) { e.acc = (e.acc || 0) + dt * rate * (e[1] - e[0]) / 270; while (e.acc >= 1) { e.acc -= 1; drips.push({ x: rand(e[0], e[1]), y: e[2], v: 0, z: e[3] }); } });
@@ -1923,7 +2196,8 @@
   // ---------- Pigeons ----------
   // A few peck about on the footpath by the shops; when someone walks close (or a dog trots by, or lightning
   // flashes) they burst up to the poles' crossbars, and drift back down in ones and twos. At night they roost.
-  var PERCH = [[176, 76], [184, 76], [192, 76], [204, 76], [212, 76], [970, 76], [978, 76], [1006, 76], [1012, 76]];
+  var PERCH = [[176, 76], [184, 76], [192, 76], [204, 76], [212, 76], [970, 76], [978, 76], [1006, 76], [1012, 76],
+    [826, 243], [842, 243], [944, 243], [958, 243], [20, 243], [34, 243], [1228, 157], [1250, 157], [450, 329], [466, 329]];   // and the ledges
   var GROUNDS = [[236, 390], [560, 640], [820, 980]];
   var pigeons = [];
   for (var pg = 0; pg < 7; pg++) { var gr = GROUNDS[pg % 3]; pigeons.push({ x: rand(gr[0], gr[1]), y: 534 + Math.floor(Math.random() * 4), state: 'peck', dir: Math.random() < 0.5 ? 1 : -1, timer: rand(0, 3), f: 0, seed: Math.random() * 9 }); }
