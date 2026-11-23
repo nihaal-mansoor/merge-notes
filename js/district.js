@@ -322,6 +322,12 @@
     STEP: { a: ['#6a6660', '#5a5650'], e: ['#4e5654', '#444c4a'], k: 0.6, d: 0.2, noGlow: true }, STEPHI: { a: ['#9a968c'], e: ['#9aaaa6'], k: 0.6, d: 0.3, noGlow: true },
     SUBLIT: { a: ['#8a9a98'], e: ['#e8fff8', '#c8e8e0'], k: 0.8, d: 0.6, h: '#5a9a90' },
     WORKL: { a: ['#c8ccd0'], e: ['#f8fcff'], k: 0.9, d: 0.4, h: '#9ab0d8' },
+    // weathering on the walls: block joints and their lit edges, chips, cracks, patched render, crust, moss, rust, soot,
+    // tags, peeling paint, more brick tones, missing bricks, and an old painted sign fading on the brick
+    CONCL: { a: ['#c6baa4', '#bcb09a'] }, CONCJ: { a: ['#8e826e'] }, CRACK: { a: ['#4a4238'] }, PATCHC: { a: ['#aa9e88', '#9e927c'] }, EFFLO: { a: ['#d8d4c6'] },
+    MOSS: { a: ['#5c6c3c', '#4e5e32'] }, RUSTST: { a: ['#8a5a3a', '#7a4e32'] }, SOOT: { a: ['#4c4640'] },
+    GRAF1: { a: ['#c04a78'] }, GRAF2: { a: ['#3a86c0'] }, GRAF3: { a: ['#e0b83c'] }, PEEL: { a: ['#c0b292'] },
+    BRICKR: { a: ['#a8644a'] }, BRICKO: { a: ['#7e4c38'] }, BRICKX: { a: ['#34241c'] }, GHOST: { a: ['#b8987a'] },
     BAR1: { a: ['#d4ac40'] }, BAR2: { a: ['#2a2622'] }, CONE: { a: ['#d46c2a'] }, CONEW: { a: ['#ece8e0'] }, HYDRANT: { a: ['#a83a2a'] },
     // far away
     SKYB: { a: ['#706c74'], haze: 0.72 }, SKYB2: { a: ['#625e66'], haze: 0.55 },
@@ -461,23 +467,87 @@
     if (pose === 'phone') { line(cx - sw * 0.42, sh + hr * 1.7, cx - hr * 0.5, hy + hr * 0.5, K.SIL, aw); px(cx - hr * 0.9, hy + hr * 0.2, K.PHONEL); }
   }
   function pickWin() { var r = rnd(); return r < 0.32 ? K.WINW : r < 0.46 ? K.WINC : r < 0.66 ? K.WIND : K.GLASS; }
+  // Each lit window has its own light: a warm bulb, a deep amber shade, a pale paper lamp, a candle, a red bulb,
+  // a neon strip, the cold tube of a kitchen, a green desk or aquarium lamp. Some have blinds.
+  function pickTone(m) {
+    var r = rnd();
+    if (m === K.WINC) return r < 0.6 ? 'cool' : r < 0.8 ? 'green' : 'neon';
+    return r < 0.42 ? 'warm' : r < 0.62 ? 'amber' : r < 0.77 ? 'pale' : r < 0.87 ? 'candle' : r < 0.93 ? 'red' : 'neon';
+  }
+  // People at home, drawn live (see drawPeeps): what they are doing, where, and their own pace
+  var WINPEEPS = [], HOME_KINDS = ['water', 'iron', 'stretch', 'read', 'type', 'cook', 'pace', 'dance', 'fold', 'paint', 'tea', 'guitar', 'pace', 'tea'];
+  function peep(o) { o.part = curPart; o.z = curZ; o.seed = rnd(); o.roam = rnd() < 0.5; WINPEEPS.push(o); return o; }
   function win(x, y, w, h, m, sill) {
     box(x - 2, y - 2, w + 4, h + 4, K.CONCD);
     box(x, y, w, h, m, y, h);
-    if ((m === K.WINW || m === K.WINC) && curPart !== 'far') LITWIN.push({ part: curPart, z: curZ, x: x, y: y, w: w, h: h, cold: m === K.WINC, s: rnd(), s2: rnd(), s3: rnd() });
-    if (m !== K.GLASS && m !== K.WIND && rnd() < 0.34) { var r = rnd(); person(x + 6 + rnd() * (w - 12), y + h, Math.min(h * 0.62, 26), r < 0.3 ? 'cup' : r < 0.55 ? 'phone' : r < 0.75 ? 'hair' : ''); }
+    var lit = (m === K.WINW || m === K.WINC) && curPart !== 'far', curtain = m !== K.GLASS && rnd() < 0.35, rec = null;
+    if (lit) { rec = { part: curPart, z: curZ, x: x, y: y, w: w, h: h, cold: m === K.WINC, s: rnd(), s2: rnd(), s3: rnd(), tone: pickTone(m), lamp: rnd(), blinds: rnd() < 0.22 }; LITWIN.push(rec); }
+    if (lit && rnd() < 0.62) peep({ win: rec, x: x, y: y, w: w, h: h, left: curtain ? x + Math.floor(w / 3) : x, kind: HOME_KINDS[Math.floor(rnd() * HOME_KINDS.length)], mull: true });
     box(x, y + Math.floor(h / 2), w, 1, K.METALD); box(x + Math.floor(w / 2), y, 1, h, K.METALD);
-    if (sill !== false) box(x - 3, y + h + 2, w + 6, 2, K.CONC2);
-    if (m !== K.GLASS && rnd() < 0.35) box(x + 1, y + 1, Math.floor(w / 3), h - 2, K.CURT, y, h);
+    if (sill !== false) {
+      box(x - 3, y + h + 2, w + 6, 2, K.CONC2); box(x - 3, y + h + 2, w + 6, 1, K.CONCL); box(x - 3, y + h + 4, w + 6, 1, K.CONCD);
+      for (var k = 0; k < w / 7; k++) { var sx = x - 2 + Math.floor(rnd() * (w + 4)), len = 5 + Math.floor(rnd() * 22); box(sx, y + h + 5, 1, len, K.STAIN, y + h + 5, len); if (rnd() < 0.4) box(sx + 1, y + h + 5, 1, Math.floor(len / 2), K.STAIN); }   // rain stains from the sill
+    }
+    if (curtain) box(x + 1, y + 1, Math.floor(w / 3), h - 2, K.CURT, y, h);
   }
-  function ac(x, y) { box(x, y, 20, 13, K.AC); ellipse(x + 8, y + 6.5, 4, 4, K.ACD); box(x + 15, y + 2, 3, 9, K.ACD); box(x + 2, y + 13, 2, 3, K.METALD); box(x + 16, y + 13, 2, 3, K.METALD); }
+  function ac(x, y) {
+    box(x, y, 20, 13, K.AC); ellipse(x + 8, y + 6.5, 4, 4, K.ACD); box(x + 15, y + 2, 3, 9, K.ACD); box(x + 2, y + 13, 2, 3, K.METALD); box(x + 16, y + 13, 2, 3, K.METALD);
+    box(x, y, 20, 1, K.CONCL); for (var gx = x + 3; gx < x + 13; gx += 2) px(gx, y + 6, K.ACD);
+    for (var k = 0; k < 4; k++) { var rx = x + 3 + Math.floor(rnd() * 14), len = 6 + Math.floor(rnd() * 16); box(rx, y + 16, 1, len, K.RUSTST, y + 16, len); }   // rust run down from its brackets
+  }
   function balcony(x, y, w, laundry) {
     box(x, y + 26, w, 3, K.CONC2); box(x, y + 29, w, 2, K.CONCD);
     if (laundry) { box(x + 4, y - 18, w - 8, 1, K.METALD); [[8, K.LAUN1, 14], [22, K.LAUN2, 18], [38, K.LAUN3, 12], [52, K.LAUN1, 16]].forEach(function (l) { if (l[0] < w - 10) box(x + l[0], y - 17, 10, l[2], l[1]); }); }
     for (var bx = x; bx < x + w; bx += 4) box(bx, y, 1, 26, K.LATT);
     box(x, y, w, 2, K.LATT); box(x, y + 13, w, 1, K.LATT);
   }
-  function slab(x, y, w) { box(x, y, w, 2, K.CONCD); }
+  function slab(x, y, w) { box(x, y, w, 2, K.CONCD); for (var mx = x; mx < x + w; mx++) if (rnd() < 0.08) px(mx, y - 1, K.MOSS); }   // (moss creeps along the ledges)
+  // ---------- Worn walls ----------
+  // Big cast blocks in staggered courses: each block shaded from its lit top to its foot, joints between them, the
+  // odd block a different pour or a patch, corners chipped back to the aggregate
+  function blocks(x0, y0, x1, y1, bw, bh, base) {
+    for (var y = y0, row = 0; y < y1; y += bh, row++) {
+      var off = (row % 2) * Math.floor(bw / 2), hh = Math.min(bh, y1 - y);
+      for (var x = x0 - off; x < x1; x += bw) {
+        var bx = Math.max(x, x0), be = Math.min(x + bw, x1), r = rnd();
+        if (be - bx < 2) continue;
+        box(bx, y + 1, be - bx, hh - 1, r < 0.16 ? K.CONC2 : r < 0.22 ? K.PATCHC : base, y - 2, hh + 6);
+        if (rnd() < 0.55) box(bx + 1, y + 1, be - bx - 2, 1, K.CONCL);
+        if (x > x0) box(x, y, 1, hh, K.CONCJ);
+        if (rnd() < 0.14) { var cx = rnd() < 0.5 ? bx + 1 : be - 4, cy = rnd() < 0.5 ? y + 1 : y + hh - 3; box(cx, cy, 3, 2, K.CONCD); px(cx + (cx === bx + 1 ? 0 : 2), cy, K.CONCL); px(cx + 1, cy + 1, K.CONC2); }
+      }
+      box(x0, y, x1 - x0, 1, K.CONCJ);
+    }
+  }
+  // Hairline cracks wandering down from a corner or a ledge, lit along one edge
+  function cracks(x0, y0, x1, y1, n) {
+    for (var k = 0; k < n; k++) {
+      var x = x0 + Math.floor(rnd() * (x1 - x0)), y = y0 + Math.floor(rnd() * (y1 - y0)), len = 8 + Math.floor(rnd() * 26);
+      for (var s = 0; s < len; s++) { px(x, y, K.CRACK); px(x + 1, y, K.CONCL); var r = rnd(); x += r < 0.3 ? -1 : r < 0.6 ? 1 : 0; y++; if (rnd() < 0.08) { px(x - 1, y, K.CRACK); px(x - 2, y + 1, K.CRACK); } }
+    }
+  }
+  // Where the render has fallen away: the brick underneath, a broken edge round it
+  function bareBrick(cx, cy, rw, rh) {
+    for (var y = Math.floor(cy - rh); y <= cy + rh; y++) {
+      var dy = (y - cy) / rh, half = rw * Math.sqrt(Math.max(0, 1 - dy * dy)) * (0.75 + rnd() * 0.3);
+      for (var x = Math.round(cx - half); x <= Math.round(cx + half); x++) {
+        var brick = ((y % 4) === 3) || (((x + (Math.floor(y / 4) % 2) * 4) % 8) === 0);
+        px(x, y, brick ? K.BRICKD : rnd() < 0.2 ? K.BRICKHI : K.BRICK);
+      }
+      px(Math.round(cx - half) - 1, y, K.CONCD); px(Math.round(cx + half) + 1, y, K.CONCD); px(Math.round(cx + half) + 2, y, K.CONCL);
+    }
+  }
+  // Soot along a roofline, thinning as it goes down; white crust (salt) along a damp foot of wall
+  function soot(x0, x1, y, depth) { for (var d = 0; d < depth; d++) for (var x = x0; x < x1; x++) if (rnd() < 0.5 * (1 - d / depth)) px(x, y + d, K.SOOT); }
+  function crust(x0, x1, y, depth) { for (var d = 0; d < depth; d++) for (var x = x0; x < x1; x++) if (rnd() < 0.35 * (1 - d / depth)) px(x, y - d, K.EFFLO); }
+  // A wordless tag: a looping 2 px line with a darker outline under it
+  function tag(x, y, w, m) {
+    var cx = x, cy = y, pts = [];
+    for (var s = 0; s < w; s++) { pts.push([cx, cy]); cx += 1; cy += Math.round(Math.sin(s * 0.7 + rnd()) * 1.6); }
+    pts.forEach(function (p) { box(p[0], p[1] + 1, 2, 2, K.DARK); });
+    pts.forEach(function (p) { box(p[0], p[1], 2, 2, m); });
+    for (var q = 0; q < 3; q++) px(x + rnd() * w, y + 4 + rnd() * 3, m);   // drips
+  }
   function stains(x0, x1, y0, y1) { for (var k = 0; k < (x1 - x0) / 6; k++) { var sx = x0 + Math.floor(rnd() * (x1 - x0)), len = 6 + Math.floor(rnd() * 30), sy = y0 + Math.floor(rnd() * (y1 - y0)); box(sx, sy, 1, len, K.STAIN, sy, len); } }
   function lantern(x, cy, rx, ry, top) { box(x, top, 1, cy - ry - top, K.LANTD); ellipse(x, cy, rx, ry, K.LANT, 0.5); box(x - rx, cy - 1, rx * 2, 1, K.LANTD); box(x - rx + 3, cy - ry, rx * 2 - 6, 2, K.LANTD); box(x - rx + 3, cy + ry - 1, rx * 2 - 6, 2, K.LANTD); box(x, cy + ry + 1, 1, 4, K.LANT); }
 
@@ -524,19 +594,21 @@
     seed = 101;
     box(-M, 160, 196 + M, 370, K.CONC, 160, 400); box(-M, 152, 196 + M, 8, K.CONC2); box(-M, 152, 196 + M, 1, K.CONCD);
     speckle(-M, 160, 196, 416, 0.015);
+    blocks(-M, 160, 196, 416, 26, 13, K.CONC); soot(-M, 196, 160, 6);
     box(18, 120, 44, 30, K.TANK, 120, 30); box(22, 150, 3, 4, K.METALD); box(54, 150, 3, 4, K.METALD); box(16, 118, 48, 3, K.METAL);
     line(160, 96, 160, 152, K.METAL); line(150, 108, 170, 108, K.METAL); line(152, 120, 168, 120, K.METAL);
     [160, 246, 332].forEach(function (fy, f) {
       slab(-M, fy + 84, 196 + M);
       win(-56, fy + 16, 30, 42, pickWin());
-      box(-12, fy + 18, 46, 62, pickWin(), fy + 18, 62); box(40, fy + 24, 44, 40, pickWin(), fy + 24, 40);
-      if (rnd() < 0.5) person(52, fy + 64, 26, rnd() < 0.5 ? 'cup' : '');
+      var bigW = pickWin(), smallW = pickWin();
+      box(-12, fy + 18, 46, 62, bigW, fy + 18, 62); box(40, fy + 24, 44, 40, smallW, fy + 24, 40);
+      if (rnd() < 0.5 && (smallW === K.WINW || smallW === K.WINC)) peep({ win: null, x: 40, y: fy + 24, w: 44, h: 40, left: 40, kind: HOME_KINDS[Math.floor(rnd() * HOME_KINDS.length)] });
       balcony(-16, fy + 54, 106, f !== 1);
       if (f < 2) { win(112, fy + 16, 72, 42, pickWin()); ac(140, fy + 64); }
     });
     box(108, 338, 80, 56, K.POSTER, 338, 56); frame(106, 336, 84, 60, K.METALD, 2);
     sign('FOLLOW', 148, 346, { font: F3, scale: 2, fill: K.POSTERD }); sign('LINKEDIN', 148, 362, { font: F3, scale: 2, fill: K.POSTERD }); box(118, 380, 60, 2, K.POSTERD);
-    stains(-M, 196, 170, 410);
+    stains(-M, 196, 170, 410); cracks(-M, 196, 170, 406, 6); bareBrick(98, 300, 7, 9); bareBrick(-30, 236, 5, 4);
     // FEED
     box(-M, 416, 196 + M, 22, K.BOXG, 416, 22); box(-M, 416, 196 + M, 1, K.METALD); box(-M, 437, 196 + M, 1, K.METALD);
     sign('FEED', 60, 420, { font: FB, scale: 2, fill: K.LETW, shade: K.BOXGD });
@@ -544,7 +616,7 @@
     box(-M, 438, 196 + M, 92, K.CONC2);
     box(-4, 444, 190, 84, K.SHOPF, 444, 84);
     [462, 484, 506].forEach(function (sy) { box(0, sy, 182, 2, K.SHELF); for (var x = 2; x < 180; x += 4) if (rnd() < 0.8) box(x, sy - 6, 3, 6, rnd() < 0.4 ? K.SHELFR : rnd() < 0.5 ? K.SHELFY : K.SHELFB); });
-    person(150, 528, 34, 'phone');
+    peep({ win: null, shop: true, x: -4, y: 444, w: 190, h: 84, left: 110, kind: 'browse', ah: 40 });   // someone filling the shelves
     frame(-4, 444, 190, 84, K.METAL, 2); box(60, 444, 2, 84, K.METAL); box(124, 444, 2, 84, K.METAL);
   }
 
@@ -553,6 +625,8 @@
     seed = 202;
     box(196, 328, 224, 202, K.WOOD, 328, 202);
     woodGrain(200, 330, 420, 418, 8);
+    for (var pk = 0; pk < 34; pk++) { var ppx = 200 + Math.floor(rnd() * 218), ppy = 334 + Math.floor(rnd() * 80); box(ppx, ppy, 2 + Math.floor(rnd() * 4), 1 + Math.floor(rnd() * 2), K.PEEL); if (rnd() < 0.5) px(ppx, ppy + 2, K.WOODD); }   // old paint flaking off
+    for (var nx = 204; nx < 418; nx += 16) { px(nx, 340, K.METALD); px(nx, 396, K.METALD); }   // nail heads
     poly([[186, 330], [430, 330], [418, 300], [198, 300]], K.ROOF, 0.4);
     for (var tx = 200; tx < 418; tx += 5) box(tx, 302, 1, 26, K.ROOFD);
     for (var ty = 304; ty < 328; ty += 6) for (var tx2 = 201; tx2 < 418; tx2 += 5) px(tx2, ty, K.ROOFHI);
@@ -560,7 +634,7 @@
     box(250, 270, 10, 30, K.METAL); box(248, 268, 14, 3, K.METALD);       // the stove pipe that smokes
     [[212, 344], [318, 344]].forEach(function (p, i) {
       box(p[0] - 3, p[1] - 3, 84, 58, K.WOODD); box(p[0], p[1], 78, 52, K.WINW, p[1], 52);
-      if (i === 0) person(p[0] + 40, p[1] + 52, 30, 'cup');            // a shadow on the paper screen
+      if (i === 0) peep({ win: null, screen: true, x: p[0], y: p[1], w: 78, h: 52, left: p[0], kind: 'tea', ah: 44 });   // a shadow on the paper screen
       for (var lx = p[0] + 6; lx < p[0] + 78; lx += 8) box(lx, p[1], 1, 52, K.WOODD); box(p[0], p[1] + 26, 78, 1, K.WOODD); box(p[0] - 4, p[1] + 54, 86, 3, K.WOODL);
     });
     box(208, 402, 200, 14, K.BOXW); centred('BOOKS · PAPERS', 308, 405, K.LETD, 2);
@@ -571,7 +645,7 @@
       box(208, sy, 116, 2, K.WOODD);
       for (var bx = 209; bx < 322;) { var bw = 2 + Math.floor(rnd() * 3), bh = 9 + Math.floor(rnd() * 6), r = rnd(); if (rnd() < 0.88) box(bx, sy - bh, bw, bh, r < 0.25 ? K.BOOK1 : r < 0.5 ? K.BOOK2 : r < 0.75 ? K.BOOK3 : K.BOOK4); bx += bw + (rnd() < 0.2 ? 2 : 0); }
     });
-    person(300, 518, 36, 'hair'); box(296, 440, 2, 8, K.INTDK); box(291, 448, 12, 3, K.LAMPS);
+    peep({ win: null, shop: true, x: 206, y: 438, w: 120, h: 80, left: 270, kind: 'read', ah: 44 }); box(296, 440, 2, 8, K.INTDK); box(291, 448, 12, 3, K.LAMPS);   // a reader by the lamp
     frame(204, 436, 124, 84, K.WOODD, 2); box(266, 438, 1, 80, K.WOODD);
     box(336, 436, 48, 94, K.DOORGL, 436, 94); frame(334, 434, 52, 96, K.WOODD, 2); box(358, 436, 2, 94, K.WOODD); box(338, 470, 18, 2, K.WOODL); box(362, 470, 18, 2, K.WOODL);
     box(206, 518, 120, 12, K.DARK); ellipse(396, 520, 9, 8, K.PLANT); box(390, 524, 12, 6, K.METALD);
@@ -587,11 +661,14 @@
     seed = 303;
     box(420, 246, 120, 284, K.CONC2, 246, 300); box(416, 240, 128, 7, K.CONCD);
     speckle(420, 246, 540, 416, 0.015);
+    blocks(420, 246, 540, 416, 20, 10, K.CONC2); soot(420, 540, 246, 5);
     win(436, 262, 34, 46, pickWin()); win(490, 262, 34, 46, pickWin());
     win(436, 348, 34, 46, pickWin()); box(490, 348, 34, 28, pickWin()); balcony(482, 376, 54, false);
     slab(420, 330, 120); slab(420, 416, 120);
     box(530, 250, 4, 280, K.METAL);
     box(486, 440, 40, 90, K.WIND, 440, 90); frame(484, 438, 44, 92, K.METALD, 2); box(505, 440, 1, 90, K.METALD);
+    cracks(420, 250, 540, 410, 3); bareBrick(468, 322, 6, 5);
+    tag(424, 470, 24, K.GRAF1); tag(440, 500, 18, K.GRAF2); crust(420, 484, 528, 7);   // tags and salt low on the wall
     // (the cat on this roof is drawn live: see drawCat)
 
   }
@@ -647,6 +724,7 @@
     seed = 505;
     box(800, 160, 190, 370, K.CONC, 160, 400); box(796, 152, 198, 8, K.CONC2); box(796, 152, 198, 1, K.CONCD);
     speckle(800, 160, 990, 412, 0.015);
+    blocks(800, 160, 990, 412, 24, 12, K.CONC); soot(800, 990, 160, 6);
     box(940, 118, 36, 34, K.TANK, 118, 34); box(938, 116, 40, 3, K.METAL);
     box(962, 120, 8, 32, K.METAL);                                            // a vent that smokes
     ellipse(836, 144, 8, 6, K.AC); box(836, 146, 2, 7, K.METALD); line(836, 144, 843, 139, K.METALD);   // a satellite dish
@@ -658,7 +736,7 @@
       if (f === 1) balcony(806, fy + 40, 104, true);
       if (f !== 1) ac(822 + f * 40, fy + 66);
     });
-    stains(800, 990, 170, 400);
+    stains(800, 990, 170, 400); cracks(800, 990, 170, 404, 5); bareBrick(918, 234, 7, 5); bareBrick(860, 400, 5, 4);
     box(800, 412, 190, 30, K.BOXB, 412, 30); frame(800, 412, 190, 30, K.METALD, 2);
     sign('DATA', 868, 416, { font: FB, scale: 3, fill: K.LETD, shade: K.BOXBD });
     centred('DUBAI', 950, 419, K.LETD, 1); centred('NUMBERS', 950, 427, K.LETD, 1);
@@ -677,7 +755,18 @@
   function paintF() {
     seed = 606;
     box(990, 246, 180, 284, K.BRICK, 246, 300);
-    for (var by = 248; by < 412; by += 6) { box(990, by + 5, 180, 1, K.BRICKD); var off = ((by / 6) % 2) * 7; for (var bx2 = 990 + off; bx2 < 1170; bx2 += 14) { box(bx2, by, 1, 5, K.BRICKD); if (rnd() < 0.12) box(bx2 + 1, by, 12, 5, K.BRICKHI); } }
+    // bricks of four fired tones, mortar between, chips, and here and there one gone
+    for (var by = 248; by < 412; by += 6) {
+      box(990, by + 5, 180, 1, K.BRICKD); var off = ((by / 6) % 2) * 7;
+      for (var bx2 = 990 + off; bx2 < 1170; bx2 += 14) {
+        box(bx2, by, 1, 5, K.BRICKD); var br = rnd();
+        if (br < 0.1) box(bx2 + 1, by, 12, 5, K.BRICKHI); else if (br < 0.22) box(bx2 + 1, by, 12, 5, K.BRICKR); else if (br < 0.33) box(bx2 + 1, by, 12, 5, K.BRICKO);
+        else if (br < 0.345) { box(bx2 + 1, by, 12, 5, K.BRICKX); box(bx2 + 1, by, 12, 1, K.BRICKD); px(bx2 + 12, by + 4, K.BRICKHI); }
+        if (br >= 0.345) { box(bx2 + 1, by, 12, 1, br < 0.6 ? K.BRICKHI : K.BRICK); if (rnd() < 0.35) px(bx2 + 2 + rnd() * 10, by + 1 + rnd() * 3, K.BRICKD); }
+      }
+    }
+    for (var gy = 328; gy < 346; gy++) for (var gx = 1000; gx < 1160; gx++) if ((gx + gy) % 2 === 0 && rnd() < (gy < 331 || gy > 342 ? 0.55 : 0.25)) px(gx, gy, K.GHOST);   // an old painted sign, nearly gone
+    soot(990, 1170, 247, 6); crust(990, 1170, 410, 6);
     box(986, 240, 188, 7, K.CONCD);
     box(996, 254, 168, 24, K.TICKBG); frame(996, 254, 168, 24, K.METAL);
     for (var tx2 = 1000; tx2 < 1162; tx2 += 4) { px(tx2, 257, K.LEDR); px(tx2, 275, K.LEDR); }
@@ -692,7 +781,7 @@
     box(1000, 500, 160, 10, K.COUNTER2); box(1000, 500, 160, 1, K.METALHI);
     for (var x = 1006; x < 1152; x += 18) { box(x + 5, 490, 2, 10, K.METALD); box(x, 474, 12, 17, K.PHONEC); box(x + 2, 476, 8, 12, K.PHONEL, 476, 12); }
     box(1004, 452, 22, 16, K.BOXR); box(1134, 452, 22, 16, K.BOXY);
-    person(1120, 528, 34, '');
+    peep({ win: null, shop: true, x: 996, y: 448, w: 168, h: 80, left: 1090, kind: 'clerk', ah: 44 });   // the assistant behind the counter
     frame(996, 448, 168, 80, K.METAL, 2);
   }
 
@@ -701,10 +790,12 @@
     seed = 707;
     box(1170, 74, 134 + M, 456, K.CONC2, 74, 480); box(1166, 66, 142 + M, 8, K.CONCD);
     speckle(1170, 74, W + M, 418, 0.015);
+    blocks(1170, 74, W + M, 418, 22, 11, K.CONC2); soot(1170, W + M, 74, 7);
     [74, 160, 246, 332].forEach(function (fy) { slab(1170, fy + 84, 134 + M); win(1214, fy + 20, 34, 44, pickWin()); win(1262, fy + 20, 34, 44, pickWin()); win(1310, fy + 20, 30, 44, pickWin()); });
     box(1170, 418, 134 + M, 112, K.CONCD); box(1180, 430, 120, 100, K.SHUT, 430, 100); for (var sy2 = 432; sy2 < 520; sy2 += 4) box(1180, sy2, 120, 1, K.METAL);
     box(1180, 520, 120, 10, K.SHOPW);
-    stains(1170, W + M, 90, 410);
+    tag(1194, 468, 30, K.GRAF2); tag(1236, 488, 26, K.GRAF1); tag(1262, 456, 20, K.GRAF3);   // tags on the shutter
+    stains(1170, W + M, 90, 410); cracks(1170, W + M, 90, 410, 5); bareBrick(1300, 300, 8, 6);
     [74, 160, 246].forEach(function (fy) {                                     // a fire escape: landings, rails, and stairs between
       box(1206, fy + 66, 96, 2, K.METALD); box(1206, fy + 56, 96, 1, K.METALD);
       for (var rx = 1206; rx <= 1302; rx += 6) box(rx, fy + 56, 1, 10, K.METALD);
@@ -727,7 +818,7 @@
     sign('NEWSLETTER', 478, 413, { font: F5, scale: 1, fill: K.LETW, shade: K.LETD });
     box(440, 424, 76, 106, K.KIOSK, 424, 106); frame(440, 424, 76, 106, K.METALHI);
     for (var r = 0; r < 3; r++) for (var c = 0; c < 7; c++) { var mm = rnd(); box(444 + c * 10, 430 + r * 14, 8, 11, mm < 0.33 ? K.MAG1 : mm < 0.66 ? K.MAG2 : K.MAG3); box(445 + c * 10, 432 + r * 14, 5, 1, K.PAPER); }
-    box(446, 474, 64, 22, K.SHOPW, 474, 22); person(478, 496, 18, '');
+    box(446, 474, 64, 22, K.SHOPW, 474, 22); peep({ win: null, shop: true, x: 446, y: 474, w: 64, h: 22, left: 466, kind: 'vendor', ah: 30 });   // the newsagent
     box(440, 496, 76, 4, K.WOODL); box(446, 500, 22, 8, K.PAPER); for (var ly = 502; ly < 508; ly += 2) box(447, ly, 20, 1, K.LETD);
     box(474, 502, 38, 15, K.BOARD); centred('JOIN FREE', 493, 507, K.LETW, 1);
     box(440, 522, 76, 8, K.KIOSKD);
@@ -1551,9 +1642,10 @@
     drawDrone(ctx, t, false);
     drawStreet(t);
     if (state.lights > 0.01) { ctx.save(); ctx.globalCompositeOperation = 'screen'; drawHalos(ctx); ctx.restore(); }   // (before the footpath things, which stand in front)
+    drawHomes(ctx, t);
     drawBoards(ctx);                                    // the billboard, the specials and the ticker, in pixel letters
     drawSmoke(ctx, 'mid');
-    drawGround(ctx); drawPuddles(ctx); drawPart(ctx, PROPS); if (PROPS_BACK) drawPart(ctx, PROPS_BACK); drawReflections(t); drawWetTrails(ctx, t);
+    drawGround(ctx); drawPuddles(ctx); drawPart(ctx, PROPS); drawPeeps(ctx, 'props', t); if (PROPS_BACK) drawPart(ctx, PROPS_BACK); drawReflections(t); drawWetTrails(ctx, t);
     drawPart(ctx, PART_SIGN);                            // the sign hangs in front of the newsstand
     drawXmasStreet(ctx, t); drawCat(ctx, t); drawPigeons(ctx, t, true); drawDrips(ctx);
     drawLiveBits(ctx, t, false); drawReactions(ctx, t); drawGroundLight(ctx);
@@ -1601,6 +1693,7 @@
       gtx.save(); groundTransform(gtx); lights(gtx, GROUNDP, 0.8, function (c) { gtx.drawImage(c, 0, 0); }); gtx.restore();
       partLights(gtx, PROPS, 0.9); partLights(gtx, SUBWAY, 1); partLights(gtx, NEAR, 1);
       if (PROPS_BACK) partLights(gtx, PROPS_BACK, 0.9); if (PROPS_FRONT) partLights(gtx, PROPS_FRONT, 0.9);
+      smokerGlow(gtx, state.t);
       gtx.globalAlpha = state.lights;
       drawMarquee(gtx, t, true); drawLiveBits(gtx, t, true); drawDrone(gtx, t, true);
       gtx.globalAlpha = 1;
@@ -1624,8 +1717,9 @@
   // Windows keep their own hours, on the visitor's clock: they come on one by one as it gets dark, go dark as people
   // go to bed (a few night owls stay up), early risers switch on before dawn, and now and then someone goes into
   // another room. One flat has a TV on in the evening.
-  var TVWIN = null;
+  var TVWIN;                                            // (chosen when the parts are built; not reset here)
   function windowOn(w, h) {
+    if (w.smoker) return false;                         // the smoker keeps the light off
     var hh = h < 12 ? h + 24 : h, bed = w.s < 0.12 ? 99 : 21.5 + w.s2 * 5, wake = 5 + w.s3 * 1.6;
     var on = hh < bed || (h >= wake && h < 10);
     var slot = Math.floor(Date.now() / 40000), r = Math.sin((slot + w.s * 977) * 12.9898) * 43758.5453; r -= Math.floor(r);
@@ -1638,21 +1732,112 @@
     if (!winByPart) { winByPart = {}; LITWIN.forEach(function (w) { (winByPart[w.part] = winByPart[w.part] || []).push(w); }); }
     LITWIN.forEach(function (w) { w.on = windowOn(w, state.hour); });
   }
+  // Each lit window's own light: mul tints the room, glow is the lamp's pool in one corner
+  var TONES = { warm: { glow: '255,214,150', k: 0 }, cool: { glow: '220,240,255', k: 0 }, amber: { mul: '#ffa860', glow: '255,170,90', k: 0.5 },
+    pale: { mul: '#fff2d6', glow: '255,246,224', k: 0.3 }, candle: { mul: '#ff9a48', glow: '255,150,60', k: 0.62, flicker: true }, red: { mul: '#ff6a5a', glow: '255,80,70', k: 0.55 },
+    neon: { mul: '#c87aff', glow: '255,90,210', k: 0.55 }, green: { mul: '#8affc0', glow: '110,230,160', k: 0.45 } };
   function drawWindowHours(g, partName, t) {
+    var a = state.lights;
+    windowsNow(); var list = winByPart[partName];
+    if (list && a >= 0.03) {
+      var off = css(litColor('GLASS'));
+      list.forEach(function (w) {
+        var x = w.x + offset(w.z);
+        if (!w.on) {
+          g.globalAlpha = Math.min(1, a * 1.15); g.fillStyle = off; g.fillRect(x, w.y, w.w, w.h);
+          g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x + 2, w.y + 2, Math.max(1, w.w - 10), 1); g.fillRect(x + 2, w.y + 3, 1, Math.max(1, w.h - 12));
+          g.globalAlpha = 1;
+        } else if (w === TVWIN && (state.hour >= 19 || state.hour < 1)) {
+          var fl = 0.16 + 0.1 * Math.sin(t * 13.1) * Math.sin(t * 3.7) + (Math.sin(t * 0.9) > 0.7 ? 0.08 : 0);
+          g.save(); g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(110,150,255,' + (fl * a).toFixed(3) + ')'; g.fillRect(x, w.y, w.w, w.h); g.restore();
+        } else {
+          var T = TONES[w.tone] || TONES.warm, fk = T.flicker ? 0.8 + 0.2 * Math.sin(t * 9.3 + w.s * 40) * Math.sin(t * 2.3) : 1;
+          g.save();
+          if (T.mul) { g.globalCompositeOperation = 'multiply'; g.globalAlpha = a * T.k * fk; g.fillStyle = T.mul; g.fillRect(x, w.y, w.w, w.h); }
+          // the lamp's pool of light, in one top corner or low down, so no two windows are lit the same way
+          var lx = x + (w.lamp < 0.4 ? w.w * 0.2 : w.lamp < 0.8 ? w.w * 0.8 : w.w * 0.5), ly = w.y + (w.lamp < 0.8 ? w.h * 0.25 : w.h * 0.85), rr = w.w * 0.75;
+          var gr = g.createRadialGradient(lx, ly, 0, lx, ly, rr); gr.addColorStop(0, 'rgba(' + T.glow + ',' + (0.32 * a * fk).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + T.glow + ',0)');
+          g.globalCompositeOperation = 'screen'; g.globalAlpha = 1; g.fillStyle = gr; g.fillRect(x, w.y, w.w, w.h);
+          g.restore();
+        }
+      });
+    }
+  }
+  // The people at home, and the blinds in front of them: drawn after the glow, so they stay dark against their light
+  // (the glow would otherwise light them up). The newsagent goes with the footpath things (see renderScene).
+  function drawHomes(g, t) {
+    STREET.forEach(function (b) { drawPeeps(g, b.p.name, t); });
     var a = state.lights; if (a < 0.03) return;
-    windowsNow(); var list = winByPart[partName]; if (!list) return;
-    var off = css(litColor('GLASS'));
-    list.forEach(function (w) {
-      var x = w.x + offset(w.z);
-      if (!w.on) {
-        g.globalAlpha = Math.min(1, a * 1.15); g.fillStyle = off; g.fillRect(x, w.y, w.w, w.h);
-        g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x + 2, w.y + 2, Math.max(1, w.w - 10), 1); g.fillRect(x + 2, w.y + 3, 1, Math.max(1, w.h - 12));
-        g.globalAlpha = 1;
-      } else if (w === TVWIN && (state.hour >= 19 || state.hour < 1)) {
-        var fl = 0.16 + 0.1 * Math.sin(t * 13.1) * Math.sin(t * 3.7) + (Math.sin(t * 0.9) > 0.7 ? 0.08 : 0);
-        g.save(); g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(110,150,255,' + (fl * a).toFixed(3) + ')'; g.fillRect(x, w.y, w.w, w.h); g.restore();
-      }
+    LITWIN.forEach(function (w) {
+      if (!w.blinds || !w.on) return;
+      var x = w.x + offset(w.z); g.fillStyle = 'rgba(24,16,14,' + (0.42 * a).toFixed(3) + ')';
+      for (var by = w.y + 1; by < w.y + w.h; by += 3) g.fillRect(x, by, w.w, 1);
     });
+  }
+  // People at home and in the shops: each has something to do, wanders a little, now and then steps out of the
+  // room and comes back. Seen as dark shapes against their light; faint by day, gone when their room is dark.
+  var peepsByPart = null, SMOKER = null;
+  function drawPeeps(g, partName, t) {
+    if (!crowd || !crowd.roomActor) return;
+    if (!peepsByPart) {
+      // the smoker's window: on the middle floor of E if it can be, otherwise any flat's window (not the TV one)
+      var cands = LITWIN.filter(function (w) { return w !== TVWIN && (w.part === 'E' || w.part === 'A' || w.part === 'G'); });
+      var sw = cands.filter(function (w) { return w.part === 'E' && w.y > 240 && w.y < 300; })[0] || cands[0];
+      if (sw) {
+        sw.smoker = true; WINPEEPS = WINPEEPS.filter(function (p) { return p.win !== sw; });
+        SMOKER = { smoker: true, part: sw.part, z: sw.z, x: sw.x, y: sw.y, w: sw.w, h: sw.h, seed: 0.37, win: sw }; WINPEEPS.push(SMOKER);
+      }
+      peepsByPart = {}; WINPEEPS.forEach(function (p) { (peepsByPart[p.part] = peepsByPart[p.part] || []).push(p); });
+    }
+    var list = peepsByPart[partName]; if (!list) return;
+    var a = state.lights, mull = css(litColor('METALD'));
+    list.forEach(function (p) {
+      var ox = offset(p.z), x = p.x + ox;
+      if (p.smoker) { drawSmoker(g, p, x, t, a); return; }
+      var lit = p.shop || p.screen || !p.win || p.win.on;
+      if (!lit && a > 0.25) return;                       // a dark room at night: nobody to see
+      var per = 50 + p.seed * 70, ph = ((t + p.seed * 300) / per) % 1;
+      if (!p.shop && ph > 0.84) return;                   // stepped out of the room for a while
+      var edge = p.shop ? 0 : ph < 0.04 ? 1 - ph / 0.04 : ph > 0.8 ? (ph - 0.8) / 0.04 : 0;   // walking in or out
+      var left = p.left + ox, span = x + p.w - left;
+      var cx = left + span * (0.28 + 0.44 * p.seed) + (p.roam && !p.shop ? Math.sin(t * 0.22 + p.seed * 9) * span * 0.22 : 0) + edge * span * 0.9;
+      var kind = edge > 0 ? 'pace' : p.kind, f = Math.floor(t * (2 + p.seed * 2) + p.seed * 10) % 4;
+      var ah = p.ah || Math.min(44, p.h * 1.05), sit = /^(read|type|guitar)$/.test(kind), by = p.y + p.h + (sit ? 2 : p.shop ? ah * 0.18 : ah * 0.3);
+      var dark = lit && a > 0.2 ? [26, 18, 16] : mix([40, 34, 30], [70, 72, 76], state.day);
+      g.save(); g.beginPath(); g.rect(x, p.y, p.w, p.h); g.clip();
+      g.globalAlpha = p.screen ? 0.55 : lit && a > 0.2 ? 0.9 : 0.35;
+      crowd.roomActor(g, kind, f, Math.round(cx), Math.round(by), ah, css(dark), a > 0.3 ? '#9ad4ff' : '#c8d8e0');
+      g.restore();
+      if (p.mull) { g.fillStyle = mull; g.fillRect(x, p.y + Math.floor(p.h / 2), p.w, 1); g.fillRect(x + Math.floor(p.w / 2), p.y, 1, p.h); }
+    });
+  }
+  // A man at a dark window, the sash pushed up, leaning on the sill with a cigarette. Every few seconds he draws on
+  // it (the tip flares), then rests his hand on the sill again; smoke curls out and up.
+  function smokerPose(p, x, t) {
+    var sill = p.y + p.h, cx = x + Math.round(p.w * 0.55), c = (t + p.seed * 5) % 7, up = c < 1.4;
+    return { sill: sill, cx: cx, up: up, ember: up ? [cx + 5, sill - 16] : [cx + 11, sill - 4] };
+  }
+  function drawSmoker(g, p, x, t, a) {
+    var s = smokerPose(p, x, t), sill = s.sill, cx = s.cx, night = a > 0.2;
+    g.fillStyle = 'rgba(6,4,8,' + (night ? 0.55 : 0.3) + ')'; g.fillRect(x + 1, p.y + Math.floor(p.h / 2) + 1, p.w - 2, Math.floor(p.h / 2) - 1);   // the open lower half
+    g.fillStyle = night ? 'rgba(50,40,46,0.96)' : 'rgba(40,34,30,0.6)';   // (a little street light on him, so he reads against the dark room)
+    for (var yy = -4; yy <= 4; yy++) { var hw = Math.round(Math.sqrt(16 - yy * yy + 2)); g.fillRect(cx - hw, sill - 19 + yy, hw * 2 + 1, 1); }   // head
+    g.fillRect(cx - 2, sill - 15, 4, 3); g.fillRect(cx - 7, sill - 12, 14, 12); g.fillRect(cx - 10, sill - 3, 20, 3);   // neck, shoulders, arms on the sill
+    if (s.up) { g.fillRect(cx + 5, sill - 12, 3, 8); g.fillRect(cx + 3, sill - 17, 3, 6); }   // forearm raised to the mouth
+    else { g.fillRect(cx + 8, sill - 5, 4, 2); g.fillStyle = 'rgba(232,226,214,' + (night ? 0.7 : 0.9) + ')'; g.fillRect(cx + 9, sill - 4, 2, 1); }
+    g.fillStyle = s.up ? '#ffb24a' : '#d0602a'; g.fillRect(s.ember[0], s.ember[1], s.up ? 2 : 1, s.up ? 2 : 1);
+    if (s.up) { g.fillStyle = '#fff0c4'; g.fillRect(s.ember[0], s.ember[1], 1, 1); if (night) { g.fillStyle = 'rgba(255,150,70,0.5)'; g.fillRect(cx + 2, sill - 20, 2, 4); g.fillRect(cx + 3, sill - 16, 2, 1); } }   // the glow on his face
+    g.fillStyle = night ? 'rgba(120,96,104,0.5)' : 'rgba(0,0,0,0)'; g.fillRect(cx - 4, sill - 23, 6, 1); g.fillRect(cx - 7, sill - 12, 1, 9);   // a faint rim of light
+    for (var k = 0; k < 7; k++) {                       // smoke, drifting out and up with the wind
+      var age = ((t * 0.32 + k / 7) % 1), sz = Math.round(1 + age * 4), al = (1 - age) * (night ? 0.4 : 0.26);
+      var sx = cx + 11 + age * 12 + Math.sin(t * 0.8 + k * 2.1) * 3 * age, sy = sill - 6 - age * 44;
+      g.fillStyle = 'rgba(206,200,192,' + al.toFixed(3) + ')'; g.fillRect(Math.round(sx - sz / 2), Math.round(sy), sz, Math.max(1, sz - 1));
+    }
+  }
+  function smokerGlow(g, t) {                           // the cigarette tip, in the glow layer
+    if (!SMOKER || state.lights < 0.1) return;
+    var p = SMOKER, s = smokerPose(p, p.x + offset(p.z), t);
+    g.fillStyle = s.up ? '#ff9a3a' : '#a8401a'; g.fillRect(s.ember[0] - 1, s.ember[1] - 1, s.up ? 4 : 3, s.up ? 4 : 3);
   }
   function clearDarkWindows(g) { windowsNow(); LITWIN.forEach(function (w) { if (!w.on) g.clearRect(w.x + offset(w.z) - 2, w.y - 2, w.w + 4, w.h + 4); }); }
 
