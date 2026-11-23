@@ -121,18 +121,11 @@ window.StreetPeople = function (D) {
     Object.keys(window.StreetWalk.CAST).forEach(function (k) {
       var def = window.StreetWalk.CAST[k], mk = window.StreetWalk.make(def, Math.round(35 * S * def.s), false);
       var pace = mk.cycle / S / (mk.n * (def.ms || 65) / 1000);
-      CAST['v_' + k] = { v2: def, scale: def.s, speed: [pace * 0.94, pace * 1.04], sex: def.bust ? 'f' : 'm' };
+      // glide: on a skateboard, so never stops to stand about (a standing pose would lose the board)
+      CAST['v_' + k] = { v2: def, scale: def.s, speed: [pace * 0.94, pace * 1.04], sex: def.bust ? 'f' : 'm', glide: !!def.skate };
       WALKERS.push('v_' + k);
     });
   }
-  // Ready-made walkers (street-folk.js): drawn sheets, shown at their own size. They have no standing poses, so
-  // they never stop; a walk plays one cycle in about 1.1 to 1.25 seconds, the skateboarder glides by faster.
-  if (window.StreetFolk && !P.oldCast) window.StreetFolk.forEach(function (fk, i) {
-    if (!fk.img) { fk.img = new Image(); fk.img.src = fk.src; }
-    var u = fk.stride / S;
-    CAST['f_' + i] = { png: fk, scale: 1, speed: fk.kind === 'skate' ? [38, 50] : [u / 1.25, u / 1.1], sex: '' };
-    WALKERS.push('f_' + i);
-  });
 
   // ---------- Small helpers ----------
   var rgbCache = {};
@@ -840,22 +833,6 @@ window.StreetPeople = function (D) {
     var v2 = CAST[id] && CAST[id].v2, moving = pose === 'walk' || pose === 'run' || pose === 'shield';
     if (v2) { pose = moving ? 'walk' : 'stand'; umb = false; }
     var key = id + '|' + s + '|' + pose + '|' + (umb ? 1 : 0), sh = sheets[key];
-    var fk = CAST[id] && CAST[id].png;
-    if (fk) {                                             // a ready-made sheet: one size, walking only, no outline added
-      key = id + '|png'; sh = sheets[key];
-      if (!sh) {
-        var pc = document.createElement('canvas'); pc.width = fk.w * fk.n; pc.height = fk.h * 2;
-        var pg = readableContext(pc);
-        sh = sheets[key] = { canvas: pc, g: pg, fw: fk.w, fh: fk.h, footX: fk.w >> 1, footY: fk.h - 1, n: fk.n, ready: new Uint8Array(fk.n), png: fk,
-          paint: function (f) {
-            var im = fk.img;
-            if (!im || !im.complete || !im.naturalWidth) { sh.ready[f] = 0; return; }   // still decoding: try again next frame
-            pg.drawImage(im, f * fk.w, 0, fk.w, fk.h, f * fk.w, 0, fk.w, fk.h);
-            finish(pg, fk.w, fk.h, 1, f * fk.w, true);
-          } };
-      }
-      return sh;
-    }
     if (!sh && v2) {                                      // the second style: its own painter, no outline
       var mk = window.StreetWalk.make(v2, s, pose === 'stand'), vc = document.createElement('canvas');
       vc.width = mk.fw * mk.n; vc.height = mk.fh * 2;
@@ -959,7 +936,7 @@ window.StreetPeople = function (D) {
     return pick(list);
   }
   function stopAgent(a, pose, time, state) {
-    if (CAST[a.id].png) return;                         // ready-made walkers have no standing poses: they keep walking
+    if (CAST[a.id].glide) return;                       // the skateboarder rolls on
     if (CAST[a.id].v2) pose = 'idle';                   // the second style has one standing pose so far
     a.state = state || 'look'; a.timer = time; a.idle = pose; a.walkDir = a.dir; a.glance = 0;
     var p = a.partner;
@@ -1026,7 +1003,7 @@ window.StreetPeople = function (D) {
         continue;
       }
       if (a.cooldown > 0) a.cooldown -= dt;
-      if ((a.state === 'walk' || a.state === 'run' || a.state === 'shield') && SHELTER && !a.umb && !a.follow && !a.dog && !sp.png && a.lane <= 1 && env.rain > 0.45 && a.cooldown <= 0 &&
+      if ((a.state === 'walk' || a.state === 'run' || a.state === 'shield') && SHELTER && !a.umb && !a.follow && !a.dog && !sp.glide && a.lane <= 1 && env.rain > 0.45 && a.cooldown <= 0 &&
           a.x > SHELTER[0] && a.x < SHELTER[1] && Math.abs(a.x - (DOOR.x + DOOR.w / 2)) > DOOR.w * 0.7 && sheltering() < 4 && Math.random() < dt * 2) {
         a.dir = a.walkDir; stopAgent(a, pick(['phone', 'look', 'idle']), 999, 'wait'); a.shelter = true; continue;
       }
@@ -1039,7 +1016,7 @@ window.StreetPeople = function (D) {
         a.x += a.dir * v * dt; a.dist += v * dt;
         if (a.state === 'walk' && a.cooldown <= 0) {
           var doorC = DOOR.x + DOOR.w / 2;
-          if (a.lane === 0 && !a.dog && !sp.v2 && !sp.png && Math.abs(a.x - doorC) < 2 && Math.random() < 0.35) { a.state = 'enter'; a.timer = 0.4; door.open = 1.8; a.cooldown = 99; }
+          if (a.lane === 0 && !a.dog && !sp.v2 && Math.abs(a.x - doorC) < 2 && Math.random() < 0.35) { a.state = 'enter'; a.timer = 0.4; door.open = 1.8; a.cooldown = 99; }
           for (var k = 0; k < SPOTS.length && a.state === 'walk' && a.lane <= 1; k++) {
             var spot = SPOTS[k];
             if (Math.abs(a.x - spot.x) < 1.5) {
@@ -1080,7 +1057,7 @@ window.StreetPeople = function (D) {
     agents = agents.filter(function (a) { return a.active; });
     for (var e = exits.length - 1; e >= 0; e--) {
       if (t >= exits[e].at) {
-        if (V2 && !CAST[exits[e].id].v2 && !CAST[exits[e].id].png) {               // someone from the bar steps out: as one of the new cast
+        if (V2 && !CAST[exits[e].id].v2) {               // someone from the bar steps out: as one of the new cast
           var out = {}; agents.forEach(function (o) { if (o.active) out[o.id] = 1; });
           var freeV = WALKERS.filter(function (id) { return !out[id]; });
           if (!freeV.length) { exits.splice(e, 1); continue; }
@@ -1263,7 +1240,6 @@ window.StreetPeople = function (D) {
       // Walking and running frames follow the distance walked, so planted feet stay put on the pavement
       var gt = gaitOf(pose), stride = gt ? (s / S) * strideOf(gt) : 1;
       var frame = gt ? Math.floor(a.dist / stride * GAIT_FRAMES) % GAIT_FRAMES : sh.n === 16 ? Math.floor((env.t + a.phase) * 6) % 16 : Math.floor(env.t * 1.2 + i) % sh.n;
-      if (sh.png) frame = sh.png.kind === 'skate' ? Math.floor((env.t + a.phase) * 10) % sh.n : Math.floor(a.dist / (sh.png.stride / S) * sh.n) % sh.n;
       if (sh.v2) frame = sh.cycle ? Math.floor(a.dist / (sh.cycle / S) * sh.n) % sh.n : Math.floor((env.t + a.phase) * 3) % sh.n;
       var x = Math.round(a.x * S) + ox, y = L.y * S, alpha = a.alpha * L.fade;
       ctx.fillStyle = 'rgba(0,0,0,' + (0.3 * alpha) + ')';
@@ -1410,7 +1386,7 @@ window.StreetPeople = function (D) {
   function openDoor() { door.open = Math.max(door.open, 1.2); }
   function lookUp(x) {
     var best = null;
-    agents.forEach(function (a) { if (a.active && !a.follow && a.state === 'walk' && !CAST[a.id].png && LANES[a.lane] && !LANES[a.lane].ride && Math.abs(a.x - x) < 70 && (!best || Math.abs(a.x - x) < Math.abs(best.x - x))) best = a; });
+    agents.forEach(function (a) { if (a.active && !a.follow && a.state === 'walk' && !CAST[a.id].glide && LANES[a.lane] && !LANES[a.lane].ride && Math.abs(a.x - x) < 70 && (!best || Math.abs(a.x - x) < Math.abs(best.x - x))) best = a; });
     if (best) { best.dir = x > best.x ? 1 : -1; stopAgent(best, 'look', rand(1.6, 3)); best.cooldown = 4; }
   }
   function walkers() { var out = []; agents.forEach(function (a) { if (a.active && LANES[a.lane] && !LANES[a.lane].ride) out.push({ x: a.x * S, lane: a.lane, dog: a.dog ? a.dog.x * S : null }); }); return out; }

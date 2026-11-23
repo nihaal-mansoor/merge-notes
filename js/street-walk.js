@@ -49,12 +49,34 @@
     var amp = stand ? 0 : (def.amp || 1), armAmp = stand ? 0 : (def.armAmp || 1), sh = def.sh || 1, bust = def.bust || 0, hips = def.hips == null ? 0.4 : def.hips, belly = def.belly || 0;
     var fw = Math.ceil(48 * s * Math.max(1, wd)) + 6, fh = Math.ceil(64 * s) + 8, G = fh - 3, HIPX = Math.round(fw / 2) - 1;
     var FOOT = [[-1.3, -0.9], [1.1, -1.1], [4.3, 0.7], [4.3, 1.8], [-1.5, 1.8]];
+    var skate = !!def.skate && !stand, BOARD = 2.6 * s;   // the skateboard lifts the riding foot this far
+    function legFrom(hip, a, kn, ft) {
+      var knee = add(hip, dirv(a, 11.8 * legL)), ank = add(knee, dirv(a - kn, 11.2 * legL));
+      return { hip: hip, knee: knee, ank: ank, foot: FOOT.map(function (p) { return add(ank, rot([p[0] * lw, p[1] * lw], -ft)); }) };
+    }
     function legs(t) {
+      if (skate) {
+        // The front foot rides the board, knee bent; the back foot pushes along the ground, then swings back up
+        var u = ((t % 1) + 1) % 1, push = u < 0.55, k = push ? u / 0.55 : (u - 0.55) / 0.45;
+        var ba = push ? 6 - 36 * k : -30 + 36 * k, bk = push ? 4 : 4 + 52 * Math.sin(k * Math.PI);
+        // While pushing, the riding knee bends just enough for the pushing foot to reach the ground
+        var fa = 16 * rad;
+        function kneeFor(bDeg) {                         // the riding knee bend that puts the pushing foot on the ground
+          var need = 11.8 * Math.cos(bDeg * rad) + 11.2 * Math.cos((bDeg - 4) * rad) - BOARD / legL;
+          for (var q = 10; q <= 80; q++) if (11.8 * Math.cos(fa) + 11.2 * Math.cos(fa - q * rad) <= need) return q * rad;
+          return 80 * rad;
+        }
+        // pushing: matched to the foot; gliding: eased from the end of one push to the start of the next
+        var fk = push ? kneeFor(ba) : kneeFor(-30) + (kneeFor(6) - kneeFor(-30)) * (0.5 - 0.5 * Math.cos(k * Math.PI));
+        var front = legFrom([HIPX + 0.8 * s, 0], fa, fk, 0);
+        var back = legFrom([HIPX - 0.6 * s, 0], ba * rad, bk * rad, push ? 0 : -24 * rad);
+        var lowF = -1e9; front.foot.forEach(function (p) { lowF = Math.max(lowF, p[1]); });
+        return { n: front, f: back, y: G - BOARD - lowF };
+      }
       var tw = stand ? 0 : Math.cos(t * TAU);
       function leg(tt, hip) {
-        var k = legKey(tt), a = k[0] * amp * rad, kn = (stand ? 2 : k[1] * (0.5 + 0.5 * amp)) * rad, ft = k[2] * amp * rad;
-        var knee = add(hip, dirv(a, 11.8 * legL)), ank = add(knee, dirv(a - kn, 11.2 * legL));
-        return { hip: hip, knee: knee, ank: ank, foot: FOOT.map(function (p) { return add(ank, rot([p[0] * lw, p[1] * lw], -ft)); }) };
+        var k = legKey(tt);
+        return legFrom(hip, k[0] * amp * rad, (stand ? 2 : k[1] * (0.5 + 0.5 * amp)) * rad, k[2] * amp * rad);
       }
       // both hips twist evenly about one centre, so the two steps match (no limp)
       var n = leg(t, [HIPX + 0.6 * tw * s * wd, 0]), f = leg(t + 0.5, [HIPX - 0.6 * tw * s * wd + (stand ? -1.2 * s : 0), 0]);
@@ -74,20 +96,21 @@
     }
     // How far the planted foot travels back over the stance: the stride
     var cycle = 0;
-    if (!stand) { for (var f = 1; f < N / 2; f++) cycle += legs((f - 1) / N).n.ank[0] - legs(f / N).n.ank[0]; cycle = cycle / (N / 2 - 1) * N; }
+    if (skate) cycle = 96 * s;                           // one push carries the board about this far
+    else if (!stand) { for (var f = 1; f < N / 2; f++) cycle += legs((f - 1) / N).n.ank[0] - legs(f / N).n.ank[0]; cycle = cycle / (N / 2 - 1) * N; }
 
     function frame(t) {
       var L = legs(t), py = Math.round(L.y), d = py - L.y;
       [L.n, L.f].forEach(function (g) { ['hip', 'knee', 'ank'].forEach(function (k) { g[k] = [g[k][0], g[k][1] + L.y + d]; }); g.foot = g.foot.map(function (p) { return [p[0], p[1] + L.y + d]; }); });
-      var pel = [HIPX, py], tw = stand ? 0 : Math.cos(t * TAU), lean = ((def.lean || 3) + (stand ? 0.4 : 1.2) * Math.sin(t * 2 * TAU)) * rad;
-      var wf = stand ? 1 : 1 + 0.1 * Math.cos(t * 2 * TAU);            // the torso turns a touch toward us as each heel lands
+      var pel = [HIPX, py], tw = stand || skate ? 0 : Math.cos(t * TAU), lean = ((def.lean || 3) + (stand ? 0.4 : 1.2) * Math.sin(t * 2 * TAU)) * rad;
+      var wf = stand || skate ? 1 : 1 + 0.1 * Math.cos(t * 2 * TAU);            // the torso turns a touch toward us as each heel lands
       function T(p) { return add(pel, rot([p[0] * s * wd * wf, p[1] * s], lean)); }
       var off = spring(t), jig = Math.max(-0.7, Math.min(0.7, off * 0.9 * (0.3 + 0.7 * bust))) * (bust > 0 ? 1 : 0);
       var hem = stand ? 0 : 0.6 * Math.sin(t * 2 * TAU - 1.1) + off * 0.6;
       var neck = T([0.9, -20.6]);
       function Hd(p) { return add(neck, rot([p[0] * hs, p[1] * hs], -lean * 0.8)); }
-      function arm(sw, shift) {
-        var a = sw * 22 * armAmp * rad, s0 = T([-0.5 + shift, -17.6]), e = (9 + 26 * Math.max(0, sw) * armAmp) * rad;
+      function arm(sw, shift, carry) {                 // carry: this hand holds something, so it hardly swings
+        var aa = carry ? 0.2 : armAmp, a = sw * 22 * aa * rad, s0 = T([-0.5 + shift, -17.6]), e = ((carry ? 24 : 9) + 26 * Math.max(0, sw) * aa) * rad;
         var elb = add(s0, dirv(a, 9.2 * s * (def.armL || 1))), wr = add(elb, dirv(a + e, 8.2 * s * (def.armL || 1)));
         return { sh: s0, elb: elb, wr: wr, hand: add(wr, dirv(a + e * 1.15, 1.2 * s)) };
       }
@@ -104,8 +127,10 @@
       }
       function drawLeg(g, far) {
         var k = far ? 1 : 0;
-        cv.limb(g.hip, g.knee, 4.1 * lw, 2.8 * lw, skin[k], [0.35, 3.8 * lw]);
-        cv.limb(g.knee, g.ank, 2.7 * lw, 1.9 * lw, skin[k], [0.3, 3.0 * lw]);
+        var lc = def.tights || skin;                    // bare legs, or tights (a third colour: a dot pattern)
+        cv.limb(g.hip, g.knee, 4.1 * lw, 2.8 * lw, lc[k], [0.35, 3.8 * lw]);
+        cv.limb(g.knee, g.ank, 2.7 * lw, 1.9 * lw, lc[k], [0.3, 3.0 * lw]);
+        if (def.tights && def.tights[2]) for (var ti = 0.2; ti < 1.9; ti += 0.34) { var tp = hemPoint(g, ti); cv.ell(tp[0] + (k ? 0 : 0.6 * lw), tp[1], 0.55 * lw, 0.55 * lw, def.tights[2]); }
         if (bot.kind === 'shorts' || bot.kind === 'trousers') {
           var cov = bot.len, fl = bot.kind === 'shorts' ? 0.9 : 0.4;
           cv.limb(g.hip, lerp(g.hip, g.knee, Math.min(1, cov)), (4.3 + fl * 0.4) * lw, (cov >= 1 ? 3.2 : 3.4 + fl) * lw, bot.col[k], [0.35, (4.1 + fl * 0.4) * lw]);
@@ -124,7 +149,12 @@
       }
       function hemPoint(g, u) { return u <= 1 ? lerp(g.hip, g.knee, u) : lerp(g.knee, g.ank, u - 1); }
 
-      var nA = arm(-tw, -0.8 * tw), fA = arm(tw, 0.8 * tw);
+      var nA = arm(-tw, -0.8 * tw, !!def.carry), fA = arm(tw, 0.8 * tw);
+      if (skate) {                                       // the board under the riding foot, its wheels on the ground
+        var fx = L.n.ank[0] + 1 * s, by = G - BOARD, bc = def.board || ['#3a2a24', '#d8d0c0'];
+        cv.poly([[fx - 9 * s, by - 0.3 * s], [fx + 8 * s, by - 0.3 * s], [fx + 9.6 * s, by - 1.3 * s], [fx + 9.8 * s, by + 0.6 * s], [fx - 9.6 * s, by + 0.6 * s], [fx - 10.4 * s, by - 1.1 * s]], bc[0]);
+        cv.ell(fx - 6 * s, G - 1.0 * s, 1.0 * s, 1.0 * s, bc[1]); cv.ell(fx + 6 * s, G - 1.0 * s, 1.0 * s, 1.0 * s, bc[1]);
+      }
       // hair that hangs behind the body
       if (hair.style === 'pony') { var tie = Hd([-2.7, -5.4]); cv.limb(tie, add(tie, dirv((-24 + 26 * off - (stand ? 0 : 7 * Math.sin(t * 2 * TAU - 0.8))) * rad, 6.2 * hs)), 2.4 * hs, 0.9 * hs, hair.col[1], [0.4, 2.2 * hs]); }
       if (hair.style === 'long') { var r0 = Hd([-2.2, -5.6]); cv.limb(r0, add(r0, dirv((-6 + 10 * off - (stand ? 0 : 3 * Math.sin(t * 2 * TAU - 0.8))) * rad, 11 * hs)), 4.2 * hs, 2.6 * hs, hair.col[1], [0.5, 4.0 * hs]); }
@@ -149,6 +179,11 @@
         if (top.kind === 'shirt') for (var by = -17; by > hemY - 0.5 && by < -4; by += 3) { var bp = T([2.0 + pec * 0.4 + (by > -9 ? belly * 0.8 : 0), by]), bi = Math.round(bp[1]) * fw + Math.round(bp[0]) - 1; if (cv.c[bi]) cv.c[bi] = top.col[1]; }
       }
       if (def.belt) cv.poly([T([-2.3, -6.6]), T([2.3 + belly * 0.8, -6.6]), T([2.35 + belly * 0.8, -5.7]), T([-2.4, -5.7])], def.belt);
+      if (def.bib) {                                     // dungarees: a bib over the chest and a strap over the shoulder
+        cv.poly([T([0.6, -15.6]), T([2.3 + pec + (bust ? 1.2 * bust : 0), -15.2]), T([2.1 + belly * 0.5, -10]), T([2.3 + belly * 0.9, -6.2]), T([-0.4, -6.2]), T([-0.2, -12])], bot.col[0]);
+        cv.limb(T([0.9, -15.4]), T([-1.6, -19.2]), 0.9 * s, 0.9 * s, bot.col[0]);
+        cv.ell(T([1.4, -14.6])[0], T([1.4, -14.6])[1], 0.5 * s, 0.5 * s, def.bib);
+      }
       if (bot.kind === 'skirt') {                        // skirt or dress, the hem trailing a little
         var hn = hemPoint(L.n, bot.len), hf = hemPoint(L.f, bot.len), flare = (bot.flare || 1.6) * s;
         var back = Math.min(hn[0], hf[0]) - flare + hem * 0.8, front = Math.max(hn[0], hf[0]) + flare + hem * 0.6, hy = Math.max(hn[1], hf[1]) + 0.5;
@@ -159,6 +194,14 @@
         cv.poly([T([-2.4, -18.2]), T([-5.6, -17.4]), T([-6.0, -9.6]), T([-2.4, -9.0])], def.bag.col[0]);
         cv.poly([T([-5.6, -17.4]), T([-4.6, -17.6]), T([-5.0, -9.4]), T([-6.0, -9.6])], def.bag.col[1]);
         cv.limb(T([-1.4, -19]), T([1.4, -12]), 1.0 * s, 1.0 * s, def.bag.col[1]);
+      }
+      if (def.bag && def.bag.kind === 'hiking') {        // a tall pack with a rolled mat strapped on top, bobbing a little
+        var bb = off * 0.5;
+        cv.poly([T([-2.2, -19.4 + bb]), T([-6.4, -18.6 + bb]), T([-7.2, -11 + bb]), T([-6.4, -6.6 + bb]), T([-2.2, -7.4 + bb])], def.bag.col[0]);
+        cv.poly([T([-6.4, -18.6 + bb]), T([-5.2, -18.8 + bb]), T([-5.6, -6.8 + bb]), T([-6.4, -6.6 + bb]), T([-7.2, -11 + bb])], def.bag.col[1]);
+        cv.poly([T([-6.8, -13 + bb]), T([-4.4, -13 + bb]), T([-4.4, -10.4 + bb]), T([-6.9, -10.4 + bb])], def.bag.col[1]);
+        var rl = T([-4.6, -20.8 + bb]); cv.ell(rl[0], rl[1], 3.4 * s, 1.5 * s, def.bag.roll || '#7a8a4a');
+        cv.limb(T([-1.4, -19]), T([1.2, -12]), 1.0 * s, 1.0 * s, def.bag.col[1]);
       }
       if (def.bag && def.bag.kind === 'tote') {
         var bx = hem * 0.6;
@@ -187,6 +230,16 @@
       }
       if (st === 'bald' && hair.col) cv.poly([Hd([-3.0, -4.4]), Hd([-0.4, -4.6]), Hd([-0.2, -2.0]), Hd([-2.6, -1.8])], hair.col[0]);
       if (st === 'long') cv.poly([Hd([-3.3, -5]), Hd([-1.4, -6]), Hd([-0.6, -1]), Hd([-2.6, 0.4])], hair.col[0]);
+      if (st === 'mohawk') {                             // shaved sides, a tall crest
+        cv.ell(hc[0], hc[1], 3.3 * hs, 4.0 * hs, skin[1]);
+        cv.poly([Hd([0.6, -6.1]), Hd([3.0, -6.4]), Hd([3.8, -4.7]), Hd([3.7, -2.6]), Hd([3.2, -0.9]), Hd([2.2, 0.2]), Hd([0.8, 0.0]), Hd([0.2, -1.7])], skin[0]);
+        cv.poly([Hd([-3.0, -6.0]), Hd([-2.4, -9.6]), Hd([-0.8, -11.0]), Hd([1.0, -10.6]), Hd([2.8, -9.8]), Hd([3.4, -7.8]), Hd([1.4, -8.2]), Hd([-1.0, -7.8])], hair.col[0]);
+        cv.poly([Hd([-2.4, -9.6]), Hd([-0.8, -11.0]), Hd([0.2, -10.9]), Hd([-1.2, -8.2]), Hd([-3.0, -6.0])], hair.col[1]);
+      }
+      if (st === 'hood') {                               // the hood up, framing the face, in the top's colour
+        cv.poly([Hd([-3.8, -4.4]), Hd([-3.0, -8.4]), Hd([0.2, -9.8]), Hd([3.2, -9.0]), Hd([4.2, -7.0]), Hd([3.0, -6.6]), Hd([1.4, -6.8]), Hd([0.6, -4.2]), Hd([0.4, -0.8]), Hd([-0.4, 1.4]), Hd([-3.4, 1.0])], top.col[0]);
+        cv.poly([Hd([1.4, -6.8]), Hd([3.0, -6.6]), Hd([4.2, -7.0]), Hd([3.8, -6.2]), Hd([1.6, -6.0]), Hd([1.0, -4.0]), Hd([0.9, -0.6]), Hd([0.4, -0.8]), Hd([0.6, -4.2])], top.col[1]);
+      }
       var hat = def.hat;
       if (hat && (hat.kind === 'cap' || hat.kind === 'capback')) {
         cv.poly([Hd([-3.2, -6.0]), Hd([-2.2, -8.6]), Hd([1.0, -9.3]), Hd([3.3, -8.0]), Hd([3.8, -6.2])], hat.col[0]);
@@ -197,6 +250,14 @@
       if (hat && hat.kind === 'flatcap') { cv.poly([Hd([-3.3, -5.8]), Hd([-2.4, -8.4]), Hd([1.6, -8.9]), Hd([4.8, -6.8]), Hd([4.8, -6.0])], hat.col[0]); cv.poly([Hd([2.0, -6.6]), Hd([4.8, -6.8]), Hd([4.8, -6.0]), Hd([2.0, -6.0])], hat.col[1]); }
       if (def.glasses) { cv.poly([Hd([1.8, -5.1]), Hd([4.0, -5.2]), Hd([4.0, -4.1]), Hd([1.8, -4.0])], '#1c1a1e'); cv.limb(Hd([0.6, -4.6]), Hd([1.8, -4.6]), 0.8 * hs, 0.8 * hs, '#1c1a1e'); }
       if (def.phones) { cv.limb(Hd([-0.4, -3.2]), Hd([0.6, -8.6]), 1.0 * hs, 1.0 * hs, '#26242c'); var ec = Hd([0.2, -3.2]); cv.ell(ec[0], ec[1], 1.3 * hs, 1.5 * hs, '#26242c'); }
+      if (def.carry) {                                   // a basket hanging from the near hand, swinging a little behind it
+        var hx = nA.hand[0] + hem * 0.5, hy2 = nA.hand[1], bc2 = def.carry;
+        cv.limb([hx - 2.4 * s, hy2 + 2.6 * s], [hx, hy2 - 0.4 * s], 0.7 * s, 0.7 * s, bc2[1]);
+        cv.limb([hx + 2.4 * s, hy2 + 2.6 * s], [hx, hy2 - 0.4 * s], 0.7 * s, 0.7 * s, bc2[1]);
+        cv.poly([[hx - 3.4 * s, hy2 + 2.4 * s], [hx + 3.4 * s, hy2 + 2.4 * s], [hx + 2.6 * s, hy2 + 6.4 * s], [hx - 2.6 * s, hy2 + 6.4 * s]], bc2[0]);
+        cv.poly([[hx - 3.2 * s, hy2 + 3.8 * s], [hx + 3.2 * s, hy2 + 3.8 * s], [hx + 3.0 * s, hy2 + 4.6 * s], [hx - 3.0 * s, hy2 + 4.6 * s]], bc2[1]);
+        if (bc2[2]) { cv.ell(hx - 1.4 * s, hy2 + 2.0 * s, 1.1 * s, 1.0 * s, bc2[2]); cv.ell(hx + 1.2 * s, hy2 + 1.8 * s, 1.0 * s, 1.0 * s, bc2[3] || bc2[2]); }
+      }
       drawArm(nA, false);
       return cv;
     }
@@ -240,6 +301,25 @@
     w3: { name: 'Tall, striped tee, midi skirt, tote', s: 1.06, wd: 0.95, bust: 0.45, hips: 0.9, armL: 1.02, skin: SKIN.a, hair: { style: 'long', col: c2('#d8b26a', '#b08a4a') },
       top: { kind: 'tee', col: c2('#f0ece2', '#c4beb0'), stripe: '#2c3a5c', sleeve: 0.45, hem: -6.2 }, bottom: { kind: 'skirt', col: c2('#8a8a4a', '#6a6a36'), len: 1.5, flare: 1.8 },
       shoes: { kind: 'sandal', col: c2('#3a2a22', '#2a1e18') }, bag: { kind: 'tote', col: c2('#d8ccb0', '#a89c80') } },
+    h1: { name: 'Hood up, hoodie, jeans', s: 0.98, sh: 1.1, waist: 1.08, hips: 0.3, armAmp: 0.35, skin: SKIN.c, hair: { style: 'hood', col: c2('#1a1210', '#0e0a08') },
+      top: { kind: 'tee', col: c2('#2f6a4a', '#214c35'), sleeve: 1.85, hem: -3.4 }, bottom: { kind: 'trousers', col: c2('#3a5a86', '#2a4264'), len: 2 }, shoes: { kind: 'sneaker', col: c2('#26242a', '#18161c'), sole: '#d8d4cc' } },
+    b1: { name: 'Big man, white shirt, green trousers', s: 1.02, wd: 1.5, limb: 1.45, sh: 1.3, pec: 0.8, belly: 2.8, waist: 1.3, hips: 0.6, neck: 1.9, amp: 0.78, armAmp: 0.8, ms: 78, skin: SKIN.a,
+      hair: { style: 'bald', col: c2('#d89a6a', '#b07a50') }, beard: '#c88a5a',
+      top: { kind: 'shirt', col: c2('#eeeae2', '#c4bfb4'), sleeve: 0.55, hem: -4.2 }, bottom: { kind: 'trousers', col: c2('#2f5a3a', '#22432b'), len: 2 }, shoes: { kind: 'boot', col: c2('#5a3a26', '#3a2418') } },
+    s1: { name: 'Skateboarder, red jumper, cap', s: 0.96, wd: 0.95, limb: 0.95, hips: 0.3, lean: 8, armAmp: 0.4, skate: true, ms: 55, skin: SKIN.b, hair: { style: 'short', col: c2('#3a2418', '#24160e') },
+      hat: { kind: 'cap', col: c2('#e08a3a', '#b46a28') }, board: ['#3e2a22', '#e8e0cc'],
+      top: { kind: 'tee', col: c2('#b8343e', '#8c2630'), sleeve: 1.8, hem: -3.6 }, bottom: { kind: 'trousers', col: c2('#86b6da', '#6690b4'), len: 2 }, shoes: { kind: 'sneaker', col: c2('#e8e4dc', '#bdb7ac'), sole: '#c8403a' } },
+    p1: { name: 'Backpacker, bedroll, beard', s: 1.04, sh: 1.15, limb: 1.05, pec: 0.4, waist: 1.1, hips: 0.35, lean: 7, amp: 0.92, ms: 70, skin: SKIN.a, beard: '#3a2418',
+      hair: { style: 'buzz', col: c2('#3a2418', '#24160e') }, bag: { kind: 'hiking', col: c2('#5a4a3a', '#3e3226'), roll: '#8a9a4a' },
+      top: { kind: 'tee', col: c2('#3a8ab0', '#2a6a8a'), sleeve: 0.5, hem: -4.0 }, bottom: { kind: 'shorts', col: c2('#a8383a', '#842a2c'), len: 0.75 }, shoes: { kind: 'boot', col: c2('#7a5232', '#54361e') }, socks: c2('#d8d0c0', '#a8a090') },
+    g1: { name: 'Green mohawk, orange tee', s: 1.0, wd: 0.92, limb: 0.92, sh: 1.05, hips: 0.3, amp: 1.05, ms: 62, skin: SKIN.a, hair: { style: 'mohawk', col: c2('#5ac04a', '#3e9634') },
+      top: { kind: 'tee', col: c2('#e0702a', '#b4561e'), sleeve: 0.5, hem: -4.4 }, bottom: { kind: 'trousers', col: c2('#2e5a96', '#22446e'), len: 2 }, shoes: { kind: 'boot', col: c2('#b8303a', '#8a2229') } },
+    d1: { name: 'Dungarees, market basket', s: 0.95, wd: 1.05, bust: 0.8, hips: 1.0, skin: SKIN.e, hair: { style: 'bob', col: c2('#1a1210', '#0e0a08') }, bib: '#e8c84a',
+      carry: ['#b8864a', '#8a6034', '#d8402a', '#e8b030'],
+      top: { kind: 'tee', col: c2('#e8d8c0', '#bcae96'), sleeve: 0.5, hem: -6.2 }, bottom: { kind: 'trousers', col: c2('#4a6a9a', '#364e74'), len: 1.7 }, shoes: { kind: 'sneaker', col: c2('#e8e4dc', '#bdb7ac'), sole: '#c9c4ba' } },
+    t1: { name: 'Purple dress, patterned tights', s: 0.98, wd: 1.12, bust: 1.05, hips: 1.25, belly: 0.5, skin: SKIN.d, tights: ['#3a2a30', '#2a1e24', '#c8506a'],
+      hair: { style: 'short', col: c2('#e8d8b0', '#c8b890') },
+      top: { kind: 'dress', col: c2('#6a2a7a', '#4e1e5a'), sleeve: 0, hem: -6.2 }, bottom: { kind: 'skirt', col: c2('#d8506a', '#b03a52'), len: 0.75, flare: 1.8 }, shoes: { kind: 'boot', col: c2('#d88a3a', '#a8682a') } },
     w4: { name: 'Blouse, cropped trousers, sunglasses', s: 0.97, wd: 1.1, bust: 1.2, hips: 1.1, belly: 0.4, skin: SKIN.c, glasses: true, hair: { style: 'short', col: c2('#9a908a', '#7a706a') },
       top: { kind: 'shirt', col: c2('#f3efe6', '#c8c2b4'), sleeve: 0.4, hem: -5.0 }, bottom: { kind: 'trousers', col: c2('#34406a', '#262e4e'), len: 1.62 }, shoes: { kind: 'sneaker', col: c2('#b8483e', '#8e3630'), sole: '#ece8e0' } }
   };
