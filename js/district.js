@@ -1268,7 +1268,7 @@
   // ---------- The view: it stays still. Only ?cam=-1..1 (for checking the depth) sets it to one side. ----------
   var CAMX = 0, lastCam = null;
   function offset(depth) { return Math.round(CAMX * depth); }
-  function env() { return { t: state.t, lights: state.lights, day: state.day, rain: rainLevel, wind: wind(), wet: 0.3 + 0.7 * wet, offset: function (d) { return Math.round(CAMX * d) / 2; }, puddles: puddlesNear, hour: state.hour, crowd: crowdAt(state.hour), tea: teaBreak(state.hour), crewOff: state.hour >= 1 && state.hour < 6.5 }; }
+  function env() { return { t: state.t, lights: state.lights, day: state.day, rain: rainLevel, wind: wind(), wet: 0.3 + 0.7 * wet, offset: function (d) { return Math.round(CAMX * d) / 2; }, puddles: puddlesNear, hour: state.hour, crowd: crowdAt(state.hour), tea: teaBreak(state.hour), crewOff: state.hour >= 1 && state.hour < 6.5, climate: state.weather === 'rain' ? 'rain' : state.weather === 'snow' ? 'cold' : 'summer' }; }
   function updateCamera() {
     CAMX = camFixed !== null && !reduceMotion ? camFixed * CAM : 0;
     var r = Math.round(CAMX * 2) / 2;
@@ -1902,7 +1902,7 @@
       var dark = lit && a > 0.2 ? [26, 18, 16] : mix([40, 34, 30], [70, 72, 76], state.day);
       g.save(); g.beginPath(); g.rect(x, p.y, p.w, p.h); g.clip();
       g.globalAlpha = p.screen ? 0.55 : lit && a > 0.2 ? 0.9 : 0.35;
-      crowd.roomActor(g, kind, f, Math.round(cx), Math.round(by), ah, css(dark), a > 0.3 ? '#9ad4ff' : '#c8d8e0');
+      crowd.roomActor(g, kind, f, Math.round(cx), Math.round(by), ah, css(dark), a > 0.3 ? '#9ad4ff' : '#c8d8e0', p.seed);
       g.restore();
       if (p.mull) { g.fillStyle = mull; g.fillRect(x, p.y + Math.floor(p.h / 2), p.w, 1); g.fillRect(x + Math.floor(p.w / 2), p.y, 1, p.h); }
     });
@@ -2498,8 +2498,8 @@
   function pxDisc(g, cx, cy, r) { for (var y = -r; y <= r; y++) { var w = Math.round(Math.sqrt(r * r - y * y + r * 0.6)); g.fillRect(cx - w, cy + y, w * 2 + 1, 1); } }
   function hexShade(c, f) { var v = rgbH(c); return css([v[0] * f, v[1] * f, v[2] * f]); }
   // A car drawn at scale f (all its numbers are in design units; every shape lands on whole pixels, so it stays crisp)
-  function carSprite(kind, color, f) {
-    var key = kind + color + f; if (carSprites[key]) return carSprites[key];
+  function carSprite(kind, color, f, drv) {
+    var key = kind + color + f + '|' + (drv || 0); if (carSprites[key]) return carSprites[key];
     if (kind === 'suv') return (carSprites[key] = suvSprite());
     var bus = kind === 'bus', van = kind === 'van', pick = kind === 'pickup', L = bus ? 212 : van ? 108 : kind === 'hatch' ? 88 : pick ? 106 : 102, Hh = bus ? 56 : van ? 40 : 36, top = Hh - 32;
     var b = offscreen(Math.ceil(L * f), Math.ceil(Hh * f)), l = offscreen(Math.ceil(L * f), Math.ceil(Hh * f)), c = color, wheels = [], glass = '#1e2630', glassHi = '#56646e';
@@ -2508,16 +2508,32 @@
     var D = function (g, cx, cy, r) { pxDisc(g, Math.round(cx * f), Math.round(cy * f), Math.max(1, Math.round(r * f))); };
     var W2 = function (x, r) { wheels.push([x, Hh - 6, r]); };
     var plate = function (x) { b.fillStyle = '#d8d4c4'; R(b, x, Hh - 13, 8, 3); b.fillStyle = '#5a5a5a'; R(b, x + 1, Hh - 12, 6, 1); };          // a plain plate
-    var driver = function (x, y) { b.fillStyle = '#0c0e12'; D(b, x, y, 2.6); R(b, x - 4, y + 2, 8, 4); b.fillStyle = '#2a323c'; R(b, x - 1, y - 2, 2, 1); };   // a head and shoulders behind the glass
+    // At the wheel: one of the street's own people (street-body.js), sitting, hands forward on the wheel, seen
+    // through the glass (clip: the window, in design units). Without it, a dark head and shoulders.
+    var seated = function (g, x, y, clip, seed, arms, tint) {   // someone sitting, their head at (x, y), seen through clip
+      var SB = window.StreetBody, adults = SB.cast().filter(function (d) { return d.age !== 'kid'; }), who = adults[seed % adults.length];
+      var mk = SB.make(who, 'summer', 19.5 * f, { sit: true, n: 1, arms: function () { return arms; } }), cv = offscreen(mk.fw, mk.fh), info = mk.paint(cv, 0, 0, 0);
+      g.save(); g.beginPath(); clip.forEach(function (q, i) { if (i) g.lineTo(q[0] * f, q[1] * f); else g.moveTo(q[0] * f, q[1] * f); }); g.closePath(); g.clip();
+      g.drawImage(cv.canvas, Math.round(x * f - info.head[0]), Math.round(y * f - info.head[1]));
+      g.fillStyle = tint; g.fill(); g.restore();                                         // (the glass between us and them)
+    };
+    var driver = function (x, y, clip) {
+      if (window.StreetBody && clip) { seated(b, x, y, clip, (drv || 0) * 5 + (parseInt((color || '#3').slice(1), 16) || 0) % 7, { n: [70, 20], f: [64, 26] }, 'rgba(24,32,42,0.32)'); return; }
+      b.fillStyle = '#0c0e12'; D(b, x, y, 2.6); R(b, x - 4, y + 2, 8, 4); b.fillStyle = '#2a323c'; R(b, x - 1, y - 2, 2, 1);
+    };
     if (bus) {
       b.fillStyle = c; R(b, 1, 3, L - 2, Hh - 12); b.fillStyle = hexShade(c, 1.15); R(b, 1, 3, L - 2, 2);
       b.fillStyle = '#2a6a7a'; R(b, 1, Hh - 22, L - 2, 4); b.fillStyle = hexShade(c, 0.6); R(b, 1, Hh - 12, L - 2, 3);
       for (var wi = 0; wi < 11; wi++) { var wx = 10 + wi * 17; b.fillStyle = glass; R(b, wx, 9, 14, 17); b.fillStyle = glassHi; R(b, wx + 1, 10, 4, 1);
-        l.fillStyle = '#ffe2a8'; R(l, wx, 9, 14, 17); if ((wi * 7) % 3) { l.fillStyle = '#5a4030'; D(l, wx + 7, 19, 3); R(l, wx + 3, 22, 9, 4); } }
+        l.fillStyle = '#ffe2a8'; R(l, wx, 9, 14, 17);
+        if ((wi * 7) % 3) {                                // a passenger (lit when the bus's lights are on)
+          if (window.StreetBody) seated(l, wx + 7, 18, [[wx, 9], [wx + 14, 9], [wx + 14, 26], [wx, 26]], wi * 3 + (drv || 0), (wi % 3) ? { n: [25, 85] } : { n: [30, 100] }, 'rgba(255,214,150,0.18)');
+          else { l.fillStyle = '#5a4030'; D(l, wx + 7, 19, 3); R(l, wx + 3, 22, 9, 4); }
+        } }
       b.fillStyle = glass; R(b, L - 14, 7, 12, 26); b.fillStyle = glassHi; R(b, L - 12, 9, 1, 10);
       b.fillStyle = '#3a3a3a'; R(b, L - 34, 9, 12, Hh - 21); b.fillStyle = hexShade(c, 0.7); R(b, L - 29, 9, 1, Hh - 21);   // the door
       l.fillStyle = '#ffb030'; R(l, L - 48, 4, 30, 4);                                    // the route sign
-      driver(L - 8, 20); plate(4);
+      driver(L - 8, 20, [[L - 14, 7], [L - 2, 7], [L - 2, 33], [L - 14, 33]]); plate(4);
       W2(36, 8); W2(L - 46, 8);
       l.fillStyle = '#fff6d8'; R(l, L - 4, Hh - 20, 3, 4); l.fillStyle = '#ff3a2a'; R(l, 1, Hh - 22, 3, 6);
     } else if (van) {
@@ -2527,7 +2543,7 @@
       b.fillStyle = hexShade(c, 0.75); R(b, 58, 6, 1, Hh - 15); R(b, 30, 6, 1, Hh - 15); R(b, 30, 6, 28, 1);
       b.fillStyle = hexShade(c, 1.3); R(b, 52, 18, 4, 1); R(b, 86, 19, 3, 1);
       b.fillStyle = glass; R(b, 3, 8, 10, 7); b.fillStyle = '#141414'; R(b, 59, 16, 18, 1);
-      driver(85, 11); plate(3); plate(L - 10); b.fillStyle = '#e08a2a'; R(b, L - 9, 23, 2, 1);
+      driver(85, 11, [[80, 7], [93, 15], [80, 15]]); plate(3); plate(L - 10); b.fillStyle = '#e08a2a'; R(b, L - 9, 23, 2, 1);
       W2(20, 6); W2(L - 22, 6);
       l.fillStyle = '#fff6d8'; R(l, L - 4, 19, 3, 4); l.fillStyle = '#ff3a2a'; R(l, 1, 12, 3, 6);
     } else if (pick) {
@@ -2536,7 +2552,7 @@
       b.fillStyle = '#3a3630'; R(b, 6, top + 7, 10, 5); R(b, 20, top + 9, 14, 3);                  // something in the bed: a crate and a sack
       b.fillStyle = glass; P(b, [[64, top + 12], [65, top + 4], [76, top + 4], [76, top + 12]]); P(b, [[78, top + 12], [78, top + 4], [83, top + 4], [89, top + 12]]);
       b.fillStyle = '#202020'; R(b, 76, top + 4, 2, 9); b.fillStyle = glassHi; R(b, 66, top + 5, 5, 1);
-      driver(82, top + 7);
+      driver(82, top + 7, [[78, top + 12], [78, top + 4], [83, top + 4], [89, top + 12]]);
       b.fillStyle = hexShade(c, 0.62); R(b, 1, Hh - 11, L - 2, 3); b.fillStyle = hexShade(c, 0.7); R(b, 55, top + 14, 1, Hh - top - 23); b.fillStyle = hexShade(c, 1.35); R(b, 60, top + 17, 3, 1);
       b.fillStyle = '#3a3a3c'; R(b, L - 4, Hh - 14, 4, 4); R(b, 0, Hh - 14, 3, 4); plate(2); plate(L - 11);
       W2(20, 6); W2(L - 22, 6);
@@ -2551,7 +2567,7 @@
       P(b, hatch ? [[47, top + 12], [47, top + 4], [61, top + 4], [70, top + 11]] : [[53, top + 12], [53, top + 4], [65, top + 4], [76, top + 12]]);
       b.fillStyle = glassHi; R(b, hatch ? 31 : 39, top + 5, 6, 1); R(b, hatch ? 49 : 55, top + 5, 5, 1);
       b.fillStyle = '#141414'; R(b, hatch ? 20 : 26, top + 12, hatch ? 50 : 50, 1); R(b, hatch ? 45 : 51, top + 4, 2, 9);   // rubber trim and the pillar
-      driver(hatch ? 56 : 62, top + 7); plate(3); plate(L - 11); b.fillStyle = '#e08a2a'; R(b, L - 9, top + 15, 2, 1);
+      driver(hatch ? 56 : 62, top + 7, hatch ? [[47, top + 12], [47, top + 4], [61, top + 4], [70, top + 11]] : [[53, top + 12], [53, top + 4], [65, top + 4], [76, top + 12]]); plate(3); plate(L - 11); b.fillStyle = '#e08a2a'; R(b, L - 9, top + 15, 2, 1);
       b.fillStyle = hexShade(c, 0.7); R(b, hatch ? 46 : 51, top + 14, 1, Hh - top - 23);
       b.fillStyle = hexShade(c, 1.35); R(b, hatch ? 38 : 43, top + 17, 3, 1); R(b, hatch ? 54 : 60, top + 17, 3, 1);
       b.fillStyle = '#3a3a3c'; R(b, L - 4, Hh - 14, 4, 4); R(b, 0, Hh - 14, 3, 4);           // bumpers
@@ -2578,11 +2594,11 @@
   function pickCar(li) {
     var r = Math.random();
     if (li === 1 && window.StreetProps && (r > 0.86 || /[?&]suv\b/.test(location.search))) return { kind: 'suv', color: '' };   // the near lane only: it is drawn at that lane's size (?suv: always, to preview it)
-    if (r < 0.08) return { kind: 'bus', color: '#c8c0a8' };
+    if (r < 0.08 || (/[?&]bus\b/.test(location.search) && r < 0.6)) return { kind: 'bus', color: '#c8c0a8' };   // (?bus: more buses, to preview them)
     if (r < 0.3) return { kind: 'taxi', color: '#e4d8b0' };
     return { kind: r < 0.4 ? 'van' : r < 0.52 ? 'pickup' : r < 0.7 ? 'hatch' : 'sedan', color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)] };
   }
-  function addCar(li, x) { var pk = pickCar(li); cars.push({ lane: li, kind: pk.kind, color: pk.color, x: x, v: pk.kind === 'bus' ? rand(55, 70) : rand(75, 120), dist: 0 }); }
+  function addCar(li, x) { var pk = pickCar(li); cars.push({ lane: li, kind: pk.kind, color: pk.color, x: x, v: pk.kind === 'bus' ? rand(55, 70) : rand(75, 120), dist: 0, drv: Math.floor(Math.random() * 8) }); }   // (drv: which of eight drivers is at the wheel)
   function updateCars(dt) {
     CAR_LANES.forEach(function (ln, li) {
       ln.next -= dt; if (ln.next > 0) return;
@@ -2591,10 +2607,10 @@
       if (!cars.some(function (c) { return c.lane === li && Math.abs(c.x - entry) < 420; })) addCar(li, entry);
     });
     cars.forEach(function (c) {
-      var ln = CAR_LANES[c.lane], v = c.v, sp = carSprite(c.kind, c.color, ln.f);
+      var ln = CAR_LANES[c.lane], v = c.v, sp = carSprite(c.kind, c.color, ln.f, c.drv);
       cars.forEach(function (o) {                       // keep a gap behind the car in front
         if (o === c || o.lane !== c.lane || (o.x - c.x) * ln.dir <= 0) return;
-        var gap = Math.abs(o.x - c.x) - (sp.L + carSprite(o.kind, o.color, ln.f).L) / 2;
+        var gap = Math.abs(o.x - c.x) - (sp.L + carSprite(o.kind, o.color, ln.f, o.drv).L) / 2;
         if (gap < 46) v = Math.min(v, o.v);
       });
       c.x += ln.dir * v * dt; c.dist += v * dt;
@@ -2602,7 +2618,7 @@
     cars = cars.filter(function (c) { return c.x > -420 && c.x < W + 420; });
   }
   CAR_LANES.forEach(function (ln, li) { addCar(li, 260 + li * 520 + rand(-80, 80)); });   // the road is never empty at first
-  function eachCar(fn) { [0, 1].forEach(function (li) { cars.forEach(function (c) { if (c.lane === li) fn(c, CAR_LANES[li], carSprite(c.kind, c.color, CAR_LANES[li].f)); }); }); }
+  function eachCar(fn) { [0, 1].forEach(function (li) { cars.forEach(function (c) { if (c.lane === li) fn(c, CAR_LANES[li], carSprite(c.kind, c.color, CAR_LANES[li].f, c.drv)); }); }); }
   function drawCars(g) {
     g.imageSmoothingEnabled = false;
     eachCar(function (c, ln, sp) {

@@ -115,7 +115,20 @@ window.StreetPeople = function (D) {
   // The second style (street-walk.js): flat colour, no outlines, one shared body and walk. When it is loaded,
   // the people on the footpath are this cast. Their pace comes from their stride, so a walk plays at its
   // own rhythm (about 65 ms a frame) and the planted foot stays put.
-  var V2 = !!(window.StreetWalk && !P.oldCast);
+  // The third style (street-body.js, the approved one): everyone on the footpath, at the bar and behind its counter,
+  // each dressed for the weather they set out in (summer, rain or cold).
+  var BODY = !!(window.StreetBody && !P.oldCast), SB = window.StreetBody, CLIM = 'summer';
+  var V2 = !BODY && !!(window.StreetWalk && !P.oldCast);
+  if (BODY) {
+    WALKERS = []; DINERS = [];
+    SB.cast().forEach(function (def) {
+      var ms = def.age === 'elder' ? 82 : def.age === 'kid' ? 58 : 66, mk = SB.make(def, 'summer', 35 * def.k, false);
+      var pace = mk.cycle / (mk.n * ms / 1000);
+      CAST['b_' + def.id] = { body: def, scale: def.k, speed: [pace * 0.95, pace * 1.05], sex: def.sex };
+      WALKERS.push('b_' + def.id); if (def.age !== 'kid') DINERS.push('b_' + def.id);
+    });
+    CAST.b_waiter = { body: SB.staff.waiter, scale: 1, speed: [9, 11], sex: 'f' };
+  }
   if (V2) {
     WALKERS = [];
     Object.keys(window.StreetWalk.CAST).forEach(function (k) {
@@ -829,7 +842,34 @@ window.StreetPeople = function (D) {
   }
   // A sheet is made empty, and each frame is drawn (and outlined) the first time it is shown. That spreads the
   // work over many frames, so a new pose never makes the animation stutter. eager: draw every frame now.
-  function sheet(id, s, pose, umb, eager) {
+  // The third style's poses (street-body.js options): arms are [angle from straight down (+ forward), elbow bend]
+  var TAU_ = Math.PI * 2;
+  function bodyOpts(pose) {
+    if (pose === 'walk' || pose === 'run' || pose === 'shield') return {};
+    if (pose === 'tray') return { tray: true, arms: function () { return { n: [-8, 98] }; } };
+    if (pose === 'wipe') return { stand: true, cloth: '#7ab0c8', n: 16, arms: function (t) { return { n: [46 + 16 * Math.sin(t * TAU_), 30] }; } };
+    if (/^back-/.test(pose)) return { back: true, kind: pose.slice(5), seat: BACK_SEAT, n: 12 };
+    if (/^sit-/.test(pose)) return { sit: true, n: 12, arms: function (t) { return { n: [62, 40 + (pose === 'sit-eat' ? 20 * Math.max(0, Math.sin(t * TAU_)) : 0)], f: [58, 40] }; } };
+    if (pose === 'phone') return { stand: true, n: 1, arms: function () { return { n: [28, 105] }; } };
+    if (pose === 'watch') return { stand: true, n: 1, arms: function () { return { n: [55, 95] }; } };
+    if (pose === 'pockets') return { stand: true, n: 1, arms: function () { return { n: [-6, 12], f: [-6, 12] }; } };
+    if (pose === 'talk') return { stand: true, n: 16, arms: function (t) { return { n: [22 + 12 * Math.sin(t * TAU_), 45 + 15 * Math.sin(t * TAU_ * 2)] }; } };
+    return { stand: true, n: 1 };
+  }
+  function sheet(id, s, pose, umb, eager, clim) {
+    var body = CAST[id] && CAST[id].body;
+    if (body) {
+      var bkey = id + '|' + s + '|' + pose + '|' + (clim || 'summer'), bsh = sheets[bkey];
+      if (!bsh) {
+        var bmk = SB.make(body, clim || 'summer', s / S, bodyOpts(pose)), bc = document.createElement('canvas');
+        bc.width = bmk.fw * bmk.n; bc.height = bmk.fh * 2;
+        var bg = readableContext(bc);
+        bsh = sheets[bkey] = { canvas: bc, g: bg, fw: bmk.fw, fh: bmk.fh, footX: bmk.footX, footY: bmk.footY, n: bmk.n, ready: new Uint8Array(bmk.n), cycle: bmk.cycle * S, v2: true, body: true,
+          paint: function (f) { bmk.paint(bg, f, f * bmk.fw); finish(bg, bmk.fw, bmk.fh, 1, f * bmk.fw, true); } };
+      }
+      if (eager) for (var bf = 0; bf < bsh.n; bf++) ensureFrame(bsh, bf);
+      return bsh;
+    }
     var v2 = CAST[id] && CAST[id].v2, moving = pose === 'walk' || pose === 'run' || pose === 'shield';
     if (v2) { pose = moving ? 'walk' : 'stand'; umb = false; }
     var key = id + '|' + s + '|' + pose + '|' + (umb ? 1 : 0), sh = sheets[key];
@@ -906,7 +946,7 @@ window.StreetPeople = function (D) {
   function sizeOf(a) { return Math.round(LANES[a.lane].h * S * (CAST[a.id].scale || 1)); }
   function makeAgent(id, lane, x, dir) {
     var sp = CAST[id];
-    return { id: id, lane: lane, x: x, dir: dir, walkDir: dir, speed: rand(sp.speed[0], sp.speed[1]), dist: rand(0, 50), state: 'walk', timer: 0, alpha: 1, cooldown: rand(2, 6), active: true, phase: rand(0, 20), idle: null, glance: 0 };
+    return { id: id, lane: lane, x: x, dir: dir, walkDir: dir, speed: rand(sp.speed[0], sp.speed[1]), dist: rand(0, 50), state: 'walk', timer: 0, alpha: 1, cooldown: rand(2, 6), active: true, phase: rand(0, 20), idle: null, glance: 0, climate: CLIM };
   }
   function spawn(lane, atEdge) {
     var dir = Math.random() < 0.5 ? 1 : -1, x = atEdge ? (dir > 0 ? -40 : W + 40) : rand(20, W - 20), r = Math.random(), h = LANES[lane].h;
@@ -932,12 +972,12 @@ window.StreetPeople = function (D) {
     if (a.partner && a.partner.active) return Math.random() < 0.75 ? 'talk' : 'look';
     if (a.umb) return pick(['idle', 'look', 'idle', 'watch']);
     var list = ['idle', 'pockets', 'watch', 'phone', 'look', 'phone'];
-    if (!raining) list.push('smoke', 'smoke');
+    if (!raining && !CAST[a.id].body) list.push('smoke', 'smoke');   // (the third style has no cigarette yet)
     return pick(list);
   }
   function stopAgent(a, pose, time, state) {
     if (CAST[a.id].glide) return;                       // the skateboarder rolls on
-    if (CAST[a.id].v2) pose = 'idle';                   // the second style has one standing pose so far
+    if (CAST[a.id].v2 && !CAST[a.id].body) pose = 'idle';   // the second style has one standing pose
     a.state = state || 'look'; a.timer = time; a.idle = pose; a.walkDir = a.dir; a.glance = 0;
     var p = a.partner;
     if (p && p.active) {
@@ -970,7 +1010,7 @@ window.StreetPeople = function (D) {
   // seat BACK_SEAT higher). Otherwise (P.seats) they sit inside at the counter, side on.
   var STOOLS = P.stools || null, STOOL_FOOT = P.stoolFoot || 264, BACK_SEAT = P.stoolSeat || 11;
   var SEATS = STOOLS ? STOOLS.map(function (x) { return [x, 1]; }) : P.seats || [[214, 1], [226, -1], [256, 1], [270, -1], [288, 1], [358, 1], [370, -1], [434, 1], [450, -1]];
-  function diner(i, x, dir, id, kind, fresh) { return { stool: i, x: x, dir: dir, id: id, kind: kind, clock: rand(0, 10), pace: rand(2.6, 4.2), pause: rand(0, 2), back: !!STOOLS, alpha: fresh ? 0 : 1, state: fresh ? 'come' : 'sit', stay: fresh ? rand(70, 170) : rand(15, 160), served: !fresh }; }
+  function diner(i, x, dir, id, kind, fresh) { return { stool: i, x: x, dir: dir, id: id, kind: kind, clock: rand(0, 10), pace: rand(2.6, 4.2), pause: rand(0, 2), back: !!STOOLS, alpha: fresh ? 0 : 1, state: fresh ? 'come' : 'sit', stay: fresh ? rand(70, 170) : rand(15, 160), served: !fresh, climate: CLIM }; }
   SEATS.forEach(function (seat, i) { if (Math.random() < (STOOLS ? 0.6 : 0.72)) diners.push(diner(i, seat[0], seat[1], pick(DINERS), pick(['eat', 'eat', 'drink', 'talk', 'phone']), false)); });
   if (STOOLS && !diners.length) diners.push(diner(1, STOOLS[1], 1, pick(DINERS), 'eat', false));
   // The counter's life (with stools): people who go in through the door sit down a little later and order; a small
@@ -982,13 +1022,14 @@ window.StreetPeople = function (D) {
   var workers = P.workers || [{ id: 'workerA', x: 566, dir: 1, kind: 'talk' }, { id: 'workerB', x: 590, dir: -1, kind: 'shovel' }, { id: 'workerC', x: 626, dir: -1, kind: 'sign' }];
 
   function update(dt, t, env) {
+    if (env.climate) CLIM = env.climate;               // what people put on when they set out (those already out keep theirs)
     var raining = env.rain > 0.3;
     door.open = Math.max(0, door.open - dt);
     for (var i = 0; i < agents.length; i++) {
       var a = agents[i];
       if (!a.active) continue;
       var sp = CAST[a.id];
-      a.umb = raining && !!sp.umbrella && a.state !== 'shield';
+      a.umb = raining && !!(sp.body ? (sp.body[a.climate] || sp.body.summer).umbrella : sp.umbrella) && a.state !== 'shield';
       if (a.follow) {
         var L = a.follow;
         a.state = L.state; a.alpha = L.alpha; a.active = L.active;
@@ -1057,7 +1098,7 @@ window.StreetPeople = function (D) {
     agents = agents.filter(function (a) { return a.active; });
     for (var e = exits.length - 1; e >= 0; e--) {
       if (t >= exits[e].at) {
-        if (V2 && !CAST[exits[e].id].v2) {               // someone from the bar steps out: as one of the new cast
+        if ((V2 || BODY) && !CAST[exits[e].id].v2 && !CAST[exits[e].id].body) {               // someone from the bar steps out: as one of the new cast
           var out = {}; agents.forEach(function (o) { if (o.active) out[o.id] = 1; });
           var freeV = WALKERS.filter(function (id) { return !out[id]; });
           if (!freeV.length) { exits.splice(e, 1); continue; }
@@ -1157,13 +1198,13 @@ window.StreetPeople = function (D) {
     ctx.clip();
     var dS = (P.dinerSize || 36) * S;
     if (!STOOLS) diners.forEach(function (d) {
-      var sh = sheet(d.id, dS, 'sit-' + d.kind, false);
+      var sh = sheet(d.id, dS, 'sit-' + d.kind, false, false, d.climate);
       var cycle = (env.t + d.clock) % (d.pace + d.pause), frame = cycle < d.pace ? Math.floor(cycle / d.pace * 12) % 12 : 0;
       drawSprite(ctx, sh, frame, Math.round(d.x * S + ox6), Math.round((COUNTER + SEAT_DROP) * S), d.dir, 1, env);
       light(ctx, opts, dinerGlow(d, env));
     });
-    var wS = (P.waiterSize || 36) * S, wsh = sheet('waiter', wS, waiter.state === 'walk' ? 'tray' : waiter.pose, false);
-    var wf = waiter.state === 'walk' ? Math.floor(waiter.dist / (wS / S * strideOf(GAITS.walk)) * GAIT_FRAMES) % GAIT_FRAMES : Math.floor(env.t * 6) % 16;
+    var wS = (P.waiterSize || 36) * S, wsh = sheet(BODY ? 'b_waiter' : 'waiter', wS, waiter.state === 'walk' ? 'tray' : waiter.pose, false);
+    var wf = wsh.body ? (waiter.state === 'walk' ? Math.floor(waiter.dist / (wsh.cycle / S) * wsh.n) % wsh.n : Math.floor(env.t * 6) % wsh.n) : waiter.state === 'walk' ? Math.floor(waiter.dist / (wS / S * strideOf(GAITS.walk)) * GAIT_FRAMES) % GAIT_FRAMES : Math.floor(env.t * 6) % 16;
     drawSprite(ctx, wsh, wf, Math.round(waiter.x * S + ox6), Math.round(WAITER.y * S), waiter.dir, 1, env);
     if (STOOLS && WIN.length) {                         // order tickets on a rail, and the printer that prints them
       var w0 = WIN[0], rx = (w0.x + env.offset(DINER_DEPTH)) * S, ry = (w0.y + 3) * S;
@@ -1179,7 +1220,7 @@ window.StreetPeople = function (D) {
     // its owner (so behind the head, from here), and steam rises from the bowls of those eating.
     if (STOOLS) diners.forEach(function (d) {
       light(ctx, opts, dinerGlow(d, env));
-      var sh = sheet(d.id, dS, 'back-' + d.kind, false);
+      var sh = sheet(d.id, dS, 'back-' + d.kind, false, false, d.climate);
       var cycle = (env.t + d.clock) % (d.pace + d.pause), frame = cycle < d.pace ? Math.floor(cycle / d.pace * 12) % 12 : 0;
       var bx = Math.round(d.x * S + ox6), fy = Math.round(STOOL_FOOT * S);
       drawSprite(ctx, sh, frame, bx, fy, 1, d.alpha === undefined ? 1 : d.alpha, env);
@@ -1236,7 +1277,7 @@ window.StreetPeople = function (D) {
     for (var i = 0; i < agents.length; i++) {
       var a = agents[i];
       if (a.lane !== li) continue;
-      var s = sizeOf(a), pose = poseOf(a), sh = sheet(a.id, s, pose, a.umb && pose !== 'ride');
+      var s = sizeOf(a), pose = poseOf(a), sh = sheet(a.id, s, pose, a.umb && pose !== 'ride', false, a.climate);
       // Walking and running frames follow the distance walked, so planted feet stay put on the pavement
       var gt = gaitOf(pose), stride = gt ? (s / S) * strideOf(gt) : 1;
       var frame = gt ? Math.floor(a.dist / stride * GAIT_FRAMES) % GAIT_FRAMES : sh.n === 16 ? Math.floor((env.t + a.phase) * 6) % 16 : Math.floor(env.t * 1.2 + i) % sh.n;
@@ -1324,7 +1365,72 @@ window.StreetPeople = function (D) {
   // person's height, c the silhouette colour, lc the colour of any light they hold (a screen, a stove's steam).
   var ROOM_KINDS = ['water', 'iron', 'stretch', 'read', 'type', 'cook', 'pace', 'dance', 'fold', 'paint', 'bulb', 'guitar', 'tea',
     'cashier', 'browse', 'vendor', 'tech', 'clerk', 'bus-read', 'bus-phone', 'bus-doze', 'bus-stand'];
-  function roomActor(g, kind, f, x, y, h, c, lc) {
+  // In the third style, the people inside are the street's own people (who: 0..1 picks one, and the way they face),
+  // in their summer clothes, doing the same things, with what they hold in their hands.
+  var ROOM_POSE = {
+    water: { stand: true, arms: function () { return { n: [72, 8], f: [12, 20] }; } },
+    iron: { stand: true, arms: function (t) { return { n: [28 + 14 * Math.sin(t * TAU_), 52], f: [18, 30] }; } },
+    stretch: { stand: true, arms: function (t) { return t < 0.5 ? { n: [172, 0], f: [166, 0] } : { n: [150, 25], f: [140, 25] }; } },
+    read: { sit: true, arms: function () { return { n: [25, 85], f: [20, 80] }; } },
+    type: { sit: true, arms: function (t) { return { n: [35, 55 + 8 * (Math.floor(t * 4) % 2)], f: [30, 55] }; } },
+    cook: { stand: true, arms: function (t) { return { n: [34 + 8 * Math.cos(t * TAU_), 56], f: [10, 20] }; } },
+    pace: { arms: function () { return { n: [25, 150] }; } },
+    dance: { arms: function (t) { return t < 0.5 ? { n: [150, 30], f: [40, 40] } : { n: [40, 40], f: [150, 30] }; } },
+    fold: { stand: true, arms: function (t) { return { n: [60, 30 - 14 * (Math.floor(t * 4) % 2)], f: [55, 30] }; } },
+    paint: { stand: true, arms: function (t) { return { n: [100 + 10 * Math.sin(t * TAU_), 10], f: [12, 20] }; } },
+    bulb: { stand: true, arms: function () { return { n: [178, 0], f: [12, 15] }; } },
+    guitar: { sit: true, arms: function (t) { return { n: [48, 22 + 10 * Math.sin(t * TAU_)], f: [72, 60] }; } },
+    tea: { stand: true, arms: function (t) { return t < 0.5 ? { n: [20, 140] } : { n: [22, 70] }; } },
+    cashier: { stand: true, arms: function (t) { return { n: [45, 40 + 14 * Math.abs(Math.sin(t * TAU_))], f: [40, 40] }; } },
+    browse: { stand: true, arms: function (t) { return { n: [100, Math.floor(t * 4) === 2 ? 12 : 0], f: [10, 15] }; } },
+    vendor: { stand: true, arms: function () { return { n: [55, 35], f: [50, 35] }; } },
+    tech: { stand: true, arms: function (t) { return { n: [122, 15 + 6 * Math.sin(t * TAU_)], f: [10, 15] }; } },
+    clerk: { stand: true, arms: function (t) { return t < 0.5 ? { n: [25, 150] } : { n: [42, 42], f: [38, 40] }; } },
+    'bus-read': { sit: true, arms: function () { return { n: [25, 85] }; } }, 'bus-phone': { sit: true, arms: function () { return { n: [30, 100] }; } },
+    'bus-doze': { sit: true }, 'bus-stand': { stand: true, arms: function () { return { n: [176, 0] }; } }
+  };
+  var roomSprites = {}, SHOPKINDS = /^(cashier|browse|vendor|tech|clerk)$/;
+  function roomBody(g, kind, f, x, y, h, lc, who) {
+    var cast = SB.cast(), adults = SHOPKINDS.test(kind) ? cast.filter(function (d) { return d.age !== 'kid'; }) : cast;
+    var def = adults[Math.floor(who * 997) % adults.length], hu = Math.max(8, Math.round(h / 2 * (def.age === 'kid' ? 0.72 : 1) * 2) / 2), fr = f % 4;
+    var key = def.id + '|' + kind + '|' + fr + '|' + hu, spr = roomSprites[key];
+    if (!spr) {
+      var base = ROOM_POSE[kind] || { stand: true }, opts = { stand: base.stand, sit: base.sit, arms: base.arms, n: 4 };
+      var mk = SB.make(def, 'summer', hu, opts), cv = document.createElement('canvas'); cv.width = mk.fw; cv.height = mk.fh;
+      var info = mk.paint(cv.getContext('2d'), fr, 0, 0);
+      spr = roomSprites[key] = { c: cv, fx: mk.footX, fy: mk.footY, hn: info.hands ? info.hands.n : [mk.footX, mk.footY - h * 0.5], hf: info.hands && info.hands.f ? info.hands.f : null, sit: !!base.sit };
+    }
+    var dir = SHOPKINDS.test(kind) || (who * 7) % 1 < 0.5 ? 1 : -1, feet = spr.sit ? y + Math.round(h * 0.27) : y;
+    var hn = [spr.hn[0] - spr.fx, spr.hn[1] - spr.fy], hf = spr.hf ? [spr.hf[0] - spr.fx, spr.hf[1] - spr.fy] : hn, q = h / 44;
+    g.save(); g.translate(Math.round(x), Math.round(feet)); g.scale(dir, 1);
+    var R = function (x0, y0, w, hh, col) { g.fillStyle = col; g.fillRect(Math.round(x0), Math.round(y0), Math.max(1, Math.round(w)), Math.max(1, Math.round(hh))); };
+    var L = function (x0, y0, x1, y1, w, col) { var n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); g.fillStyle = col; for (var i = 0; i <= n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n - w / 2), Math.round(y0 + (y1 - y0) * i / n), w, w); };
+    // behind them: a chair's back, a shelf, an easel
+    if (kind === 'read' || kind === 'type') { R(-0.2 * h, -0.62 * h, 0.05 * h, 0.62 * h, '#4a3022'); R(-0.2 * h, -0.62 * h, 0.05 * h, 1, '#6a4a32'); }
+    if (kind === 'browse') { R(0.3 * h, -0.98 * h, 2, 0.98 * h, '#5a4030'); for (var sv = 0; sv < 3; sv++) { var sy = -0.9 * h + sv * 0.3 * h; R(0.3 * h, sy, 0.2 * h, 1, '#5a4030'); for (var bk = 0; bk < 5; bk++) R(0.31 * h + bk * 2 * q, sy - 4 * q, 1.5 * q, 4 * q, ['#a83a3a', '#3a6a8a', '#d8b040', '#4a7a4a', '#e8e0d0'][(bk + sv) % 5]); } }
+    if (kind === 'paint') { L(hn[0] + 0.1 * h, 0, hn[0] + 0.13 * h, -0.78 * h, Math.max(1, Math.round(q)), '#6a4a2a'); R(hn[0] + 0.05 * h, -0.72 * h, 0.2 * h, 0.26 * h, '#e8e2d4'); R(hn[0] + 0.08 * h, -0.66 * h, 2 * q, 2 * q, '#c84a3a'); R(hn[0] + 0.14 * h, -0.6 * h, 3 * q, 2 * q, '#3a6aa8'); }
+    g.drawImage(spr.c, -spr.fx, -spr.fy);
+    // in their hands, or in front of them
+    switch (kind) {
+      case 'water': R(hn[0] - 1, hn[1] - 1, 4 * q, 3 * q, '#4a7a8a'); L(hn[0] + 3 * q, hn[1], hn[0] + 6 * q, hn[1] - 2 * q, 1, '#4a7a8a'); if (fr % 2) R(hn[0] + 6 * q, hn[1] + 1, 1, 2, lc); break;
+      case 'iron': R(hn[0] - 0.22 * h, hn[1] + 2, 0.45 * h, 2, '#c8c0b0'); L(hn[0] - 0.1 * h, hn[1] + 3, hn[0] + 0.05 * h, 0, 1, '#6a6a6a'); R(hn[0] - 2, hn[1] - 1, 4 * q, 2, '#d8d8dc'); break;
+      case 'read': R(hn[0] - 1, hn[1] - 0.1 * h, 0.07 * h, 0.1 * h, lc); break;
+      case 'type': R(hn[0] - 0.14 * h, hn[1] + 1, 0.42 * h, 2, '#6a4a32'); L(hn[0] + 0.24 * h, hn[1] + 2, hn[0] + 0.24 * h, 0, 1, '#4a3022'); R(hn[0] + 0.02 * h, hn[1] - 0.12 * h, 0.1 * h, 0.12 * h, lc); break;
+      case 'cook': R(hn[0] - 0.06 * h, hn[1] + 0.04 * h, 0.3 * h, -hn[1] - 0.04 * h, '#8a8a86'); R(hn[0] - 0.06 * h, hn[1] + 0.04 * h, 0.3 * h, 1, '#b8b8b2'); R(hn[0] - 0.02 * h, hn[1] - 0.03 * h, 0.14 * h, 0.06 * h, '#3a3a3e'); for (var s2 = 0; s2 < 3; s2++) R(hn[0] + s2 * 3 + ((fr + s2) % 2), hn[1] - 0.08 * h - s2 * 3 - fr, 1, 2, lc); break;
+      case 'pace': case 'clerk': case 'bus-phone': if (kind !== 'clerk' || fr < 2) R(hn[0] - 1, hn[1] - 2, 2, 3, lc); break;
+      case 'fold': R(Math.min(hn[0], hf[0]) - 1, Math.min(hn[1], hf[1]), Math.abs(hn[0] - hf[0]) + 3, Math.max(2, 0.05 * h), '#d8c8b0'); break;
+      case 'bulb': R(hn[0] - 1, hn[1] - 3, 3, 3, fr % 2 ? lc : '#c8c0a8'); break;
+      case 'guitar': g.fillStyle = '#8a5a2a'; g.beginPath(); g.ellipse(Math.round(hn[0] - 0.04 * h), Math.round(hn[1] + 0.03 * h), Math.max(2, 0.08 * h), Math.max(2, 0.06 * h), 0, 0, Math.PI * 2); g.fill(); L(hn[0] - 0.04 * h, hn[1] + 0.02 * h, hf[0], hf[1], 1, '#4a3020'); break;
+      case 'tea': R(hn[0] - 1, hn[1] - 2, 3, 3, '#e8e4dc'); if (fr < 2) R(hn[0], hn[1] - 5 - fr, 1, 2, lc); break;
+      case 'vendor': case 'bus-read': R(hn[0] - 1, hn[1] - 0.08 * h, 0.14 * h, 0.1 * h, '#e8e2d4'); break;
+      case 'tech': R(hn[0] + 0.04 * h, hn[1] - 0.12 * h, 0.2 * h, 0.14 * h, lc); break;
+      case 'browse': if (fr === 2) R(hn[0] - 1, hn[1] - 4 * q, 3, 6 * q, '#a83a3a'); break;
+    }
+    if (kind === 'cashier' || kind === 'clerk') { R(0.06 * h, -0.5 * h, 0.55 * h, 0.5 * h, '#5a4a3a'); R(0.06 * h, -0.5 * h, 0.55 * h, 2, '#7a6a58'); if (kind === 'cashier') R(0.3 * h, -0.62 * h, 0.12 * h, 0.1 * h, lc); }
+    g.restore();
+  }
+  function roomActor(g, kind, f, x, y, h, c, lc, who) {
+    if (BODY && who !== undefined) { roomBody(g, kind, f, x, y, h, lc, who); return; }
     var R = function (x0, y0, w, hh, col) { g.fillStyle = col || c; g.fillRect(Math.round(x0), Math.round(y0), Math.max(1, Math.round(w)), Math.max(1, Math.round(hh))); };
     var L = function (x0, y0, x1, y1, w, col) { var n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); g.fillStyle = col || c; for (var i = 0; i <= n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n - w / 2), Math.round(y0 + (y1 - y0) * i / n), w, w); };
     var D = function (cx, cy, r, col) { g.fillStyle = col || c; for (var yy = -r; yy <= r; yy++) { var w = Math.round(Math.sqrt(r * r - yy * yy + r * 0.5)); g.fillRect(Math.round(cx - w), Math.round(cy + yy), w * 2 + 1, 1); } };
