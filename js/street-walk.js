@@ -16,6 +16,15 @@
   function dirv(a, l) { return [Math.sin(a) * l, Math.cos(a) * l]; }
   function lerp(a, b, u) { return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
   function inPoly(pts, x, y) { var c = false; for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) { var a = pts[i], b = pts[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+  // A colour in shade (f < 1: darker and a little cooler) or in the light (f > 1: lighter, a little warmer)
+  var adjCache = {};
+  function adj(hex, f) {
+    var key = hex + f; if (adjCache[key]) return adjCache[key];
+    var n = parseInt(hex.slice(1), 16), c = [((n >> 16) & 255) * f, ((n >> 8) & 255) * f, (n & 255) * f];
+    if (f < 1) { var t = (1 - f) * 40; c = [c[0] - t * 0.5, c[1] - t * 0.2, c[2] + t * 0.6]; } else { var u = (f - 1) * 40; c = [c[0] + u * 0.5, c[1] + u * 0.3, c[2] - u * 0.3]; }
+    var out = '#' + c.map(function (v) { v = Math.max(0, Math.min(255, Math.round(v))); return (v < 16 ? '0' : '') + v.toString(16); }).join('');
+    return (adjCache[key] = out);
+  }
   var rgbCache = {};
   function rgb(h) { var r = rgbCache[h]; if (r) return r; var n = parseInt(h.slice(1), 16); return (rgbCache[h] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]); }
 
@@ -45,9 +54,10 @@
   // ---------------------------------------------------------------- one person
   // def: the person (see CAST). heightPx: how tall they stand, in sprite pixels. stand: the standing pose
   function make(def, heightPx, stand) {
-    var s = heightPx / 54, wd = def.wd || 1, lw = (def.limb || 1) * s, legL = (def.legL || 1) * s, hs = s * (def.headK || 1);
+    // FILL: limbs a good deal fuller than a stick figure; bodies a touch wider too (see T)
+    var FILL = def.fill || 1.24, s = heightPx / 54, wd = (def.wd || 1) * 1.1, lw = (def.limb || 1) * s * FILL, legL = (def.legL || 1) * s, hs = s * (def.headK || 1);
     var amp = stand ? 0 : (def.amp || 1), armAmp = stand ? 0 : (def.armAmp || 1), sh = def.sh || 1, bust = def.bust || 0, hips = def.hips == null ? 0.4 : def.hips, belly = def.belly || 0;
-    var fw = Math.ceil(48 * s * Math.max(1, wd)) + 6, fh = Math.ceil(64 * s) + 8, G = fh - 3, HIPX = Math.round(fw / 2) - 1;
+    var fw = Math.ceil(48 * s * Math.max(1, wd)) + 6, fh = Math.ceil(64 * s) + 8 + (def.umbrella ? Math.ceil(12 * s) : 0), G = fh - 3, HIPX = Math.round(fw / 2) - 1;
     var FOOT = [[-1.3, -0.9], [1.1, -1.1], [4.3, 0.7], [4.3, 1.8], [-1.5, 1.8]];
     var skate = !!def.skate && !stand, BOARD = 2.6 * s;   // the skateboard lifts the riding foot this far
     function legFrom(hip, a, kn, ft) {
@@ -116,25 +126,36 @@
       }
       var cv = new Cv(fw, fh), top = def.top, bot = def.bottom, shoe = def.shoes, skin = def.skin, hair = def.hair;
 
+      // shade along the side of a limb away from the light (light comes from ahead and above)
+      function shadeSide(a2, b2, wa, wb, col) {
+        var dx = b2[0] - a2[0], dy = b2[1] - a2[1], L2 = Math.hypot(dx, dy) || 1, nx = -dy / L2, ny = dx / L2;   // (nx, ny): the back side for a limb pointing down
+        var o1 = wa * 0.32, o2 = wb * 0.32;
+        cv.limb([a2[0] + nx * o1, a2[1] + ny * o1], [b2[0] + nx * o2, b2[1] + ny * o2], wa * 0.38, wb * 0.38, col);
+      }
       function drawArm(A, far) {
-        var k = far ? 1 : 0, sl = top.sleeve || 0;
+        var k = far ? 1 : 0, coat = def.coat, sl = coat ? 1.95 : top.sleeve || 0, slc = coat ? coat.col : top.col;
         cv.limb(A.sh, A.elb, 2.5 * lw, 2.1 * lw, skin[k]);
         cv.limb(A.elb, A.wr, 2.1 * lw, 1.7 * lw, skin[k]);
-        cv.ell(A.hand[0], A.hand[1], 1.0 * lw, 1.2 * lw, skin[k]);
-        if (sl > 0) cv.limb(A.sh, lerp(A.sh, A.elb, Math.min(1, sl)), 3.0 * lw, (2.6 + (sl < 1 ? 0.5 : 0)) * lw, top.col[k]);
+        cv.ell(A.hand[0], A.hand[1], 1.0 * lw, 1.2 * lw, def.gloves ? def.gloves[k] : skin[k]);
+        if (sl > 0) cv.limb(A.sh, lerp(A.sh, A.elb, Math.min(1, sl)), (coat ? 3.4 : 3.0) * lw, (2.6 + (sl < 1 ? 0.5 : 0.3)) * lw, slc[k]);
         else if (!far) cv.ell(A.sh[0] + 0.4 * s, A.sh[1] - 1.0 * s, 0.7 * lw, 0.6 * lw, top.col[0]);   // a strap over the near shoulder
-        if (sl > 1) cv.limb(A.elb, lerp(A.elb, A.wr, sl - 1), 2.6 * lw, 2.3 * lw, top.col[k]);
+        if (sl > 1) cv.limb(A.elb, lerp(A.elb, A.wr, sl - 1), (coat ? 2.9 : 2.6) * lw, 2.4 * lw, slc[k]);
+        // light and shade on the arm: the underside in shadow, a lit line along the top
+        shadeSide(A.sh, A.elb, 2.6 * lw, 2.2 * lw, adj(sl > 0.6 ? slc[k] : skin[k], 0.8));
+        shadeSide(A.elb, A.wr, 2.2 * lw, 1.8 * lw, adj(sl > 1.5 ? slc[k] : skin[k], 0.8));
       }
       function drawLeg(g, far) {
         var k = far ? 1 : 0;
         var lc = def.tights || skin;                    // bare legs, or tights (a third colour: a dot pattern)
         cv.limb(g.hip, g.knee, 4.1 * lw, 2.8 * lw, lc[k], [0.35, 3.8 * lw]);
         cv.limb(g.knee, g.ank, 2.7 * lw, 1.9 * lw, lc[k], [0.3, 3.0 * lw]);
+        legShade(g, k, lc[k], 0, 2);
         if (def.tights && def.tights[2]) for (var ti = 0.2; ti < 1.9; ti += 0.34) { var tp = hemPoint(g, ti); cv.ell(tp[0] + (k ? 0 : 0.6 * lw), tp[1], 0.55 * lw, 0.55 * lw, def.tights[2]); }
         if (bot.kind === 'shorts' || bot.kind === 'trousers') {
           var cov = bot.len, fl = bot.kind === 'shorts' ? 0.9 : 0.4;
           cv.limb(g.hip, lerp(g.hip, g.knee, Math.min(1, cov)), (4.3 + fl * 0.4) * lw, (cov >= 1 ? 3.2 : 3.4 + fl) * lw, bot.col[k], [0.35, (4.1 + fl * 0.4) * lw]);
           if (cov > 1) cv.limb(g.knee, lerp(g.knee, g.ank, cov - 1), 3.2 * lw, (cov > 1.9 ? 2.6 : 2.5) * lw, bot.col[k], [0.3, 3.3 * lw]);
+          legShade(g, k, bot.col[k], 0, cov);
         }
         if (def.socks) cv.limb(lerp(g.ank, g.knee, 0.32), g.ank, 2.3 * lw, 2.1 * lw, def.socks[k]);
         if (shoe.kind === 'boot') { cv.limb(lerp(g.ank, g.knee, 0.26), g.ank, 2.9 * lw, 2.5 * lw, shoe.col[k]); cv.poly(g.foot, shoe.col[k]); }
@@ -148,8 +169,21 @@
         }
       }
       function hemPoint(g, u) { return u <= 1 ? lerp(g.hip, g.knee, u) : lerp(g.knee, g.ank, u - 1); }
+      // Shade on a leg (from u0 to u1 along it: 0 hip, 1 knee, 2 ankle) in col: the back of the thigh and calf in
+      // shadow, a crease behind a bent knee, the kneecap catching the light
+      function legShade(g, k, col, u0, u1) {
+        var dk = adj(col, 0.78), lt = adj(col, 1.16);
+        if (u0 < 1) { var e1 = Math.min(1, u1); shadeSide(hemPoint(g, u0), hemPoint(g, e1), 4.0 * lw, (e1 >= 1 ? 2.8 : 3.4) * lw, dk); }
+        if (u1 > 1) { shadeSide(g.knee, hemPoint(g, Math.min(2, u1)), 2.8 * lw, 2.0 * lw, dk); }
+        if (u0 <= 1 && u1 >= 1) {
+          var tx = g.knee[0] - g.hip[0], ty = g.knee[1] - g.hip[1], sx2 = g.ank[0] - g.knee[0], sy2 = g.ank[1] - g.knee[1];
+          var bend = Math.abs(Math.atan2(tx * sy2 - ty * sx2, tx * sx2 + ty * sy2));
+          if (bend > 0.2) cv.ell(g.knee[0] - 1.0 * lw, g.knee[1] + 0.2 * lw, 0.8 * lw, 0.9 * lw, adj(col, 0.68));   // the crease behind the knee
+          cv.ell(g.knee[0] + 0.9 * lw, g.knee[1] - 0.2 * lw, 0.55 * lw, 0.75 * lw, lt);                       // the kneecap in the light
+        }
+      }
 
-      var nA = arm(-tw, -0.8 * tw, !!def.carry), fA = arm(tw, 0.8 * tw);
+      var nA = arm(-tw, -0.8 * tw, !!(def.carry || def.umbrella)), fA = arm(tw, 0.8 * tw);
       if (skate) {                                       // the board under the riding foot, its wheels on the ground
         var fx = L.n.ank[0] + 1 * s, by = G - BOARD, bc = def.board || ['#3a2a24', '#d8d0c0'];
         cv.poly([[fx - 9 * s, by - 0.3 * s], [fx + 8 * s, by - 0.3 * s], [fx + 9.6 * s, by - 1.3 * s], [fx + 9.8 * s, by + 0.6 * s], [fx - 9.6 * s, by + 0.6 * s], [fx - 10.4 * s, by - 1.1 * s]], bc[0]);
@@ -189,6 +223,21 @@
         var back = Math.min(hn[0], hf[0]) - flare + hem * 0.8, front = Math.max(hn[0], hf[0]) + flare + hem * 0.6, hy = Math.max(hn[1], hf[1]) + 0.5;
         cv.poly([T([-2.3, -6.4]), T([2.3 + belly * 0.8, -6.4]), T([2.6, -3]), [front, hy], [back, hy], T([-2.8 - hips, -1])], bot.col[0]);
         cv.poly([T([-2.3, -6.4]), T([-0.6, -4]), [(back + front) / 2 - 0.6, hy], [back, hy], T([-2.8 - hips, -1])], bot.col[1]);
+      }
+      if (def.coat) {                                    // a coat over the top: open at the front, its hem trailing as they walk
+        var C = def.coat, cl = C.col, lag = (hem * 1.3 + off * 0.9) * s, kind = C.kind, longish = kind === 'long' || kind === 'rain';
+        var fr2, bk2;
+        if (longish) { var hn2 = hemPoint(L.n, C.len || 1.05), hf2 = hemPoint(L.f, C.len || 1.05), cy2 = Math.max(hn2[1], hf2[1]); fr2 = [Math.max(hn2[0], hf2[0]) + 1.4 * s, cy2]; bk2 = [Math.min(hn2[0], hf2[0]) - 2.6 * s - Math.abs(lag), cy2 + 1]; }
+        else { fr2 = T([2.3 + belly * 0.8, kind === 'puffer' ? -2.6 : -1.6]); bk2 = T([-3.4 - hips * 0.5 - (kind === 'puffer' ? 0.6 : 0), kind === 'puffer' ? -2.6 : -1.6]); }
+        var puff = kind === 'puffer' ? 0.7 : 0;
+        var coatPts = [T([-1.0, -20.6]), T([0.7, -20.0]), T([1.3 + puff, -18.4]), T([1.4 + puff, -15.4]), T([1.5 + belly * 0.6 + puff, -9.5]), fr2, bk2, T([-3.5 - hips * 0.4 - puff, -3]), T([-3.3 * sh - puff, -12]), T([-3.4 * sh - puff, -17.6]), T([-2.4 * sh, -19.8])];
+        cv.poly(coatPts, cl[0]);
+        cv.poly([T([1.3 + puff, -18.4]), T([1.4 + puff, -15.4]), T([1.5 + belly * 0.6 + puff, -9.5]), fr2, [fr2[0] - 1.2 * s, fr2[1]], T([0.6 + belly * 0.5, -9.5]), T([0.5, -15.4])], adj(cl[0], 1.12));   // the lit front panel
+        cv.limb(T([-1.2, -16]), longish ? [bk2[0] * 0.5 + fr2[0] * 0.5 - 1.5 * s, bk2[1]] : T([-1.6, -2.6]), 0.9 * s, 0.9 * s, adj(cl[0], 0.8));   // a fold down the back
+        if (kind === 'puffer') for (var qy = -17; qy < -3; qy += 3) cv.limb(T([-3.4 * sh - 0.6, qy]), T([1.5 + puff, qy]), 0.7 * s, 0.7 * s, adj(cl[0], 0.78));   // quilting
+        if (kind === 'rain') cv.limb(T([0.4, -18]), longish ? [fr2[0] - 2 * s, fr2[1] - 1] : T([0.4, -3]), 0.7 * s, 0.7 * s, adj(cl[0], 1.3));   // a wet sheen
+        cv.poly([T([-1.2, -20.8]), T([0.9, -20.4]), T([1.5, -18.6]), T([0.2, -18.4]), T([-1.6, -19.6])], cl[1]);   // the collar
+        if (C.belt) cv.limb(T([-3.3, -7]), T([1.6 + belly * 0.6, -7]), 1.0 * s, 1.0 * s, cl[1]);
       }
       if (def.bag && def.bag.kind === 'backpack') {
         cv.poly([T([-2.4, -18.2]), T([-5.6, -17.4]), T([-6.0, -9.6]), T([-2.4, -9.0])], def.bag.col[0]);
@@ -250,6 +299,12 @@
       if (hat && hat.kind === 'flatcap') { cv.poly([Hd([-3.3, -5.8]), Hd([-2.4, -8.4]), Hd([1.6, -8.9]), Hd([4.8, -6.8]), Hd([4.8, -6.0])], hat.col[0]); cv.poly([Hd([2.0, -6.6]), Hd([4.8, -6.8]), Hd([4.8, -6.0]), Hd([2.0, -6.0])], hat.col[1]); }
       if (def.glasses) { cv.poly([Hd([1.8, -5.1]), Hd([4.0, -5.2]), Hd([4.0, -4.1]), Hd([1.8, -4.0])], '#1c1a1e'); cv.limb(Hd([0.6, -4.6]), Hd([1.8, -4.6]), 0.8 * hs, 0.8 * hs, '#1c1a1e'); }
       if (def.phones) { cv.limb(Hd([-0.4, -3.2]), Hd([0.6, -8.6]), 1.0 * hs, 1.0 * hs, '#26242c'); var ec = Hd([0.2, -3.2]); cv.ell(ec[0], ec[1], 1.3 * hs, 1.5 * hs, '#26242c'); }
+      if (hat && hat.kind === 'beanie') { cv.poly([Hd([-3.4, -5.4]), Hd([-2.6, -8.6]), Hd([0.6, -9.8]), Hd([3.2, -8.6]), Hd([3.8, -5.8])], hat.col[0]); cv.limb(Hd([-3.4, -5.6]), Hd([3.8, -6.0]), 1.4 * hs, 1.4 * hs, hat.col[1]); cv.ell(Hd([0.4, -10.2])[0], Hd([0.4, -10.2])[1], 1.2 * hs, 1.0 * hs, hat.col[1]); }
+      if (def.scarf) {                                   // a scarf round the neck, its end swinging
+        var sc0 = T([0.9, -20.2]), swg = (-8 + 14 * off - (stand ? 0 : 6 * Math.sin(t * 2 * TAU - 0.6))) * rad;
+        cv.limb(T([-1.4, -20.4]), T([2.6, -19.6]), 2.2 * s, 2.2 * s, def.scarf[0]); cv.limb(T([-1.4, -21.2]), T([2.4, -20.6]), 1.0 * s, 1.0 * s, adj(def.scarf[0], 1.15));
+        cv.limb(sc0, add(sc0, dirv(swg, 6.5 * s)), 1.8 * s, 1.5 * s, def.scarf[1]);
+      }
       if (def.carry) {                                   // a basket hanging from the near hand, swinging a little behind it
         var hx = nA.hand[0] + hem * 0.5, hy2 = nA.hand[1], bc2 = def.carry;
         cv.limb([hx - 2.4 * s, hy2 + 2.6 * s], [hx, hy2 - 0.4 * s], 0.7 * s, 0.7 * s, bc2[1]);
@@ -259,6 +314,16 @@
         if (bc2[2]) { cv.ell(hx - 1.4 * s, hy2 + 2.0 * s, 1.1 * s, 1.0 * s, bc2[2]); cv.ell(hx + 1.2 * s, hy2 + 1.8 * s, 1.0 * s, 1.0 * s, bc2[3] || bc2[2]); }
       }
       drawArm(nA, false);
+      if (def.umbrella) {                                // an umbrella held up in the near hand, bobbing with each step
+        var uh = nA.hand, top2 = [uh[0] + 1.5 * s, Hd([0, -12])[1] - 2 * s], uc = def.umbrella, ur = 12 * s;
+        cv.limb(uh, top2, 0.8 * s, 0.8 * s, '#2a2624');
+        var dome = [], crown = [], uhgt = 7 * s;
+        for (var ua = 0; ua <= 16; ua++) { var an4 = Math.PI * ua / 16; dome.push([top2[0] + Math.cos(an4) * ur, top2[1] + 1 * s - Math.sin(an4) * uhgt]); crown.push([top2[0] - 2 * s + Math.cos(an4) * ur * 0.55, top2[1] - 2 * s - Math.sin(an4) * uhgt * 0.6]); }
+        cv.poly(dome, uc); cv.poly(crown, adj(uc, 1.18));   // the canopy, lit on top
+        for (var rb = -2; rb <= 2; rb++) cv.limb(top2, [top2[0] + rb * ur * 0.45, top2[1] + 0.2 * s], 0.6 * s, 0.6 * s, adj(uc, 0.72));   // ribs
+        for (var sc2 = -ur; sc2 < ur; sc2 += 3 * s) cv.ell(top2[0] + sc2 + 1.5 * s, top2[1] + 0.4 * s, 1.5 * s, 0.8 * s, uc);   // the scalloped edge
+        cv.ell(top2[0], top2[1] - 6.4 * s, 0.6 * s, 0.8 * s, '#2a2624');
+      }
       return cv;
     }
     return {
@@ -323,5 +388,78 @@
     w4: { name: 'Blouse, cropped trousers, sunglasses', s: 0.97, wd: 1.1, bust: 1.2, hips: 1.1, belly: 0.4, skin: SKIN.c, glasses: true, hair: { style: 'short', col: c2('#9a908a', '#7a706a') },
       top: { kind: 'shirt', col: c2('#f3efe6', '#c8c2b4'), sleeve: 0.4, hem: -5.0 }, bottom: { kind: 'trousers', col: c2('#34406a', '#262e4e'), len: 1.62 }, shoes: { kind: 'sneaker', col: c2('#b8483e', '#8e3630'), sole: '#ece8e0' } }
   };
-  window.StreetWalk = { make: make, CAST: CAST, FRAMES: N };
+  // ---------------------------------------------------------------- dressed for the weather
+  // climate: 'summer' (as drawn), 'rain' (a raincoat or an umbrella, covered legs, shoes), 'cold' (a coat, scarf,
+  // hat, gloves, trousers or tights, boots). Each person's choice is fixed by their own seed, so it never flickers.
+  function seeded(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+  var RAIN_COATS = [c2('#d8b030', '#a88620'), c2('#2e4a6a', '#20344e'), c2('#8a2e2e', '#662020'), c2('#3e5a3a', '#2c422a'), c2('#c8c2b4', '#9c9688')];
+  var UMBRELLAS = ['#c23a5a', '#2a8a96', '#d8b040', '#2a2a3a', '#5a7a3a', '#8a3ac2', '#e0e0e0', '#c86a2a'];
+  var COATS = [c2('#5a3a26', '#3e2818'), c2('#2a2e3a', '#1c1f28'), c2('#7a6a4a', '#5a4e36'), c2('#6a2a34', '#4a1e26'), c2('#3a4a5a', '#2a3644'), c2('#8a8478', '#6a655c'), c2('#2e4a3a', '#20342a')];
+  var KNITS = [c2('#c83a3a', '#9a2a2a'), c2('#e0c050', '#b09030'), c2('#3a7ab0', '#2a5a84'), c2('#e8e4d8', '#bcb6a8'), c2('#5a8a4a', '#406a34'), c2('#8a4a8a', '#663666')];
+  function copy(o) { var r = {}; for (var k in o) r[k] = o[k]; return r; }
+  function dress(def, climate, key) {
+    if (!climate || climate === 'summer') return def;
+    var d = copy(def), r = function (i) { return seeded((key || 1) * 7.3 + i * 13.7); };
+    if (d.bottom && (d.bottom.kind === 'shorts' || (d.bottom.kind === 'trousers' && d.bottom.len < 1.8))) d.bottom = { kind: 'trousers', col: r(1) < 0.5 ? c2('#2e3a56', '#222a40') : c2('#3a3632', '#2a2724'), len: 2 };
+    if (climate === 'rain') {
+      if (r(2) < 0.55) d.coat = { kind: 'rain', col: RAIN_COATS[Math.floor(r(3) * RAIN_COATS.length)], len: 0.9 }; else d.umbrella = UMBRELLAS[Math.floor(r(4) * UMBRELLAS.length)];
+      if (d.shoes && d.shoes.kind === 'sandal') d.shoes = { kind: 'sneaker', col: c2('#3a3a42', '#26262c'), sole: '#d8d4cc' };
+      if (d.hat && d.hat.kind === 'sunhat') d.hat = null;
+    } else {
+      var pf = r(5) < 0.45;
+      d.coat = { kind: pf ? 'puffer' : 'long', col: (pf ? KNITS : COATS)[Math.floor(r(6) * (pf ? KNITS.length : COATS.length))], len: 1.1, belt: !pf && r(7) < 0.4 };
+      if (r(8) < 0.7) { var sk = KNITS[Math.floor(r(9) * KNITS.length)]; d.scarf = [sk[0], sk[1]]; }
+      if (!d.hat || d.hat.kind === 'sunhat' || d.hat.kind === 'capback') d.hat = r(10) < 0.55 ? { kind: 'beanie', col: KNITS[Math.floor(r(11) * KNITS.length)] } : d.hat && d.hat.kind !== 'sunhat' ? d.hat : null;
+      if (r(12) < 0.45) d.gloves = c2('#2a2420', '#1c1814');
+      if (d.bottom && d.bottom.kind === 'skirt' && !d.tights) d.tights = c2('#2a2428', '#1c181c');
+      d.shoes = { kind: 'boot', col: r(13) < 0.5 ? c2('#4a3020', '#2e1e14') : c2('#26242a', '#18161c') };
+      d.socks = null;
+    }
+    return d;
+  }
+
+  // ---------------------------------------------------------------- many more people, built from parts
+  // Each is made from a seed: a build, a skin tone, hair, a top, bottoms, shoes and extras, in good colours.
+  var BUILDS = [
+    { s: 1.0 }, { s: 1.04, wd: 0.94, limb: 0.92 }, { s: 0.94, wd: 1.08 }, { s: 1.06, wd: 1.18, limb: 1.15, sh: 1.2, pec: 0.5 },
+    { s: 1.0, wd: 1.36, limb: 1.32, belly: 2.0, waist: 1.25, amp: 0.85, ms: 74 }, { s: 1.1, wd: 0.96 }, { s: 0.88, wd: 1.0 },
+    { s: 0.97, wd: 1.12, belly: 1.0, lean: 8, amp: 0.72, armAmp: 0.6, ms: 84 }, { s: 0.92, wd: 0.92, limb: 0.94, amp: 1.08, ms: 60 }
+  ];
+  var SKINS = [SKIN.a, SKIN.b, SKIN.c, SKIN.d, SKIN.e, SKIN.f];
+  var HAIRS = [c2('#141010', '#0a0808'), c2('#3a2418', '#24160e'), c2('#6a4a2a', '#4a3220'), c2('#c8a060', '#a07c44'), c2('#d8b26a', '#b08a4a'), c2('#8a8078', '#6a625c'), c2('#d8d0c8', '#b0a8a0'), c2('#8a3a1a', '#682a12')];
+  var TOPCOLS = [c2('#e0705a', '#b4523f'), c2('#a9c4dc', '#7f9ab4'), c2('#4d9a6a', '#3a7652'), c2('#f0ece2', '#c4beb0'), c2('#e8c04a', '#bc9634'), c2('#2c3a5c', '#1e2840'), c2('#b8483e', '#8e3630'),
+    c2('#8a6ab0', '#6a4e8a'), c2('#3a8ab0', '#2a6a8a'), c2('#e89ab0', '#c07890'), c2('#5a5a62', '#42424a'), c2('#c8b48e', '#a08c6a'), c2('#2a2a32', '#1c1c22'), c2('#e8e6e0', '#b8b4ac')];
+  var BOTCOLS = [c2('#46638f', '#304768'), c2('#5a7bb0', '#41598a'), c2('#2a2a32', '#1c1c22'), c2('#c9b48e', '#a08c6a'), c2('#5e5e66', '#46464c'), c2('#7d8590', '#5e646e'), c2('#3e5a3a', '#2c422a'), c2('#8a3a3a', '#662a2a')];
+  var SHOECOLS = [c2('#ece8e0', '#bdb7ac'), c2('#2c3550', '#1e2438'), c2('#c8403a', '#962e2a'), c2('#3a7ad0', '#2a5aa0'), c2('#4a3020', '#2e1e14'), c2('#26242a', '#18161c')];
+  function generate(n, seed0) {
+    var out = {};
+    for (var i = 0; i < n; i++) {
+      var k = (seed0 || 1) * 1000 + i, r = function (j) { return seeded(k * 3.1 + j * 17.3); }, of = function (arr, j) { return arr[Math.floor(r(j) * arr.length)]; };
+      var f = r(1) < 0.5, b = copy(of(BUILDS, 2)), d = b;
+      d.name = 'person ' + (i + 1); d.skin = of(SKINS, 3);
+      if (f) { d.bust = 0.45 + r(4) * 1.0; d.hips = 0.8 + r(5) * 0.5; } else { d.pec = Math.max(d.pec || 0, 0.25 + r(4) * 0.4); d.hips = 0.3; d.sh = Math.max(d.sh || 1, 1.08 + r(5) * 0.15); }
+      var hs = f ? of(['pony', 'long', 'bob', 'short', 'long', 'bob'], 6) : of(['short', 'short', 'buzz', 'bald', 'short', 'long', 'mohawk'], 6);
+      d.hair = { style: hs, col: hs === 'mohawk' ? of([c2('#5ac04a', '#3e9634'), c2('#c84a8a', '#9a3468'), c2('#3a8ad8', '#2a6aa8')], 7) : of(HAIRS, 7) };
+      if (hs === 'bald') d.hair.col = of(HAIRS, 8);
+      var tk = f ? of(['tee', 'tank', 'shirt', 'dress', 'tee', 'shirt'], 9) : of(['tee', 'tee', 'shirt', 'polo', 'tank'], 9), tc = of(TOPCOLS, 10);
+      d.top = { kind: tk, col: tc, sleeve: tk === 'tank' || tk === 'dress' ? 0 : 0.4 + r(11) * 0.4, hem: tk === 'dress' ? -6.2 : r(12) < 0.5 ? -6.2 : -3.4 - r(13) * 1.5 };
+      if (tk === 'polo') d.top.trim = '#e8e2d6';
+      if (r(14) < 0.15 && tk === 'tee') d.top.stripe = of(['#2c3a5c', '#b8483e', '#2a2a32'], 15);
+      if (tk === 'dress') d.bottom = { kind: 'skirt', col: tc, len: 0.7 + r(16) * 0.8, flare: 1.6 + r(17) * 0.6 };
+      else if (f && r(16) < 0.3) d.bottom = { kind: 'skirt', col: of(BOTCOLS, 17), len: 0.6 + r(18) * 0.9, flare: 1.5 + r(19) * 0.5 };
+      else d.bottom = { kind: r(16) < 0.45 ? 'shorts' : 'trousers', col: of(BOTCOLS, 17), len: 0 };
+      if (d.bottom.kind === 'shorts') d.bottom.len = 0.4 + r(18) * 0.55; else if (d.bottom.kind === 'trousers') d.bottom.len = r(18) < 0.25 ? 1.6 + r(19) * 0.2 : 2;
+      d.shoes = { kind: of(['sneaker', 'sneaker', 'sandal', 'boot'], 20), col: of(SHOECOLS, 21), sole: '#e8e4dc' };
+      if (d.shoes.kind === 'sandal') d.shoes.col = of([c2('#5a3a26', '#3a2418'), c2('#c08a56', '#8e6440'), c2('#2a2a32', '#1c1c22')], 22);
+      if (r(23) < 0.15) d.glasses = true;
+      if (r(24) < 0.16) d.hat = { kind: of(['cap', 'capback', 'flatcap'], 25), col: of(TOPCOLS, 26) };
+      if (!f && r(27) < 0.3) d.beard = of(['#2a1c16', '#6a4a2a', '#8a8078', '#3a2418'], 28);
+      if (r(29) < 0.1) d.phones = true;
+      var bg = r(30); if (bg < 0.12) d.bag = { kind: 'tote', col: of([c2('#d8ccb0', '#a89c80'), c2('#c8508a', '#9a3a68'), c2('#5a7a8a', '#40606c')], 31) }; else if (bg < 0.24) d.bag = { kind: 'backpack', col: of([c2('#26262c', '#18181c'), c2('#3a4a5a', '#2a3644'), c2('#e08a3a', '#b46a28')], 31) };
+      if (r(32) < 0.08) d.socks = c2('#ece8e0', '#bdb7ac');
+      out['p' + i] = d;
+    }
+    return out;
+  }
+  window.StreetWalk = { make: make, CAST: CAST, FRAMES: N, dress: dress, generate: generate };
 })();
