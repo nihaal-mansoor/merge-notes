@@ -486,35 +486,6 @@ textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
 .city-glow { filter: blur(calc(3 * var(--px))) brightness(1.15) saturate(1.2); mix-blend-mode: screen; opacity: 0.72; }
 
 /* ==========================================================
-   Home B: the street scene fills the first screen, and the
-   page starts just below it. js/street.js draws the scene.
-   ========================================================== */
-.street-fallback { background-image: url(../img/street/fallback.png); }
-.street-glow { filter: blur(calc(3 * var(--px))) brightness(1.15) saturate(1.2); mix-blend-mode: screen; opacity: 0.72; }
-.street-light { mix-blend-mode: screen; }   /* light falling on the scene and the people */
-.hero-home .page { margin-top: calc(100vh - 110px); margin-top: calc(100svh - 110px); }
-.hero-hint {
-  position: absolute;
-  left: 50%;
-  top: calc(100vh - 150px);
-  top: calc(100svh - 150px);
-  transform: translateX(-50%);
-  padding: 2px 10px;
-  background: rgba(8, 6, 26, 0.7);
-  border: 1px solid var(--line);
-  color: var(--cyan);
-  font-family: var(--pixel);
-  font-size: 20px;
-  letter-spacing: 1px;
-  white-space: nowrap;
-}
-.hero-hint:visited { color: var(--cyan); }
-@media (max-width: 599px) {
-  .hero-home .page { margin-top: calc(100vh - 90px); margin-top: calc(100svh - 90px); }
-  .hero-hint { top: calc(100vh - 130px); top: calc(100svh - 130px); }
-}
-
-/* ==========================================================
    Home C (Merge Notes): the street is the page. js/district.js
    paints it at 1280 x 720 art pixels; one art pixel = --px.
    The scene fits the width and may lose a little sky and road

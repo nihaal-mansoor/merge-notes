@@ -1,5 +1,6 @@
 /*
-  The people of the street scenes (home pages B and C), version 3.
+  The people of the street (the home page). The walkers, diners and the waiter are the approved people from
+  street-body.js; this file moves them about, and paints the scooter rider and the road workers itself.
 
   People are drawn at twice the scene's pixel density, on their own canvas (1280 x 720), so they have room
   for real shapes. Nobody is an image file: each character is a recipe (build, clothes, cloth, colours, hair,
@@ -68,78 +69,28 @@ window.StreetPeople = function (D) {
   function smoothWin(v, a, b, r) { var k = Math.min(Math.max(0, Math.min(1, (v - a) / r)), Math.max(0, Math.min(1, (b - v) / r))); return k * k * (3 - 2 * k); }
 
   // ---------- The cast ----------
-  // weave: the cloth of the coat or top; pantsWeave: the trousers (twill when not given). See WEAVE below.
+  // Everyone on the footpath, at the bar and behind its counter is one of the approved people (street-body.js),
+  // each dressed for the weather they set out in (summer, rain or cold). Only the scooter rider and the road
+  // workers here are still drawn with this file's own painter (outlines and woven cloth: see WEAVE).
   var CAST = {
-    coatWoman: { sex: 'f', build: 0.92, coat: '#7a3440', coatType: 'long', coatLen: 0.62, belt: true, weave: 'check', pants: '#1a1a22', shoes: '#2a1a14', skin: '#c89a80', hair: '#2a1a14', hairStyle: 'long', scarf: '#3ec8be', bag: 'tote', bagColor: '#d8c8a8', umbrella: '#c23a5a', speed: [8, 11] },
-    hoodie: { sex: 'm', build: 1.05, coat: '#2e3a34', coatType: 'hoodie', weave: 'fleece', head: 'hood', pants: '#2a3448', pantsWeave: 'denim', shoes: '#e8e8e8', skin: '#a8765a', hair: '#141010', hairStyle: 'short', bag: 'backpack', bagColor: '#151515', speed: [10, 13], runs: true },
-    oldMan: { sex: 'm', build: 1, stoop: 1, coat: '#6a6a5e', coatType: 'long', coatLen: 0.55, belt: true, weave: 'tweed', shirt: '#d8d0c0', head: 'fedora', headColor: '#2a2420', pants: '#2a2a2a', shoes: '#1a1410', skin: '#d0a88c', hair: '#b8b0a8', hairStyle: 'short', cane: true, umbrella: '#2a2a3a', speed: [5, 7] },
-    jacketWoman: { sex: 'f', build: 0.88, coat: '#5a3a7a', coatType: 'jacket', weave: 'stripe', pants: '#1a1a2a', pantsWeave: 'denim', shoes: '#c8c8d0', skin: '#e0b49a', hair: '#c8a060', hairStyle: 'pony', umbrella: '#2a8a96', speed: [9, 11] },
-    coatMan: { sex: 'm', build: 1.05, coat: '#1e2a44', coatType: 'long', coatLen: 0.5, weave: 'twill', shirt: '#c8ccd0', pants: '#1a1a1a', shoes: '#2a1a14', skin: '#8a5a40', hair: '#141010', hairStyle: 'short', scarf: '#d8b848', speed: [9, 11] },
-    kid: { sex: 'm', scale: 0.62, build: 1.15, coat: '#e0b830', coatType: 'cape', coatLen: 0.45, gloss: true, head: 'hood', headColor: '#e0b830', pants: '#3a4a7a', pantsWeave: 'denim', shoes: '#b03030', skin: '#e0b49a', speed: [9, 11] },
-    puffer: { sex: 'm', build: 1.15, coat: '#3a6a8a', coatType: 'puffer', head: 'beanie', headColor: '#b03a3a', pants: '#2a2a30', shoes: '#2a2a2a', skin: '#c89a80', speed: [7, 9], dog: true },
-    cape: { sex: 'm', build: 1, coat: '#2a5a5a', coatType: 'cape', coatLen: 0.75, weave: 'twill', head: 'hood', headColor: '#2a5a5a', pants: '#1a1a1a', shoes: '#1a1a1a', skin: '#b08068', speed: [9, 12] },
-    student: { sex: 'm', build: 0.95, coat: '#4a4a52', coatType: 'jacket', weave: 'denim', head: 'cap', headColor: '#1a1a1a', pants: '#4a3c28', pantsWeave: 'cord', shoes: '#e8e0d0', skin: '#6a4430', hair: '#101010', hairStyle: 'short', bag: 'tote', bagColor: '#c8508a', speed: [10, 13], runs: true },
-    nurse: { sex: 'f', build: 0.9, coat: '#2a3a4a', coatType: 'long', coatLen: 0.4, weave: 'twill', pants: '#7ab0b8', pantsWeave: 'canvas', shoes: '#e8e8e8', skin: '#d8a888', hair: '#3a2010', hairStyle: 'bun', umbrella: '#d8b040', speed: [9, 12] },
     rider: { sex: 'm', build: 1.05, coat: '#c8642a', coatType: 'jacket', weave: 'canvas', head: 'helmet', headColor: '#e8d050', pants: '#1a1a24', pantsWeave: 'denim', shoes: '#1a1a1a', skin: '#b08068', bag: 'box', bagColor: '#1e6a70', speed: [46, 56] },
-    waiter: { sex: 'f', build: 0.9, coat: '#ece6dc', coatType: 'apron', weave: 'canvas', apron: '#1a1a20', pants: '#1a1a20', shoes: '#101010', skin: '#c08a6a', hair: '#1a1010', hairStyle: 'bun', speed: [9, 11] },
     workerA: { sex: 'm', build: 1.1, coat: '#2a3038', coatType: 'vest', weave: 'canvas', head: 'helmet', headColor: '#f0d040', pants: '#2a2e34', pantsWeave: 'canvas', shoes: '#1a1a1a', skin: '#b07a5a', glove: '#c8b040' },
     workerB: { sex: 'm', build: 1.05, coat: '#2a3038', coatType: 'vest', weave: 'canvas', head: 'helmet', headColor: '#e8e8e8', pants: '#2a2e34', pantsWeave: 'canvas', shoes: '#1a1a1a', skin: '#d8a888', glove: '#c8b040' },
     workerC: { sex: 'f', build: 0.95, coat: '#2a3038', coatType: 'vest', weave: 'canvas', head: 'helmet', headColor: '#f08030', pants: '#2a2e34', pantsWeave: 'canvas', shoes: '#1a1a1a', skin: '#8a5a40', hair: '#101010', hairStyle: 'pony', glove: '#c8b040' }
   };
-  var WALKERS = ['coatWoman', 'hoodie', 'oldMan', 'coatMan', 'puffer', 'cape', 'student', 'nurse', 'jacketWoman'];
-  var DINERS = ['coatWoman', 'coatMan', 'jacketWoman', 'student', 'nurse', 'hoodie', 'oldMan'];
-  // More people, built from parts (rule 5 of the street's design rules): build and height, skin tone, hair, top,
-  // cloth, trousers, shoes, and extras. Seeded, so the same 18 people live on the street on every visit.
-  (function () {
-    var seed = 7177, r = function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }, of = function (a) { return a[Math.floor(r() * a.length)]; };
-    var SKIN = ['#f0c8a8', '#e0b49a', '#c89a80', '#a8765a', '#8a5a40', '#6a4430'];
-    var HAIR = ['#141010', '#2a1a14', '#3a2010', '#6a4a2a', '#c8a060', '#8a8a8a', '#d8d0c8'];
-    var COAT = ['#2a3a4a', '#5a3a2a', '#3a4a3a', '#6a2a3a', '#2e2e34', '#7a6a4a', '#3a5a6a', '#8a4a2a', '#4a3a5a', '#b8a888', '#5a5a62', '#2a4a5a'];
-    var PANTS = ['#1a1a22', '#2a3448', '#3a3a3a', '#4a3c28', '#2a2a30', '#5a5a60', '#3a2a22'];
-    var SHOES = ['#1a1a1a', '#2a1a14', '#e8e8e8', '#c8c8d0', '#6a3a2a'];
-    var UMB = ['#c23a5a', '#2a8a96', '#d8b040', '#2a2a3a', '#5a7a3a', '#8a3ac2', '#e0e0e0'];
-    for (var i = 0; i < 18; i++) {
-      var f = r() < 0.5, type = of(['long', 'long', 'jacket', 'jacket', 'hoodie', 'puffer', 'cape']), coat = of(COAT);
-      var p = { sex: f ? 'f' : 'm', build: 0.86 + r() * 0.22, scale: 0.94 + r() * 0.1, coat: coat, coatType: type, weave: of(['twill', 'check', 'stripe', 'tweed', 'denim', 'canvas', 'cord', 'fleece']),
-        pants: of(PANTS), pantsWeave: of(['twill', 'denim', 'cord']), shoes: of(SHOES), skin: of(SKIN), hair: of(HAIR), speed: [8 + r() * 2, 10.5 + r() * 2.5] };
-      p.hairStyle = f ? of(['long', 'pony', 'bun', 'short', 'long']) : of(['short', 'short', 'none', 'short']);
-      if (type === 'long') { p.coatLen = 0.42 + r() * 0.2; p.belt = r() < 0.4; if (r() < 0.6) p.shirt = of(['#d8d0c0', '#c8ccd0', '#e8e0d8']); }
-      if (type === 'cape') p.coatLen = 0.5 + r() * 0.2;
-      if (type === 'hoodie' && r() < 0.5) { p.head = 'hood'; } else { var hr = r(); if (hr < 0.14) { p.head = 'beanie'; p.headColor = of(COAT); } else if (hr < 0.26) { p.head = 'cap'; p.headColor = of(['#1a1a1a', '#2a3a5a', '#8a2a2a']); } else if (hr < 0.32 && type === 'long') { p.head = 'fedora'; p.headColor = '#2a2420'; } }
-      if (r() < 0.25) p.scarf = of(['#3ec8be', '#d8b848', '#b8483a', '#8a8aa8', '#c8c0b0']);
-      var br = r(); if (br < 0.2) { p.bag = 'tote'; p.bagColor = of(['#d8c8a8', '#c8508a', '#5a7a8a']); } else if (br < 0.38) { p.bag = 'backpack'; p.bagColor = of(['#151515', '#3a4a5a', '#6a3a2a']); }
-      if (r() < 0.6) p.umbrella = of(UMB); else p.runs = true;
-      CAST['g' + i] = p; WALKERS.push('g' + i); if (type !== 'cape' && p.head !== 'hood') DINERS.push('g' + i);
-    }
-  })();
-  // The second style (street-walk.js): flat colour, no outlines, one shared body and walk. When it is loaded,
-  // the people on the footpath are this cast. Their pace comes from their stride, so a walk plays at its
-  // own rhythm (about 65 ms a frame) and the planted foot stays put.
-  // The third style (street-body.js, the approved one): everyone on the footpath, at the bar and behind its counter,
-  // each dressed for the weather they set out in (summer, rain or cold).
-  var BODY = !!(window.StreetBody && !P.oldCast), SB = window.StreetBody, CLIM = 'summer';
-  var HD = P.hd || 1;                                   // the scene's people canvas is HD times its size: the third style is drawn that much finer
-  var V2 = !BODY && !!(window.StreetWalk && !P.oldCast);
-  if (BODY) {
-    WALKERS = []; DINERS = [];
-    SB.cast().forEach(function (def) {
-      var ms = def.age === 'elder' ? 82 : def.age === 'kid' ? 58 : 66, mk = SB.make(def, 'summer', 35 * def.k, false);
-      var pace = mk.cycle / (mk.n * ms / 1000);
-      CAST['b_' + def.id] = { body: def, scale: def.k, speed: [pace * 0.95, pace * 1.05], sex: def.sex };
-      WALKERS.push('b_' + def.id); if (def.age !== 'kid') DINERS.push('b_' + def.id);
-    });
-    CAST.b_waiter = { body: SB.staff.waiter, scale: 1, speed: [9, 11], sex: 'f' };
-  }
-  if (V2) {
-    WALKERS = [];
-    Object.keys(window.StreetWalk.CAST).forEach(function (k) {
-      var def = window.StreetWalk.CAST[k], mk = window.StreetWalk.make(def, Math.round(35 * S * def.s), false);
-      var pace = mk.cycle / S / (mk.n * (def.ms || 65) / 1000);
-      // glide: on a skateboard, so never stops to stand about (a standing pose would lose the board)
-      CAST['v_' + k] = { v2: def, scale: def.s, speed: [pace * 0.94, pace * 1.04], sex: def.bust ? 'f' : 'm', glide: !!def.skate };
-      WALKERS.push('v_' + k);
-    });
-  }
+  var SB = window.StreetBody, CLIM = 'summer';
+  if (!SB) throw new Error('street-people.js needs street-body.js loaded first');
+  var HD = P.hd || 1;                                   // the scene's people canvas is HD times its size: the people are drawn that much finer
+  // Their pace comes from their stride, so a walk plays at its own rhythm and the planted foot stays put.
+  var WALKERS = [], DINERS = [], ADULTS = [], WOMEN = [], KIDS = [];
+  SB.cast().forEach(function (def) {
+    var ms = def.age === 'elder' ? 82 : def.age === 'kid' ? 58 : 66, mk = SB.make(def, 'summer', 35 * def.k, false);
+    var pace = mk.cycle / (mk.n * ms / 1000), id = 'b_' + def.id;
+    CAST[id] = { body: def, scale: def.k, speed: [pace * 0.95, pace * 1.05], sex: def.sex };
+    WALKERS.push(id);
+    if (def.age === 'kid') KIDS.push(id); else { DINERS.push(id); ADULTS.push(id); if (def.sex === 'f' && def.age !== 'elder') WOMEN.push(id); }
+  });
+  CAST.b_waiter = { body: SB.staff.waiter, scale: 1, speed: [9, 11], sex: 'f' };
 
   // ---------- Small helpers ----------
   var rgbCache = {};
@@ -871,16 +822,8 @@ window.StreetPeople = function (D) {
       if (eager) for (var bf = 0; bf < bsh.n; bf++) ensureFrame(bsh, bf);
       return bsh;
     }
-    var v2 = CAST[id] && CAST[id].v2, moving = pose === 'walk' || pose === 'run' || pose === 'shield';
-    if (v2) { pose = moving ? 'walk' : 'stand'; umb = false; }
+    // (the rider and the road workers: this file's own painter)
     var key = id + '|' + s + '|' + pose + '|' + (umb ? 1 : 0), sh = sheets[key];
-    if (!sh && v2) {                                      // the second style: its own painter, no outline
-      var mk = window.StreetWalk.make(v2, s, pose === 'stand'), vc = document.createElement('canvas');
-      vc.width = mk.fw * mk.n; vc.height = mk.fh * 2;
-      var vg = readableContext(vc);
-      sh = sheets[key] = { canvas: vc, g: vg, fw: mk.fw, fh: mk.fh, footX: mk.footX, footY: mk.footY, n: mk.n, ready: new Uint8Array(mk.n), cycle: mk.cycle, v2: true,
-        paint: function (f) { mk.paint(vg, f, f * mk.fw); finish(vg, mk.fw, mk.fh, 1, f * mk.fw, true); } };
-    }
     if (!sh) {
       var sp = CAST[id], n = frameCount(pose);
       var fw = Math.ceil(s * 1.25) + 8, fh = Math.ceil(s * 1.5) + 8, footX = Math.round(fw * 0.5), footY = fh - 6;
@@ -952,8 +895,14 @@ window.StreetPeople = function (D) {
   function spawn(lane, atEdge) {
     var dir = Math.random() < 0.5 ? 1 : -1, x = atEdge ? (dir > 0 ? -40 : W + 40) : rand(20, W - 20), r = Math.random(), h = LANES[lane].h;
     var taken = function (id) { return agents.some(function (o) { return o.active && o.id === id; }) || (diners || []).some(function (d) { return d.id === id; }); };
-    if (!V2 && r < 0.12 && !taken('jacketWoman') && !taken('coatMan')) { var a = makeAgent('jacketWoman', lane, x, dir), b = makeAgent('coatMan', lane, x, dir); b.speed = a.speed; b.follow = a; b.gap = -h * 0.42; a.partner = b; agents.push(a, b); return; }
-    if (!V2 && r < 0.2 && !taken('coatWoman') && !taken('kid')) { var pa = makeAgent('coatWoman', lane, x, dir), kd = makeAgent('kid', lane, x, dir); kd.speed = pa.speed; kd.follow = pa; kd.gap = h * 0.38; pa.partner = kd; agents.push(pa, kd); return; }
+    var freeOf = function (list) { return list.filter(function (id) { return !taken(id); }); };
+    if (r < 0.12) {                                     // a couple, side by side
+      var two = freeOf(ADULTS);
+      if (two.length >= 2) { var ai = pick(two), a = makeAgent(ai, lane, x, dir), b = makeAgent(pick(two.filter(function (id) { return id !== ai; })), lane, x, dir); b.speed = a.speed; b.follow = a; b.gap = -h * 0.42; a.partner = b; agents.push(a, b); return; }
+    } else if (r < 0.2) {                               // a mother and her child
+      var mums = freeOf(WOMEN), kids = freeOf(KIDS);
+      if (mums.length && kids.length) { var pa = makeAgent(pick(mums), lane, x, dir), kd = makeAgent(pick(kids), lane, x, dir); kd.speed = pa.speed; kd.follow = pa; kd.gap = h * 0.38; pa.partner = kd; agents.push(pa, kd); return; }
+    }
     // No two identical people on screen: only someone who is not already out (on the footpath, at the counter, or
     // about to come out of the bar)
     var busy = {}; agents.forEach(function (o) { if (o.active) busy[o.id] = 1; }); (diners || []).forEach(function (d) { busy[d.id] = 1; }); exits.forEach(function (e) { busy[e.id] = 1; });
@@ -977,8 +926,6 @@ window.StreetPeople = function (D) {
     return pick(list);
   }
   function stopAgent(a, pose, time, state) {
-    if (CAST[a.id].glide) return;                       // the skateboarder rolls on
-    if (CAST[a.id].v2 && !CAST[a.id].body) pose = 'idle';   // the second style has one standing pose
     a.state = state || 'look'; a.timer = time; a.idle = pose; a.walkDir = a.dir; a.glance = 0;
     var p = a.partner;
     if (p && p.active) {
@@ -1045,7 +992,7 @@ window.StreetPeople = function (D) {
         continue;
       }
       if (a.cooldown > 0) a.cooldown -= dt;
-      if ((a.state === 'walk' || a.state === 'run' || a.state === 'shield') && SHELTER && !a.umb && !a.follow && !a.dog && !sp.glide && a.lane <= 1 && env.rain > 0.45 && a.cooldown <= 0 &&
+      if ((a.state === 'walk' || a.state === 'run' || a.state === 'shield') && SHELTER && !a.umb && !a.follow && !a.dog && a.lane <= 1 && env.rain > 0.45 && a.cooldown <= 0 &&
           a.x > SHELTER[0] && a.x < SHELTER[1] && Math.abs(a.x - (DOOR.x + DOOR.w / 2)) > DOOR.w * 0.7 && sheltering() < 4 && Math.random() < dt * 2) {
         a.dir = a.walkDir; stopAgent(a, pick(['phone', 'look', 'idle']), 999, 'wait'); a.shelter = true; continue;
       }
@@ -1058,7 +1005,7 @@ window.StreetPeople = function (D) {
         a.x += a.dir * v * dt; a.dist += v * dt;
         if (a.state === 'walk' && a.cooldown <= 0) {
           var doorC = DOOR.x + DOOR.w / 2;
-          if (a.lane === 0 && !a.dog && !sp.v2 && Math.abs(a.x - doorC) < 2 && Math.random() < 0.35) { a.state = 'enter'; a.timer = 0.4; door.open = 1.8; a.cooldown = 99; }
+          if (a.lane === 0 && !a.dog && Math.abs(a.x - doorC) < 2 && Math.random() < 0.35) { a.state = 'enter'; a.timer = 0.4; door.open = 1.8; a.cooldown = 99; }
           for (var k = 0; k < SPOTS.length && a.state === 'walk' && a.lane <= 1; k++) {
             var spot = SPOTS[k];
             if (Math.abs(a.x - spot.x) < 1.5) {
@@ -1099,12 +1046,6 @@ window.StreetPeople = function (D) {
     agents = agents.filter(function (a) { return a.active; });
     for (var e = exits.length - 1; e >= 0; e--) {
       if (t >= exits[e].at) {
-        if ((V2 || BODY) && !CAST[exits[e].id].v2 && !CAST[exits[e].id].body) {               // someone from the bar steps out: as one of the new cast
-          var out = {}; agents.forEach(function (o) { if (o.active) out[o.id] = 1; });
-          var freeV = WALKERS.filter(function (id) { return !out[id]; });
-          if (!freeV.length) { exits.splice(e, 1); continue; }
-          exits[e].id = pick(freeV);
-        }
         var ex = makeAgent(exits[e].id, 0, DOOR.x + DOOR.w / 2, Math.random() < 0.5 ? 1 : -1);
         ex.state = 'exit'; ex.alpha = 0; ex.cooldown = 8; door.open = 1.8; agents.push(ex); exits.splice(e, 1);
       }
@@ -1205,7 +1146,7 @@ window.StreetPeople = function (D) {
       drawSprite(ctx, sh, frame, Math.round(d.x * S + ox6), Math.round((COUNTER + SEAT_DROP) * S), d.dir, 1, env);
       light(ctx, opts, dinerGlow(d, env));
     });
-    var wS = (P.waiterSize || 36) * S, wsh = sheet(BODY ? 'b_waiter' : 'waiter', wS, waiter.state === 'walk' ? 'tray' : waiter.pose, false);
+    var wS = (P.waiterSize || 36) * S, wsh = sheet('b_waiter', wS, waiter.state === 'walk' ? 'tray' : waiter.pose, false);
     var wf = wsh.body ? (waiter.state === 'walk' ? Math.floor(waiter.dist / (wsh.cycle / S) * wsh.n) % wsh.n : Math.floor(env.t * 6) % wsh.n) : waiter.state === 'walk' ? Math.floor(waiter.dist / (wS / S * strideOf(GAITS.walk)) * GAIT_FRAMES) % GAIT_FRAMES : Math.floor(env.t * 6) % 16;
     drawSprite(ctx, wsh, wf, Math.round(waiter.x * S + ox6), Math.round(WAITER.y * S), waiter.dir, 1, env);
     if (STOOLS && WIN.length) {                         // order tickets on a rail, and the printer that prints them
@@ -1432,7 +1373,7 @@ window.StreetPeople = function (D) {
     g.restore();
   }
   function roomActor(g, kind, f, x, y, h, c, lc, who) {
-    if (BODY && who !== undefined) { roomBody(g, kind, f, x, y, h, lc, who); return; }
+    if (who !== undefined) { roomBody(g, kind, f, x, y, h, lc, who); return; }
     var R = function (x0, y0, w, hh, col) { g.fillStyle = col || c; g.fillRect(Math.round(x0), Math.round(y0), Math.max(1, Math.round(w)), Math.max(1, Math.round(hh))); };
     var L = function (x0, y0, x1, y1, w, col) { var n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); g.fillStyle = col || c; for (var i = 0; i <= n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n - w / 2), Math.round(y0 + (y1 - y0) * i / n), w, w); };
     var D = function (cx, cy, r, col) { g.fillStyle = col || c; for (var yy = -r; yy <= r; yy++) { var w = Math.round(Math.sqrt(r * r - yy * yy + r * 0.5)); g.fillRect(Math.round(cx - w), Math.round(cy + yy), w * 2 + 1, 1); } };
@@ -1494,7 +1435,7 @@ window.StreetPeople = function (D) {
   function openDoor() { door.open = Math.max(door.open, 1.2); }
   function lookUp(x) {
     var best = null;
-    agents.forEach(function (a) { if (a.active && !a.follow && a.state === 'walk' && !CAST[a.id].glide && LANES[a.lane] && !LANES[a.lane].ride && Math.abs(a.x - x) < 70 && (!best || Math.abs(a.x - x) < Math.abs(best.x - x))) best = a; });
+    agents.forEach(function (a) { if (a.active && !a.follow && a.state === 'walk' && LANES[a.lane] && !LANES[a.lane].ride && Math.abs(a.x - x) < 70 && (!best || Math.abs(a.x - x) < Math.abs(best.x - x))) best = a; });
     if (best) { best.dir = x > best.x ? 1 : -1; stopAgent(best, 'look', rand(1.6, 3)); best.cooldown = 4; }
   }
   function walkers() { var out = []; agents.forEach(function (a) { if (a.active && LANES[a.lane] && !LANES[a.lane].ride) out.push({ x: a.x * S, lane: a.lane, dog: a.dog ? a.dog.x * S : null }); }); return out; }
