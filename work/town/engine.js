@@ -20,7 +20,7 @@
     stage.addEventListener('pointermove', function (e) { var b = stage.getBoundingClientRect(); env.mouse.x = (e.clientX - b.left) / b.width * W; env.mouse.y = (e.clientY - b.top) / b.height * H; });
     stage.addEventListener('pointerleave', function () { env.mouse.x = env.mouse.y = -999; });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) prev = last = performance.now(); });   // coming back to the tab: no jump
-    // the mask that lets the rust spread out from the substation, through a dither, with a burning edge
+    // the mask that lets the rust spread out from the switch box, through a dither, with a burning edge
     var MW = 320, MH = 180, maskC = document.createElement('canvas'), edgeC = document.createElement('canvas'); maskC.width = edgeC.width = MW; maskC.height = edgeC.height = MH;
     var mg = maskC.getContext('2d'), eg = edgeC.getContext('2d'), mImg = mg.createImageData(MW, MH), eImg = eg.createImageData(MW, MH), noise = new Float32Array(MW * MH), nr = rng(5), coarse = [];
     for (var cj = 0; cj <= MH / 8 + 1; cj++) { coarse.push([]); for (var ci = 0; ci <= MW / 8 + 1; ci++) coarse[cj].push(nr()); }
@@ -40,19 +40,21 @@
     // the rust world is built while the lights are out (nobody sees the pause), and thrown away once the lights are back
     function makeBelow() { if (!below) { var tb = performance.now(); rustC.width = W; rustC.height = H; torchC.width = W / 2; torchC.height = H / 2; below = build('rust'); sR = new Scene(rustC, false); if (q.has('debug')) console.log('dbg rust built in ' + Math.round(performance.now() - tb) + ' ms'); FT.mem('rust built', 30); } }
     function freeBelow() { below = sR = null; rustC.width = rustC.height = torchC.width = torchC.height = 0; FT.mem('rust freed'); }
+    // while the rust world fills the screen the street is not drawn: let its graded layers and its people's sheets go (they come back as the lever goes up)
+    function restStreet() { sF.cache = {}; sF.key = ''; crowd.sheets = {}; crowd.bytes = 0; }
     // warm up: a few people already out, smoke and ash already in the air
     var h0 = hourNow(0); diner.fill(crowd.cast, hourNow(0) >= 1 && hourNow(0) < 5 ? 1 : 2 + ((Math.random() * 2) | 0)); for (var wu = 0; wu < 40; wu++) crowd.update(0.5, sky(h0), h0, wx, sF, sound); crowd.list.forEach(function (p) { if (p.x < 0 || p.x > W) p.x = rand(60, W - 60); });
     sF.hour = h0; sF.warm();
     if (q.has('debug')) console.log('dbg surface built in ' + Math.round(performance.now() - tb0) + ' ms'); FT.mem('surface built');
-    if (q.has('under')) { makeBelow(); under = true; reveal = 1; env.lever.pulled = true; power.force = { t0: -100, down: true }; }
+    if (q.has('under')) { makeBelow(); under = true; reveal = 1; env.lever.pulled = true; power.force = { t0: -100, down: true }; restStreet(); }
     function frame(now) { requestAnimationFrame(frame); if (now - last < 33) return; last = now; step(now); }
     function step(now) {
       var dt = Math.min(0.1, (now - prev) / 1000), t = 9 + (now - t0) / 1000; prev = now; tNow = t;
       var hour = hourNow(t - 9), S = sky(hour); wx.update(dt); power.update(dt, t, sound); crowd.update(dt, S, hour, wx, sF, sound); diner.update(dt, crowd, hour); if (!FT.Q.motion) power.next = 1e9; sF.hour = hour; if (sR) sR.hour = hour;
       if (q.has("debug") && Math.random() < 0.05) console.log("dbg t=" + t.toFixed(2) + " seq=" + (seq ? JSON.stringify(seq) : "none") + " reveal=" + reveal.toFixed(2) + " force=" + JSON.stringify(power.force) + " under=" + under);
       if (seq) { var st = t - seq.t0;
-        if (seq.dir > 0) { if (st > 0.45 && !seq.dark) { seq.dark = true; power.force = { t0: t, down: true }; } if (st > 0.9 && !below) makeBelow(); reveal = st > 1.9 ? clamp((st - 1.9) / 1.8, 0, 1) : 0; if (reveal >= 1) { seq = null; under = true; } }
-        else { reveal = clamp(1 - st / 1.6, 0, 1); if (reveal <= 0 && !seq.up) { seq.up = true; under = false; env.lever.pulled = false; power.force = { t0: t, down: false }; sound.powerUp(); } if (seq.up && st > 4) { seq = null; freeBelow(); } } }
+        if (seq.dir > 0) { if (st > 0.45 && !seq.dark) { seq.dark = true; power.force = { t0: t, down: true }; } if (st > 0.9 && !below) makeBelow(); reveal = st > 1.9 ? clamp((st - 1.9) / 1.8, 0, 1) : 0; if (reveal >= 1) { seq = null; under = true; restStreet(); FT.mem('rust world, street at rest', 26); } }
+        else { reveal = clamp(1 - st / 1.6, 0, 1); if (reveal <= 0 && !seq.up) { seq.up = true; under = false; env.lever.pulled = false; power.force = { t0: t, down: false }; sound.powerUp(); freeBelow(); } if (seq.up && st > 4) seq = null; } }
       var td = performance.now(); if (reveal < 1) sF.draw(surface, t, dt, hour, env); govern(performance.now() - td, t); if (q.has('debug') && Math.random() < 0.05) console.log('dbg frame ' + (performance.now() - td).toFixed(1) + ' ms, quality ' + FT.Q.p.toFixed(2));
       if (reveal > 0 && sR) { sR.draw(below, t, dt, hour, env); torch(); if (reveal < 1) mask(reveal); }
       rustC.style.opacity = torchC.style.opacity = reveal > 0 ? 1 : 0; FT.memTick(under ? 'rust world showing' : reveal > 0 ? 'rust spreading' : 'street');

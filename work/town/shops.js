@@ -87,7 +87,8 @@
     if (!this.noise) { this.noise = document.createElement('canvas'); this.noise.width = 24; this.noise.height = 16; this.nctx = this.noise.getContext('2d'); this.nimg = this.nctx.createImageData(24, 16); }
     if (tvp) {
       if (this.same <= 0) { var d = this.nimg.data; for (var k = 0; k < d.length; k += 4) { var v = 60 + Math.random() * 170; d[k] = v * 0.92; d[k + 1] = v * 0.96; d[k + 2] = v; d[k + 3] = 255; } this.nctx.putImageData(this.nimg, 0, 0); }
-      g.globalAlpha = 0.55 + 0.4 * night; TVS.screens.forEach(function (q) {
+      var tvOpen = hour >= 8 && hour < 22;   // after hours the workshop's sets are off, all but one
+      g.globalAlpha = 0.55 + 0.4 * night; TVS.screens.forEach(function (q, qi) { if (!tvOpen && qi > 0) return;
         if (self.same > 0) g.drawImage(g.canvas, 0, 300, g.canvas.width, g.canvas.height * 0.42, q[0], q[1], q[2], q[3]);
         else g.drawImage(self.noise, (Math.random() * 12) | 0, (Math.random() * 8) | 0, q[2], q[3], q[0], q[1], q[2], q[3]); });
       g.globalAlpha = 1; }
@@ -110,11 +111,32 @@
     if (vp && night > 0.05) { g.font = '7px VT323'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillStyle = rgba('#7adfa0', 0.4 + 0.6 * night); g.fillText('VACANCY', VAC[0] + VAC[2] / 2, VAC[1] + 11);
       if (this.ever && !buzz) { g.fillStyle = rgba('#ff5a40', 0.4 + 0.6 * night); g.fillText('NO', VAC[0] + VAC[2] / 2, VAC[1] + 4); } }
+    // ---- the news stand: the vendor, behind a paper held up over their face; point at the stand and it comes down.
+    // Open five in the morning to eleven at night; in between the shutter is down and the bulb under the awning is off
+    var nx = FT.B.switch[0] + 6, ny = G - 58, nw = 34, nh = 28, hr = ((hour % 24) + 24) % 24, nOpen = hr >= 5 && hr < 23, np = power.level(nx + 17, t) >= 0.5;
+    if (start === 'news') { this.nlook = 4; if (sound) sound.burst({ f: 900, vol: 0.02, dur: 0.12, pan: 0.7 }); } this.nlook = (this.nlook || 0) - dt;
+    if (nOpen) { g.save(); g.beginPath(); g.rect(nx, ny, nw, nh); g.clip();
+      g.fillStyle = dim(np ? '#7a6248' : '#4a3a2a', 0.5); g.fillRect(nx, ny, nw, nh);                                                     // the back wall, bulb-lit
+      for (var sr = 0; sr < 2; sr++) { g.fillStyle = dim('#3a2a1e', 0.3); g.fillRect(nx, ny + 6 + sr * 8, nw, 1); for (var sp = 0; sp < 8; sp++) { g.fillStyle = dim(['#a8463a', '#d8d0c0', '#3a5a6a', '#c9a55a'][(sp + sr) % 4], 0.5); g.fillRect(nx + 2 + sp * 4, ny + 3 + sr * 8, 3, 3); } }   // cigarettes, sweets
+      if (V) { if (!this.vendor) { var vs = V.spec({ height: 52, shape: 'f', skin: '#c87a54', hair: { style: 'bun', col: '#a8a49c' }, face: { glasses: 'clear', beard: false }, shirt: { col: '#8a9aa8', sleeves: 'long' }, jacket: { col: '#6a3a3a', open: true, len: 'hip', leather: false }, legs: { col: '#2a2a30', type: 'trousers', tights: null } }); this.vendor = V.frame(vs, 'front', 0); }
+        var vcx = nx + 17, bob = Math.sin(t * 1.3) > 0.2 ? 1 : 0; g.drawImage(this.vendor, vcx - V.GX, G - V.GY + bob);
+        var down = this.nlook > 0, turn = (t % 23) < 0.5, py = down ? G - 36 : G - 49 + bob, pw = turn ? 9 : 17;   // the paper: up, or lowered to the counter; every so often a page turns
+        g.fillStyle = dim('#e0dccc', 0.45); g.fillRect(vcx - 8, py, pw, 12); g.fillStyle = dim('#2a2826', 0.3); g.fillRect(vcx - 8, py, pw, 2);
+        g.fillStyle = dim('#8a8680', 0.4); for (var pl = 0; pl < 4; pl++) { g.fillRect(vcx - 7, py + 4 + pl * 2, 6, 1); if (!turn) g.fillRect(vcx + 2, py + 4 + pl * 2, 6, 1); } if (!turn) { g.fillStyle = dim('#b8b4a8', 0.4); g.fillRect(vcx, py, 1, 12); }
+        g.fillStyle = dim('#c87a54', 0.4); g.fillRect(vcx - 9, py + 5, 1, 3); g.fillRect(vcx - 8 + pw, py + 5, 1, 3); }                  // her hands on it
+      g.restore();
+      if (np) { g.fillStyle = night > 0.05 ? '#ffe2a8' : '#b8b0a0'; g.fillRect(nx + 16, ny - 2, 3, 2); if (night > 0.05 && this.glowOut) this.glowOut.push([nx + 15, ny - 3, 5, 4, '#ffd090', 0.8 * night]); } }
+    else { var sh2 = G - 3 - ny; g.fillStyle = dim('#6a6e6a', 0.5); g.fillRect(nx - 2, ny, nw + 4, sh2); g.fillStyle = dim('#4a4e4a', 0.5); for (var sl = ny + 2; sl < ny + sh2; sl += 3) g.fillRect(nx - 2, sl, nw + 4, 1); g.fillStyle = dim('#2a2826', 0.3); g.fillRect(nx + 15, G - 9, 4, 4); g.fillStyle = dim('#a8a49a', 0.4); g.fillRect(nx + 16, G - 11, 2, 2); }   // (the rack taken in)   // the shutter, padlocked
+    // ---- the bulbs along the WRITING awning and the hotel canopy, lit at night (one or two dead, one that flickers)
+    if (night > 0.08) [[782, 906, 10, 442, 840], [1202, 1286, 6, 430, 1244]].forEach(function (row, ri) {
+      if (power.level(row[4], t) < 0.5) return; var i = 0;
+      for (var bx = row[0]; bx <= row[1]; bx += row[2], i++) { if ((i * 7 + ri * 3) % 11 === 4) continue; var a = (i * 5 + ri) % 13 === 2 && Math.random() < 0.3 ? 0.2 : 1; g.fillStyle = 'rgba(255,214,140,' + (a * (0.45 + 0.55 * night)).toFixed(2) + ')'; g.fillRect(bx, row[3], 1, 2); }
+      if (self.glowOut) self.glowOut.push([row[0], row[3] - 1, row[1] - row[0], 3, '#ffc070', 0.35 * night]); });
     // ---- what glows (for bloom), and the levels of the shops' own lights
-    if (S.dark > 0.3) { var glow = this.glowOut; if (glow) { if (tvp) TVS.screens.forEach(function (q) { glow.push([q[0], q[1], q[2], q[3], '#b8d0f0', 0.5]); });
+    if (S.dark > 0.3) { var glow = this.glowOut; if (glow) { if (tvp) TVS.screens.forEach(function (q, qi) { if (qi > 0 && !(hour >= 8 && hour < 22)) return; glow.push([q[0], q[1], q[2], q[3], '#b8d0f0', 0.5]); });
       if (vp) { glow.push([VAC[0] + 2, VAC[1] + 8, VAC[2] - 4, 6, '#7adfa0', 0.5]); if (this.ever) glow.push([VAC[0] + 8, VAC[1] + 1, VAC[2] - 16, 6, '#ff5a40', 0.5]); }
       if (this.flash > 0) glow.push([STUDIO.win[0], STUDIO.win[1], STUDIO.win[2], STUDIO.win[3], '#f4f8ff', this.flash]); } }
-    return { flash: this.flash, tvs: tvp ? (0.35 + 0.65 * night) * (0.75 + Math.random() * 0.25) : 0, clocks: cp ? night : 0 };
+    return { flash: this.flash, tvs: tvp ? (0.35 + 0.65 * night) * (0.75 + Math.random() * 0.25) * (hour >= 8 && hour < 22 ? 1 : 0.35) : 0, clocks: cp ? night : 0, kiosk: nOpen && np ? night : 0 };
   };
 
   FT.Shops = { paint: paint, Shops: Shops, STUDIO: STUDIO, CLOCKS: CLOCKS, TVS: TVS };

@@ -19,6 +19,7 @@
   <script src="town/cast2.js" defer></script>
   <script src="town/world.js" defer></script>
   <script src="town/scene.js" defer></script>
+  <script src="town/life.js" defer></script>
   <script src="town/engine.js" defer></script>
   <style>
     @font-face { font-family: "VT323"; src: url(../fonts/vt323.woff2) format("woff2"); }
@@ -79,7 +80,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
   var T = window.FogTown, W = T.W, H = T.H;
-  var HINT = 'EVERY SIGN IS A LINK<small>Pull the lever on the substation to see what\'s underneath. Some windows are lit; you can look in.</small>';
+  var HINT = 'EVERY SIGN IS A LINK<small>Pull the lever on the green switch box to see what\'s underneath. Some windows are lit; you can look in.</small>';
   var HINT_UNDER = 'UNDERNEATH<small>The wiring, the rules, and the leads that leaked. Move the torch around.</small>';
   // what you see through a lit window, by building
   var ROOMS = {
@@ -110,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var news = { title: 'Eight apps, one set of rules', href: '../articles/eight-apps-one-set-of-rules.html' };
   fetch('../feed.xml').then(function (r) { return r.text(); }).then(function (x) { var d = new DOMParser().parseFromString(x, 'text/xml'), it = d.querySelector('item'); if (!it) return; var title = it.querySelector('title').textContent.split(':')[0], slug = it.querySelector('link').textContent.replace(/\/$/, '').split('/').pop(); news = { title: title, href: '../articles/' + slug + '.html' }; spotEls.news.href = news.href; }).catch(function () {});
   // [id, link, sign, what it is, x, y, w, h (art pixels), only (rust | surface), building for windows and doors]
+  var visits = 0; try { visits = +(localStorage.getItem('ft-visits') || 0) + 1; localStorage.setItem('ft-visits', visits); } catch (e) {}
   var SPOTS = [
     ['wires', './#work', 'THE WIRES', 'The leads that leaked, and how I found them', 0, 100, 1280, 110, 'rust'],
     ['edge', null, '', '', -10, 200, 68, 320, 'surface', 'edge'],
@@ -120,14 +122,15 @@ document.addEventListener('DOMContentLoaded', function () {
     ['writing', './#writing', 'WRITING', 'What breaks and what works, every two weeks', 778, 286, 130, 234, null, 'writing'],
     ['earlier', './#earlier', 'EARLIER WORK', 'Client websites from before', 770, 170, 146, 60],
     ['toolkit', './#toolkit', 'TOOLKIT', 'The tools I build with', 916, 170, 174, 350, null, 'toolkit'],
-    ['switch', '#lever', 'THE SWITCH', 'Pull the lever to see what\'s underneath', 1104, 410, 92, 110, null, 'switch'],
-    ['hotel', './#contact', 'CONTACT', 'The hotel lobby: CV, LinkedIn and email', 1178, 118, 112, 402, null, 'hotel'],
+    ['switch', '#lever', 'THE SWITCH', 'Pull the lever to see what\'s underneath', 1151, 398, 48, 122, null, 'switch'],
+    ['hotel', './#contact', 'CONTACT', 'The hotel lobby: CV, LinkedIn and email', 1198, 118, 92, 402, null, 'hotel'],
     ['vending', '#vend', 'THE VENDING MACHINE', 'Buy a can. Each one comes with something I believe about building.', 212, 456, 36, 68, 'surface'],
-    ['news', news.href, 'TODAY\'S PAPER', 'The latest article', 790, 495, 18, 30, 'surface'],
+    ['news', news.href, 'THE NEWS STAND', 'Today\'s paper: the latest article', 1102, 432, 48, 88, null, 'news'],
     ['contact', './#contact', 'THE PAYPHONE', 'It rings now and then. Pick it up if it does.', 238, 466, 40, 112],
     ['busstop', null, 'THE BUS STOP', 'Route 9. People wait here; the bus comes every few minutes.', 344, 498, 92, 80, 'surface'],
     ['missing', '#missing', 'A POSTER', 'Someone has lost their dog.', 346, 514, 16, 22, 'surface'],
     ['timetable', '#timetable', 'THE TIMETABLE', 'Route 9, and something written underneath.', 422, 510, 16, 26, 'surface'],
+    ['missing2', '#missing2', 'ANOTHER POSTER', 'This one wasn\'t here before.', 17, 426, 24, 26, 'surface'],
     ['home', './', 'MERGE NOTES · POP. 1', 'Home', 6, 478, 104, 50]
   ];
   var stage = document.getElementById('stage'), spots = document.getElementById('spots'), cap = document.getElementById('caption'), lever = document.getElementById('lever'), soundBtn = document.getElementById('sound');
@@ -154,20 +157,22 @@ document.addEventListener('DOMContentLoaded', function () {
     if (s[2]) a.setAttribute('aria-label', s[2] + ': ' + s[3]); else a.setAttribute('aria-hidden', 'true');
     if (s[8] === 'rust') a.classList.add('rust-only'); if (s[8] === 'surface') a.classList.add('surface-only');
     a.style.left = (s[4] / W * 100) + '%'; a.style.top = (s[5] / H * 100) + '%'; a.style.width = (s[6] / W * 100) + '%'; a.style.height = (s[7] / H * 100) + '%';
-    var show = function () { if (s[0] === 'news') cap.innerHTML = 'TODAY\'S PAPER<small>' + news.title + '</small>'; else if (s[0] === 'contact' && town && town.ringing()) cap.innerHTML = 'THE PHONE IS RINGING<small>Pick it up.</small>'; else if (s[2]) cap.innerHTML = s[2] + '<small>' + s[3] + '</small>'; if (s[9] && town) town.hover(s[9]); };
+    var show = function () { if (s[0] === 'news') cap.innerHTML = 'THE NEWS STAND<small>Today\'s paper: ' + news.title + '</small>'; else if (s[0] === 'contact' && town && town.ringing()) cap.innerHTML = 'THE PHONE IS RINGING<small>Pick it up.</small>'; else if (s[2]) cap.innerHTML = s[2] + '<small>' + s[3] + '</small>'; if (s[9] && town) town.hover(s[9]); };
     a.addEventListener('mouseenter', show); a.addEventListener('focus', show);
     a.addEventListener('mouseleave', function () { cap.innerHTML = capDefault; if (town) town.hover(null); });
     a.addEventListener('click', function (e) {
       var p = art(e);
       if (s[9] && !document.body.classList.contains('under')) { var w = town.windowAt(p[0], p[1]); if (w) { e.preventDefault(); var R = ROOMS[w.b] || ['home', 'Someone\'s home. They haven\'t noticed you.']; open('A LIT WINDOW', '<p>' + R[1] + '</p>', R[2] ? [['GO TO ' + R[3], R[2]]] : [], R[0]); return; } }
       if (s[0] === 'switch') { e.preventDefault(); flip(!document.body.classList.contains('under')); return; }
-      if (s[0] === 'missing') { e.preventDefault(); open('MISSING', '<div class="card"><b>Small grey dog. Answers to Pepper.</b><br>Last seen near the substation, after dark. She\'s friendly and she always comes home.<br><br>Please call.</div><p>All the tear-off tabs are gone but one. Someone has drawn a line through the phone number.</p>', []); return; }
+      if (s[0] === 'missing') { e.preventDefault(); open('MISSING', '<div class="card"><b>Small grey dog. Answers to Pepper.</b><br>Last seen by the news stand, after dark. She\'s friendly and she always comes home.<br><br>Please call.</div><p>All the tear-off tabs are gone but one. Someone has drawn a line through the phone number.</p>', []); return; }
+      if (s[0] === 'missing2') { e.preventDefault(); open('MISSING', '<div class="card"><b>Have you seen her?</b><br>Last seen after dark by the news stand, putting up posters for her dog.<br><br>Please call.</div><p>It\'s the same handwriting as the poster at the bus stop.</p>', []); return; }
       if (s[0] === 'timetable') { e.preventDefault(); open('ROUTE 9 · MERGE ST', '<p>Every 20 minutes, 6 AM to midnight.</p><p>Underneath, in pen, someone has written: <i>the last one doesn\'t stop here anymore.</i></p>', []); return; }
       if (!s[1]) { e.preventDefault(); return; }
       if (SOON.test(s[1])) { e.preventDefault(); soon(s[2]); return; }
       if (s[0] === 'vending') { e.preventDefault(); town.vend(); var f = nextFact(); setTimeout(function () { open('A CAN DROPS OUT', '<div class="card">' + f + '</div>', [['How I work', './#how', 1]]); }, 650); return; }
       if (s[0] === 'contact' && town.ringing()) { e.preventDefault(); town.answer(); open('HELLO?', '<p>…</p><p>Oh. You actually picked up.</p><p>I\'m Nihaal. I build the systems a sales team runs on. If you\'d like to talk about work, here\'s how to reach me.</p>', [['CV (PDF)', '#'], ['LinkedIn', '#'], ['Email', '#'], ['Contact page', './#contact', 1]]); return; }
     });
+    if (s[0] === 'missing2' && visits < 2) a.hidden = true;   // only for people who have been here before
     spots.appendChild(a); spotEls[s[0]] = a;
   });
   function flip(under) {

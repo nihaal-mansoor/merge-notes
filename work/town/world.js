@@ -17,7 +17,7 @@
     this.caps = this.snow > 0.2 ? Math.min(1, this.caps + dt / 120) : Math.max(0, this.caps - dt / 200);
   };
 
-  // ---------------------------------------------------------------- power: now and then the street's lights die, building by building out from the substation
+  // ---------------------------------------------------------------- power: now and then the street's lights die, building by building out from the switch box
   var ZONES = [[-10, 58], [58, 250], [250, 272], [272, 422], [422, 510], [510, 770], [770, 912], [912, 1040], [1040, 1104], [1104, 1196], [1196, 1300]];
   var SWX = B.switch[0] + 72, ZRANK = [];
   ZONES.map(function (z, i) { return [Math.abs((z[0] + z[1]) / 2 - SWX), i]; }).sort(function (a, b) { return a[0] - b[0]; }).forEach(function (a, rank) { ZRANK[a[1]] = rank; });
@@ -49,7 +49,7 @@
   // the walk frame for how far someone has gone (so their feet stay planted)
   function walkFrame(p, s) { return s.v2 ? Math.floor(p.dist / (0.72 * s.h * s.stride) * 8) % 8 : Math.floor(p.dist / (s.h * 0.9) * s.mk.n) % s.mk.n; }
   // walking sheets are cached, but only up to a budget: past it, the sheet nobody has drawn for longest is let go (and repainted if they come back)
-  var SHEET_CAP = 6 * 1024 * 1024;
+  var SHEET_CAP = 4 * 1024 * 1024;
   Crowd.prototype.sheet = function (def, stand, clim) {
     var key = def.id + (stand === true ? 's' : stand === false ? 'w' : stand) + clim, now = performance.now(), s = this.sheets[key]; if (s) { s.t = now; return s; }   // stand: true, false, or a pose ('sit', 'smoke', ...)
     var sp = this.V2.spec(FT.dress(def, clim)), mode = stand === true ? 'idle' : stand === false ? 'walk' : stand, sh = this.V2.sheet(sp, mode);   // their description, dressed for the weather, posed
@@ -60,12 +60,13 @@
   };
   Crowd.prototype.update = function (dt, S, hour, wx, scene, sound) {
     if (!this.V2) return; var self = this, busy = {}; this.list.forEach(function (p) { busy[p.def.id] = 1; }); if (scene.diner) scene.diner.stools.forEach(function (s) { if (s.def) busy[s.def.id] = 1; });
-    var want = hour >= 1 && hour < 5.5 ? 1 : S.dark > 0.5 ? 3 : 6; if (wx.rain > 0.5 || wx.snow > 0.5) want = Math.max(1, want - 2);
+    var want = hour >= 1 && hour < 5.5 ? 1 : (hour >= 7.5 && hour < 9.5) || (hour >= 16.5 && hour < 19) ? 9 : S.dark > 0.5 ? 3 : 6;   // (busier at the rush hours) if (wx.rain > 0.5 || wx.snow > 0.5) want = Math.max(1, want - 2);
     this.timer -= dt;
     if (this.timer <= 0) { this.timer = rand(2, 9) * (S.dark > 0.5 ? 2 : 1);
       if (this.list.length < want) { var adults = pool(this).filter(function (d) { return d.age !== 'kid' && !busy[d.id]; }); if (adults.length) {
         var def = pick(adults), li = (Math.random() * 3) | 0, lane = LANES[li], fromDoor = Math.random() < 0.3 && li === 0, x = fromDoor ? pick(DOORS) : lane.dir > 0 ? -30 : W + 30;
-        var p = { def: def, lane: li, x: x, dir: lane.dir, speed: (def.v2 ? rand(34, 46) : rand(26, 36)) * (def.age === 'elder' ? (def.v2 ? 0.6 : 0.75) : 1), dist: rand(0, 100), state: 'walk', alpha: fromDoor ? 0 : 1, fade: fromDoor ? 1 : 0, clim: wx.rain > 0.3 ? 'rain' : 'cold', lastF: -1 };
+        var p = { def: def, lane: li, x: x, dir: lane.dir, speed: (def.v2 ? rand(34, 46) : rand(26, 36)) * (def.age === 'elder' ? (def.v2 ? 0.6 : 0.75) : 1), dist: rand(0, 100), state: 'walk', alpha: fromDoor ? 0 : 1, fade: fromDoor ? 1 : 0, clim: wx.rain > 0.3 ? 'rain' : wx.snow > 0.3 ? 'snow' : 'cold', lastF: -1 };
+        if (wx.rain > 0.3 && def.age !== 'kid' && Math.random() < 0.6) p.umb = pick(['#1e1c1e', '#2a2a2e', '#6a2a2a', '#3a4a6a', '#c9a55a', '#1e1c1e']); else if (wx.rain > 0.3 || wx.snow > 0.3) p.speed *= 1.25;   // an umbrella, or a hurry
         if (Math.random() < 0.4) { var sp = SPOTS.filter(function (s) { return s.lane === li && (s.x - x) * lane.dir > 40 && !(s.what === 'phone' && (self.phoneBusy || scene.ring)); }); if (sp.length) p.stopAt = pick(sp);
           if (p.stopAt && p.stopAt.what === 'bus') { var taken = self.list.map(function (o) { return o.seat; }), free = BENCH.filter(function (bx) { return taken.indexOf(bx) < 0; }); p.seat = free.length ? pick(free) : null; p.stopAt = { x: p.seat != null ? p.seat : 428, lane: 2, what: 'bus', wait: p.stopAt.wait }; } }   // a seat on the shelter's bench, if there is one free
         if (li === 0 && !p.stopAt && Math.random() < 0.25) { var ds = DOORS.filter(function (d) { return (d - x) * lane.dir > 60; }); if (ds.length) p.enterAt = pick(ds); }
@@ -87,16 +88,21 @@
       if (p.follow) { p.at = (p.at || 0) + dt; p.x = p.follow.x - p.dir * 22; p.state = p.follow.state; p.dist += p.follow.state === 'walk' ? p.speed * dt : 0; p.alpha = p.follow.alpha; if (p.follow.gone) p.gone = true; return; }
       if (p.board) { p.alpha -= dt * 1.6; p.x += (404 - p.x) * Math.min(1, dt * 2); if (p.alpha <= 0) p.gone = true; return; }   // getting on the bus
       if (p.state === 'stand') { p.wait -= dt; p.waited += dt; p.at = (p.at || 0) + dt;
-        if (p.act === 'shake' && p.at > 1.12) { p.act = 'talk'; p.at = p.dir < 0 ? 0.64 : 0; }   // after the handshake they talk, taking turns
+        if (p.act === 'shake' && p.at > 1.12) { p.act = 'talk'; p.at = p.dir < 0 ? 0.64 : 0; }
+        if (p.what === 'meet' && p.act === 'talk' && !p.lit && p.at > 3.5) { p.lit = true; if (Math.random() < 0.45 && !(p.partner && p.partner.act === 'smoke')) { p.act = 'smoke'; p.at = 0; } }   // one of them lights a cigarette   // after the handshake they talk, taking turns
         if (p.what === 'vending' && !p.vended && p.waited > 1.4) { p.vended = true; scene.vend(sound); }
         if (p.wait <= 0) { p.state = 'walk'; if (p.what === 'phone') self.phoneBusy = null; p.what = null; p.seat = null; } return; }
       if (p.partner && !p.met && p.partner.state === 'walk' && (p.partner.x - p.x) * p.dir > 0 && Math.abs(p.partner.x - p.x) < 22) { var len = rand(7, 14); [p, p.partner].forEach(function (o) { o.state = 'stand'; o.what = 'meet'; o.act = 'shake'; o.at = 0; o.wait = len; o.waited = 0; o.met = true; }); if (/[?&]debug/.test(location.search)) console.log('dbg meet at ' + Math.round(p.x)); return; }   // two people meet: a handshake, a talk
       var ahead = null; self.list.forEach(function (o) { if (o !== p && !o.follow && o.lane === p.lane && o.dir === p.dir && (o.x - p.x) * p.dir > 0 && (!ahead || Math.abs(o.x - p.x) < Math.abs(ahead.x - p.x))) ahead = o; });
       var v = p.speed; if (ahead && Math.abs(ahead.x - p.x) < 26) v = ahead.state === 'walk' ? Math.min(v, ahead.speed) : 0;
+      if (p.slip > 0) { p.slip -= dt; v = 0; }   // a slip on the ice (life.js picks who)
+      if (!p.waved && !p.partner && p.def.age !== 'kid' && p.alpha >= 1) self.list.forEach(function (o) { if (o !== p && !o.follow && o.dir !== p.dir && o.state === 'walk' && Math.abs(o.x - p.x) < 10 && Math.abs(o.lane - p.lane) <= 1) { p.waved = o.waved = true; if (Math.random() < 0.12) { p.state = 'stand'; p.what = 'wave'; p.act = 'wave'; p.at = 0; p.wait = 1.5; p.waited = 0; } } });   // passing someone they know: a wave
+      if (p.state === 'stand') return;
       p.x += p.dir * v * dt; p.dist += v * dt;
+      if (v > 0 && scene.footprint && p.alpha > 0.5) { var fs = walkFrame(p, self.sheet(p.def, false, p.clim)); if ((fs === 0 || fs === 4) && fs !== p.lastPF) scene.footprint(p.x, LANES[p.lane].y, p.dir, fs); p.lastPF = fs; }   // each footfall, a print in the snow
       if (v > 0 && sound.on && p.alpha > 0.5 && p.x > 0 && p.x < W) { var s = self.sheet(p.def, false, p.clim), n = s.mk.n, f = walkFrame(p, s); if ((f === 0 || f === n / 2) && f !== p.lastF) sound.step((p.x / W) * 1.6 - 0.8, 0.012 + p.lane * 0.006); p.lastF = f; }
       if (p.stopAt && (p.stopAt.x - p.x) * p.dir <= 0) { if (p.stopAt.what === 'phone') { if (self.phoneBusy || scene.ring) { p.stopAt = null; } else { self.phoneBusy = p; } } if (p.stopAt) { p.state = 'stand'; p.what = p.stopAt.what; p.wait = rand(p.stopAt.wait[0], p.stopAt.wait[1]); p.waited = 0; p.x = p.stopAt.x; if (p.seat != null) p.dir = 1; p.act = p.def.v2 ? actFor(p) : null; p.at = 0; p.stopAt = null; } }   // (sitting, they look the way the bus comes)
-      if (p.enterAt != null && (p.enterAt - p.x) * p.dir <= 0) { if (p.enterAt === MIDX && scene.diner && !p.follow) p.toDiner = true; p.x = p.enterAt; p.enterAt = null; p.fade = -1; p.leaving = true; }
+      if (p.enterAt != null && (p.enterAt - p.x) * p.dir <= 0) { if (p.enterAt === MIDX && scene.diner && !p.follow) { p.toDiner = true; FT.dinerDoor = 1.4; } p.x = p.enterAt; p.enterAt = null; p.fade = -1; p.leaving = true; }
       if (p.leaving && p.alpha <= 0) { p.gone = true; if (p.toDiner) scene.diner.arrive(p.def); }
       if (p.x < -50 || p.x > W + 50) p.gone = true;
     });
@@ -106,13 +112,18 @@
   // someone leaving the diner steps out of its door onto the pavement
   Crowd.prototype.spawnAt = function (def, x) {
     var self = this; if (!def.v2 && this.cast2) { var busy = {}; this.list.forEach(function (o) { busy[o.def.id] = 1; }); var fr = this.cast2.filter(function (d) { return d.age === 'adult' && !busy[d.id]; }); if (fr.length) def = pick(fr); }   // (on the street, the v2 cast)
-    var dir = Math.random() < 0.5 ? 1 : -1; self.list.push({ def: def, lane: dir > 0 ? 0 : 1, x: x, dir: dir, speed: def.v2 ? rand(34, 44) : rand(26, 34), dist: 0, state: 'walk', alpha: 0, fade: 1, clim: 'cold', lastF: -1 }); };
+    var dir = Math.random() < 0.5 ? 1 : -1; if (Math.abs(x - MIDX) < 4) FT.dinerDoor = 1.4; self.list.push({ def: def, lane: dir > 0 ? 0 : 1, x: x, dir: dir, speed: def.v2 ? rand(34, 44) : rand(26, 34), dist: 0, state: 'walk', alpha: 0, fade: 1, clim: 'cold', lastF: -1 }); };
   Crowd.prototype.items = function (t, L) {
     var self = this, out = [];
     this.list.forEach(function (p) {
       var sit = p.state === 'stand' && p.seat != null && !p.board, v2 = !!p.def.v2, mode = p.state !== 'stand' || p.board ? false : v2 ? (p.act || (sit ? 'sit' : 'idle')) : (sit ? 'sit' : true);
       var s = self.sheet(p.def, mode, p.clim), mk = s.mk, f = mode === false ? walkFrame(p, s) : v2 ? Math.floor((p.at || 0) * 1000 / mk.ms) % mk.n : Math.floor(t * 6) % mk.n, y = sit ? (v2 ? SEAT_V2 : SEAT_BASE) : LANES[p.lane].y;   // v2: a performance played from its start
-      out.push({ base: y, x: p.x, h: s.h, draw: function (g) { var x = Math.round(p.x); g.globalAlpha = p.alpha; g.fillStyle = 'rgba(30,32,30,0.22)'; g.fillRect(x - 8, y - 1, 16, 2); g.save(); g.translate(x, y); if (p.dir < 0) g.scale(-1, 1); g.drawImage(s.c, f * mk.fw, 0, mk.fw, mk.fh, -mk.footX, -mk.footY, mk.fw, mk.fh); g.restore(); g.globalAlpha = 1; } });
+      out.push({ base: y, x: p.x, h: s.h, draw: function (g) { var x = Math.round(p.x); g.globalAlpha = p.alpha; g.fillStyle = 'rgba(30,32,30,0.22)'; g.fillRect(x - 8, y - 1, 16, 2); g.save(); g.translate(x, y); if (p.dir < 0) g.scale(-1, 1);
+        if (p.slip > 0) { var sk = Math.sin((0.9 - p.slip) / 0.9 * Math.PI); g.translate(0, sk * 2); g.rotate(-sk * 0.16); }   // (a slip: a lurch back, then upright)
+        g.drawImage(s.c, f * mk.fw, 0, mk.fw, mk.fh, -mk.footX, -mk.footY, mk.fw, mk.fh); g.restore();
+        if (p.umb && !sit) { var ux = x + p.dir * 2, uy = y - s.h - 5; g.fillStyle = p.umb; g.fillRect(ux - 10, uy + 3, 21, 2); g.fillRect(ux - 8, uy + 1, 17, 2); g.fillRect(ux - 5, uy, 11, 1); g.fillRect(ux, uy - 2, 1, 2); g.fillStyle = 'rgba(255,255,255,0.12)'; g.fillRect(ux - 5, uy + 1, 5, 1);
+          g.fillStyle = 'rgba(0,0,0,0.3)'; [-10, -4, 4, 10].forEach(function (rx) { g.fillRect(ux + rx, uy + 5, 1, 1); }); g.fillStyle = '#2a2622'; g.fillRect(ux, uy + 5, 1, Math.round(s.h * 0.42)); }   // an umbrella, held over them
+        g.globalAlpha = 1; } });
       if (p.dog && L.dog) { var D = L.dog, df = p.state === 'stand' ? 4 + (Math.floor(t * 2) % 2) : Math.floor(p.dist / 9) % 4, dx = Math.round(p.x + p.dir * 24);
         out.push({ base: y + 0.5, draw: function (g) { g.globalAlpha = p.alpha; g.save(); g.translate(dx, y - D.fh); if (p.dir < 0) { g.scale(-1, 1); } g.drawImage(D.c, df * D.fw, 0, D.fw, D.fh, -D.fw / 2, 0, D.fw, D.fh); g.restore(); g.globalAlpha = 1; } }); }
     });

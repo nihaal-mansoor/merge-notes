@@ -3,40 +3,43 @@
   'use strict';
   var W = FT.W, H = FT.H, G = FT.G, KERB = FT.KERB, ROAD = FT.ROAD, MIDX = FT.MIDX, BAYER = FT.BAYER, PAL = FT.PAL, PP = FT.PP, rng = FT.rng, hex = FT.hex, mix = FT.mix, sh = FT.sh, rgba = FT.rgba, clamp = FT.clamp, smooth = FT.smooth, rand = FT.rand, pick = FT.pick, Pt = FT.Pt, brick = FT.brick, stone = FT.stone, stucco = FT.stucco, plate = FT.plate, planks = FT.planks, grime = FT.grime, crack = FT.crack, plaster = FT.plaster, cornice = FT.cornice, band = FT.band, win = FT.win, shopWin = FT.shopWin, door = FT.door, signBoard = FT.signBoard, drainpipe = FT.drainpipe, leaves = FT.leaves, vine = FT.vine, weeds = FT.weeds, STACKS = FT.STACKS, far = FT.far, mid = FT.mid, back = FT.back, B = FT.B, SIGNS = FT.SIGNS, goose = FT.goose, street = FT.street, front = FT.front, LAMP = FT.LAMP, POLE_A = FT.POLE_A, POLE_B = FT.POLE_B, prop = FT.prop, props = FT.props, lampCone = FT.lampCone, glowSprite = FT.glowSprite, finish = FT.finish, fogStrip = FT.fogStrip, puff = FT.puff, wireY = FT.wireY, capsLayer = FT.capsLayer, wetLayer = FT.wetLayer, vehicles = FT.vehicles, stranger = FT.stranger, dogSheet = FT.dogSheet, ratSheet = FT.ratSheet, bankLayer = FT.bankLayer, paintRoom = FT.paintRoom, build = FT.build, GRADE = FT.GRADE, sky = FT.sky, blend = FT.blend, tint = FT.tint, grade = FT.grade, Sound = FT.Sound, ZONES = FT.ZONES, SWX = FT.SWX, ZRANK = FT.ZRANK, LANES = FT.LANES, DOORS = FT.DOORS, SPOTS = FT.SPOTS, Weather = FT.Weather, zoneOf = FT.zoneOf, Power = FT.Power, Crowd = FT.Crowd;
   // ---------------------------------------------------------------- the frame
-  var DOORRECT = { about: [72, 460, 26, 60], how: [331, 456, 30, 64], work: [627, 452, 26, 58], writing: [872, 458, 26, 62], toolkit: [1020, 462, 28, 58], switch: [1112, 450, 30, 70], hotel: [1228, 460, 32, 60] };
+  var DOORRECT = { about: [72, 460, 26, 60], how: [331, 456, 30, 64], work: [627, 452, 26, 58], writing: [872, 458, 26, 62], toolkit: [1020, 462, 28, 58], hotel: [1228, 460, 32, 60] };
   function Scene(cv, F) {
     this.F = F; this.g = cv.getContext('2d'); this.g.imageSmoothingEnabled = false; this.cache = {}; this.key = '';
-    this.smoke = []; this.ash = []; this.steam = []; this.birds = []; this.perched = []; this.leaves = []; this.drops = []; this.flakes = []; this.sparks = []; this.wisps = []; this.cars = []; this.moths = [];
+    this.smoke = []; this.ash = []; this.steam = []; this.birds = []; this.perched = []; this.leaves = []; this.drops = []; this.flakes = []; this.sparks = []; this.wisps = []; this.cars = []; this.moths = []; this.life = F && FT.Life ? new FT.Life(this) : null;   // the small life of the street (life.js)
     this.nextFlock = rand(4, 20); this.nextSteam = 0; this.flicker = 0; this.nextFlicker = rand(20, 90); this.nextWin = rand(3, 10); this.nextBank = rand(120, 400); this.nextFigure = rand(45, 160); this.nextRing = rand(30, 120); this.nextRat = rand(15, 80); this.nextCar = rand(2, 10); this.nextLand = rand(5, 25); this.nextGust = rand(6, 30); this.nextWisp = 0;
     this.stars = []; for (var s = 0; s < 70; s++) this.stars.push([Math.random() * W, Math.random() * 260, Math.random()]);
     for (var m = 0; m < 5; m++) this.moths.push({ a: rand(0, 6), r: rand(6, 22), sp: rand(1.5, 4), y: rand(-6, 10), j: rand(0, 9) });
     for (var pb = 0; pb < 3; pb++) this.perched.push({ x: rand(150, 1150), k: (Math.random() * 3) | 0, bob: rand(0, 6) });
-    this.vendT = -1; this.ring = null; this.figure = null; this.bank = null; this.rat = null; this.hcars = []; this.nextH = rand(0.5, 3); this.neonOff = -1; this.neonUntil = 0; this.nextNeon = rand(12, 40); this.chaseUntil = 0; this.nextChase = rand(6, 25); this.hotelE = 0; this.nextHotel = rand(8, 30); this.curtainT = -1; this.nextCurtain = rand(15, 50);
+    this.vendT = -1; this.ring = null; this.figure = null; this.bank = /[?&]bank(&|=|$)/.test(location.search) ? { t: 20, dur: 1e9, side: 1 } : null; this.rat = null; this.hcars = []; this.nextH = rand(0.5, 3); this.neonOff = -1; this.neonUntil = 0; this.nextNeon = rand(12, 40); this.chaseUntil = 0; this.nextChase = rand(6, 25); this.hotelE = 0; this.nextHotel = rand(8, 30); this.curtainT = -1; this.nextCurtain = rand(15, 50);
   }
   // warm up without drawing: smoke already rising and ash already falling when the page first shows
+  // a footprint in the snow, left by someone's step (world.js calls this at each footfall)
+  Scene.prototype.footprint = function (x, y, dir, f) { if (!this.F || !(this.capsAmt > 0.3)) return; this.prints = true; var pq = FT.scratch('prints', W, KERB - G).getContext('2d'); pq.fillStyle = 'rgba(40,50,62,0.34)'; pq.fillRect(Math.round(x + (f ? 2 : -2) * dir) - 1, Math.round(y - G - (f ? 0 : 1)), 2, 1); };
   Scene.prototype.warm = function () { var self = this; STACKS.forEach(function (s) { for (var i = 0; i < 14; i++) { var life = rand(6, 12), age = rand(0, life), vx = 14 * rand(0.5, 1.1), vy = -rand(8, 16); self.smoke.push({ x: s[0] + vx * age, y: s[1] - 2 + vy * age, vx: vx, vy: vy, age: age, life: life, s0: rand(8, 12), s1: rand(36, 60) }); } }); };
   Scene.prototype.vend = function (sound) { this.vendT = 0; if (sound) sound.clunk(); };
   Scene.prototype.spark = function () { for (var i = 0; i < 40; i++) this.sparks.push({ x: B.switch[0] + 72, y: G - 70, vx: rand(-90, 90), vy: rand(-140, 20), life: rand(0.3, 0.9), age: 0 }); };
   Scene.prototype.regrade = function (L, S) {
-    var key = [S.dark, S.warm, S.dawn, S.rain].map(function (v) { return Math.round(v * 40); }).join(','); if (key === this.key) return; this.key = key; var c = this.cache, cols = FT.skyCols(S, true); this.cols = cols;
+    var key = [S.dark, S.warm, S.dawn, S.rain, S.snow || 0].map(function (v) { return Math.round(v * 40); }).join(','); if (key === this.key) return; this.key = key; var c = this.cache, cols = FT.skyCols(S, true); this.cols = cols;
     c.sky = FT.bandedSky(cols, S, c.sky);
     ['horizon', 'far', 'mid', 'hwy', 'rail', 'back'].forEach(function (k) { c[k] = FT.skyGrade(L[k], k, S, cols, c[k]); });   // the background takes the sky's colour
     ['street', 'front', 'fg'].forEach(function (k) { c[k] = grade(L[k], k, S, c[k]); });
-    c.fogA = FT.skyGrade(L.fogA.c, 'fog', S, cols, c.fogA); c.fogB = FT.skyGrade(L.fogB.c, 'fog', S, cols, c.fogB); c.puff = FT.skyGrade(L.puff, 'fog', S, cols, c.puff); if (L.bank) c.bank = FT.skyGrade(L.bank.c, 'fog', S, cols, c.bank);
+    c.cbank = FT.skyGrade(L.cbank.c, 'cloud', S, cols, c.cbank); c.fogA = FT.skyGrade(L.fogA.c, 'fog', S, cols, c.fogA); c.fogB = FT.skyGrade(L.fogB.c, 'fog', S, cols, c.fogB); c.puff = FT.skyGrade(L.puff, 'fog', S, cols, c.puff); if (L.bank) c.bank = FT.skyGrade(L.bank.c, 'fog', S, cols, c.bank);
     c.wisp = L.wisp.map(function (wc, i) { return FT.skyGrade(wc, 'fog', S, cols, (c.wisp || [])[i]); }); if (L.caps) c.caps = grade(L.caps, 'street', S, c.caps);
   };
   // a crisp disc, row by row (no soft edges: it's pixel art)
   function disc(g, cx, cy, r, col) { g.fillStyle = col; for (var y = -r; y <= r; y++) { var hw = Math.round(Math.sqrt(r * r - y * y)); g.fillRect(Math.round(cx - hw), Math.round(cy + y), hw * 2, 1); } }
   Scene.prototype.draw = function (L, t, dt, hour, env) {
     var g = this.g, K = L.K, F = K.F, self = this, c = this.cache, wx = env.wx, crowd = env.crowd, power = env.power, sound = env.sound, mouse = env.mouse;
-    var S = F ? sky(hour) : { dark: 1, warm: 0, dawn: 0, rain: 0 }; if (F) S.rain = Math.max(wx.rain, wx.snow * 0.5);
-    if (F) this.regrade(L, S); else if (!c.far) { ['far', 'mid', 'back', 'street', 'front'].forEach(function (k) { c[k] = L[k]; }); c.fogA = L.fogA.c; c.fogB = L.fogB.c; c.puff = L.puff; ['horizon', 'hwy', 'rail', 'fg'].forEach(function (k) { c[k] = L[k]; }); c.wisp = L.wisp; }
+    var S = F ? sky(hour) : { dark: 1, warm: 0, dawn: 0, rain: 0 }; if (F) { S.rain = Math.max(wx.rain, wx.snow * 0.5); S.wetRain = wx.rain; S.snow = wx.snow; }   // (rain and snow both grey the sky; only rain turns things teal)
+    if (F) this.regrade(L, S); else if (!c.far) { ['far', 'mid', 'back', 'street', 'front'].forEach(function (k) { c[k] = L[k]; }); c.fogA = L.fogA.c; c.fogB = L.fogB.c; c.puff = L.puff; c.cbank = L.cbank.c; ['horizon', 'hwy', 'rail', 'fg'].forEach(function (k) { c[k] = L[k]; }); c.wisp = L.wisp; }
     var Q = FT.Q || { p: 1, motion: true };
     // ---- this frame's light levels: the hour, the power dips, the lamp's flickers (see lighting.js for what they light)
     var night = F ? smooth((S.dark - 0.05) / 0.5) : 1, lampP = power.level(LAMP.x, t), lampOn = (F ? smooth((S.dark - 0.15) / 0.3) : 1) * (lampP > 0.5 ? 1 : 0);
     this.nextFlicker -= dt; if (this.nextFlicker <= 0 && Q.motion) { this.nextFlicker = rand(15, 120); this.flicker = rand(0.3, 1.6); } var fl = 1; if (this.flicker > 0) { this.flicker -= dt; fl = Math.random() < 0.5 ? 0.15 : 1; }
     this.lampLevel = lampOn * fl; var vp = power.level(229, t), blink = Math.sin(t * 1.7) > 0.6, glow = this.glow = [];
-    var lit = FT.Lighting.frame(L, F ? { lamp: lampOn * fl, vending: night * vp, neon: night * power.level(640, t) * (this.neonOff >= 0 ? 0.75 : 1), diner: night * power.level(640, t), laundry: night * power.level(457, t), hotel: night * power.level(1244, t), warn: blink ? 0.3 + 0.7 * night : 0, flash: (this.shopLv || {}).flash || 0, tvs: (this.shopLv || {}).tvs || 0, clocks: (this.shopLv || {}).clocks || 0 } : { lamp: lampOn * fl, warn: blink ? 1 : 0 });
+    var lit = FT.Lighting.frame(L, F ? { lamp: lampOn * fl, vending: night * vp, neon: night * power.level(640, t) * (this.neonOff >= 0 ? 0.75 : 1), diner: night * power.level(640, t), laundry: night * power.level(457, t), hotel: night * power.level(1244, t), warn: blink ? 0.3 + 0.7 * night : 0, flash: (this.shopLv || {}).flash || 0, tvs: (this.shopLv || {}).tvs || 0, clocks: (this.shopLv || {}).clocks || 0, kiosk: (this.shopLv || {}).kiosk || 0 } : { lamp: lampOn * fl, warn: blink ? 1 : 0 });
+    if (this.life) { FT.hourNow = hour; this.life.mouse = mouse; this.life.glowOut = glow; this.life.update(dt, t, hour, S, wx, L, crowd, sound); }
     var wind = 14 + 9 * Math.sin(t * 0.031) + 6 * Math.sin(t * 0.0173 + 1.3) + 4 * Math.sin(t * 0.0071 + 4) + (F ? wx.rain * 10 : 0);
     var vis = 1 - S.rain * 0.8;   // what the cloud leaves of the sky
     // ---- sky
@@ -56,9 +59,12 @@
         var mx = 1150 - moonH * 620, my = 430 - Math.sin(clamp(moonH, 0, 1) * Math.PI) * 330, mr = 20; g.globalAlpha = vis;
         var mg = g.createRadialGradient(mx, my, mr, mx, my, mr * 3.5); mg.addColorStop(0, 'rgba(200,206,236,0.16)'); mg.addColorStop(1, 'rgba(200,206,236,0)'); g.fillStyle = mg; g.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
         disc(g, mx, my, mr, '#e6e4f0'); g.fillStyle = '#cfcce0'; [[-6, -4, 3], [5, 3, 4], [-2, 8, 2], [8, -7, 2]].forEach(function (cr) { disc(g, mx + cr[0], my + cr[1], cr[2], '#cfcce0'); });
-        disc(g, mx + 9, my - 4, mr - 2, FT.skyAt(cols, my)); g.globalAlpha = 1;
+        var mph = this.moonPh != null ? this.moonPh : (this.moonPh = +((location.search.match(/[?&]moon=([0-9.]+)/) || [])[1] || ((Date.now() / 864e5 - 10962.76) % 29.5306 + 29.5306) % 29.5306 / 29.5306)), moff = (mph < 0.5 ? -1 : 1) * 2.2 * mr * (mph < 0.5 ? mph * 2 : (1 - mph) * 2);   // tonight's moon: its real phase (waxing, lit from the right)
+        if (Math.abs(moff) < mr * 2.1) { g.fillStyle = mix(FT.skyAt(cols, my), '#e6e4f0', 0.1); for (var my2 = -mr; my2 <= mr; my2++) { var mhw = Math.round(Math.sqrt(mr * mr - my2 * my2)), shw = Math.sqrt((mr + 1) * (mr + 1) - my2 * my2), a0 = Math.max(-mhw, Math.round(moff - shw)), a1 = Math.min(mhw, Math.round(moff + shw)); if (a1 > a0) g.fillRect(Math.round(mx) + a0, Math.round(my) + my2, a1 - a0, 1); } }   // the dark side, row by row inside the disc (earthshine)
+        g.globalAlpha = 1;
       }
     }
+    if (this.life) this.life.sky(g, S, t, dt, hour, vis, wx);   // planes, a shooting star, the starlings, searchlights
     // ---- birds in flight: a passing flock now and then, and any that were startled off the wires
     if (F) { this.nextFlock -= dt; if (this.nextFlock <= 0 && S.dark < 0.7 && S.rain < 0.6) { this.nextFlock = rand(10, 45); var dir = Math.random() < 0.5 ? 1 : -1, n = 3 + (Math.random() * 8 | 0), y0 = rand(90, 260), spd = rand(40, 70); for (var b = 0; b < n; b++) this.birds.push({ x: dir > 0 ? -20 - b * rand(6, 20) : W + 20 + b * rand(6, 20), y: y0 + rand(-20, 20), vx: dir * spd * rand(0.9, 1.1), vy: 0, ph: rand(0, 6) }); }
       this.nextLand -= dt; if (this.nextLand <= 0) { this.nextLand = rand(8, 30); if (this.perched.length < 8 && S.dark < 0.6 && S.rain < 0.5) { var tx = rand(120, 1160), d2 = Math.random() < 0.5 ? 1 : -1; this.birds.push({ x: d2 > 0 ? -10 : W + 10, y: rand(60, 160), vx: d2 * 55, vy: 0, ph: 0, land: { x: tx, k: (Math.random() * 3) | 0 } }); } } }
@@ -66,14 +72,16 @@
     this.birds.forEach(function (bd) { if (bd.land) { var ty2 = wireY(bd.land.x, bd.land.k) - 2, ddx = bd.land.x - bd.x, ddy = ty2 - bd.y, dd = Math.hypot(ddx, ddy); if (dd < 3) { self.perched.push({ x: bd.land.x, k: bd.land.k, bob: 0 }); bd.gone = true; return; } bd.vx = ddx / dd * 55; bd.vy = ddy / dd * 55; }
       bd.x += bd.vx * dt; bd.y += (bd.vy || 0) * dt; if (bd.vy && !bd.land) bd.vy *= 0.98; bd.ph += dt * 11; var up = Math.sin(bd.ph) > 0 ? 1 : 0; g.fillRect(bd.x | 0, bd.y | 0, 1, 1); g.fillRect((bd.x - 2) | 0, (bd.y - up) | 0, 2, 1); g.fillRect((bd.x + 1) | 0, (bd.y - up) | 0, 2, 1); });
     this.birds = this.birds.filter(function (bd) { return !bd.gone && bd.x > -60 && bd.x < W + 60 && bd.y > -40; });
+    if (c.cbank) { var bd = (t * (1.2 + wind * 0.05)) % W; g.globalAlpha = F ? 0.55 + 0.45 * S.rain : 0.8; g.drawImage(c.cbank, -bd, 0, W, 180); g.drawImage(c.cbank, W - bd, 0, W, 180); g.globalAlpha = 1; }   // the overcast overhead, drifting
     if (F) this.drawClouds(g, S, t, dt, wind, wx);
     this.drawHorizon(g, L, c, S, t);
-    FT.blit(g, c.far); this.lights(g, L, 'far', S, t, env); this.beacons(g, 'far', S, t);
+    FT.blit(g, c.far); this.lights(g, L, 'far', S, t, env); this.beacons(g, 'far', S, t); if (this.life) this.life.far(g, S, t, dt);
     // ---- smoke: always rising, its rate and the wind always changing
     STACKS.forEach(function (s, i) { if (Math.random() < dt * Q.p * (2.2 + 1.6 * Math.sin(t * 0.05 + i * 2.1))) self.smoke.push({ x: s[0] + rand(-3, 3), y: s[1] - 2, vx: wind * rand(0.5, 1.1), vy: -rand(8, 16), age: 0, life: rand(6, 12), s0: rand(8, 12), s1: rand(36, 60), v: (Math.random() * 4) | 0 }); });
     this.smoke.forEach(function (pf) { pf.age += dt; pf.x += pf.vx * dt; pf.y += pf.vy * dt; pf.vy *= 0.995; var a = pf.age / pf.life, sz = pf.s0 + (pf.s1 - pf.s0) * a; g.globalAlpha = (1 - a) * (F ? 0.85 : 0.9) * Math.min(1, pf.age * 2); g.drawImage(c.wisp[pf.v || 0], pf.x - sz / 2, pf.y - sz * 0.4, sz, sz * 0.75); });
     g.globalAlpha = 1; this.smoke = this.smoke.filter(function (pf) { return pf.age < pf.life; });
     if (Math.sin(t * 2.9) > 0.2 && (!F || S.dark > 0.2)) { g.fillStyle = F ? '#d84a3a' : '#ff5a2a'; g.fillRect(1220, 138, 3, 3); }
+    if (F) { var drift0 = (t * (2.5 + wind * 0.12)) % (W * 2); g.globalAlpha = 0.45 + 0.15 * Math.sin(t * 0.029); g.imageSmoothingEnabled = true; g.drawImage(c.fogB, -drift0, 400, W * 2, 90); g.drawImage(c.fogB, W * 2 - drift0, 400, W * 2, 90); g.imageSmoothingEnabled = false; g.globalAlpha = 1; }   // a slow fog band between the far town and the middle one
     FT.blit(g, c.mid); this.lights(g, L, 'mid', S, t, env); this.beacons(g, 'mid', S, t);
     this.drawHighway(g, L, c, S, t, dt, hour);
     FT.blit(g, c.back); this.lights(g, L, 'back', S, t, env); this.beacons(g, 'back', S, t);
@@ -86,11 +94,15 @@
     FT.blit(g, c.street); this.lights(g, L, 'street', S, t, env);
     if (F && L.wet && wx.wet > 0.02) { g.globalAlpha = wx.wet; FT.blit(g, L.wet); g.globalAlpha = 1; }
     if (F && c.caps && wx.caps > 0.02) { g.globalAlpha = wx.caps; FT.blit(g, c.caps); g.globalAlpha = 1; }
+    this.capsAmt = F ? wx.caps : 0;
+    if (this.prints && F) { var pr = FT.scratch('prints', W, KERB - G), pq = pr.getContext('2d'); this.printFade = (this.printFade || 0) + dt; if (this.printFade > 2) { this.printFade = 0; pq.globalCompositeOperation = 'destination-out'; pq.fillStyle = 'rgba(0,0,0,0.07)'; pq.fillRect(0, 0, W, KERB - G); pq.globalCompositeOperation = 'source-over'; } if (wx.caps > 0.3) g.drawImage(pr, 0, G); }   // footprints in the snow, filling in
     if (F && S.dark > 0.05) { var slit = smooth((S.dark - 0.05) / 0.5); SIGNS.forEach(function (s) { var pw = power.level(s[0] + s[2] / 2, t); if (pw < 0.5) return; g.globalAlpha = slit * 0.85 * pw; FT.blitRect(g, L.street, s[0], s[1], s[2], s[3]); });
       g.globalCompositeOperation = 'screen'; var sg2 = this.sglow || (this.sglow = glowSprite('#f4e0b0', 30)); SIGNS.forEach(function (s) { if (!s[4] || power.level(s[0] + s[2] / 2, t) < 0.5) return; g.globalAlpha = slit * 0.5; g.drawImage(sg2, s[0] + s[2] / 2 - 30, s[1] - 22); }); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-    if (F) { var shp = this.shops || (this.shops = new FT.Shops.Shops()); shp.glowOut = glow; this.shopLv = shp.draw(g, L, t, dt, S, env, this.hour); }   // the ground-floor shops (shops.js)
+    if (F) { var shp = this.shops || (this.shops = new FT.Shops.Shops()); shp.glowOut = glow; this.shopLv = shp.draw(g, L, t, dt, S, env, this.hour); }
+    if (this.life) this.life.walls(g, L, S, t, dt, hour, wx, wind, power);   // washing, signs, curtains, the cat on the sill (life.js)   // the ground-floor shops (shops.js)
     FT.Lighting.statics(g, lit, 'street');   // the lamp, the vending machine, the signs and the shop windows on the walls and the pavement
     if (lampOn * fl > 0.01) { g.globalCompositeOperation = 'screen'; g.globalAlpha = lampOn * fl * (F ? 0.3 : 0.7) * LP.haze; g.drawImage(L.cone.c, LAMP.x - 110, LAMP.y - 6); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }   // its light in the air, behind the people and the car
+    if (F) FT.Lighting.reflect(g, wx.wet, t);   // the wet street mirrors what stands above it
     this.drawNeon(g, L, t, dt, S, env);
     if (F && env.hover && DOORRECT[env.hover]) { var dr = DOORRECT[env.hover], dg = g.createLinearGradient(0, dr[1], 0, dr[1] + dr[3]); dg.addColorStop(0, 'rgba(255,214,140,0.85)'); dg.addColorStop(1, 'rgba(200,140,70,0.75)'); g.fillStyle = dg; if (env.hover !== 'hotel') g.fillRect(dr[0] + 2, dr[1] + 2, dr[2] - 4, dr[3] - 2);   // (the hotel's lobby is already lit: keep the clerk in view)
       g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(255,214,140,0.22)'; g.beginPath(); g.moveTo(dr[0], G); g.lineTo(dr[0] + dr[2], G); g.lineTo(dr[0] + dr[2] + 24, G + 40); g.lineTo(dr[0] - 24, G + 40); g.fill(); g.globalCompositeOperation = 'source-over'; }
@@ -111,6 +123,7 @@
     var items = L.props.map(function (pr) { return { base: pr.base, draw: function (gg) { gg.drawImage(pr.c, pr.x, pr.y); } }; });
     if (F && crowd) items = items.concat(crowd.items(t, L));
     if (F) items = items.concat(this.animals(t, dt, L, crowd, env, S));
+    if (this.life) items = items.concat(this.life.items(t, dt, crowd));
     if (F && this.rat) { var R2 = this.rat; items.push({ base: 527, draw: function (gg) { var fr = R2.pause > 0 ? 0 : Math.floor(t * 12) % 2; gg.save(); gg.translate(Math.round(R2.x), 522); if (R2.dir < 0) gg.scale(-1, 1); gg.drawImage(L.rat, fr * 10, 0, 10, 5, -5, 0, 10, 5); gg.restore(); } }); }
     if (F && this.figure) { var FG = this.figure; items.push({ base: FG.base, draw: function (gg) { gg.globalAlpha = Math.min(1, FG.t / 4) * 0.55; gg.drawImage(L.stranger, Math.round(FG.x - L.stranger.ox), FG.base - L.stranger.oy); gg.globalAlpha = 1; } }); }
     items.sort(function (p, q) { return p.base - q.base; }); FT.Lighting.shadows(a, items, lit); items.forEach(function (it) { it.draw(a); });
@@ -124,10 +137,10 @@
       if (this.ring && (t - this.ring.t0) % 3 < 1.1) { g.font = '13px VT323'; g.textAlign = 'center'; g.fillStyle = 'rgba(16,20,22,0.7)'; g.fillText('RING', bx + 20 + jig, by - 7); g.fillStyle = '#ece6d6'; g.fillText('RING', bx + 19 + jig, by - 8); }
       if (this.vendT >= 0) { this.vendT += dt; var vx = L.props[1].x, vy = L.props[1].y; if (this.vendT < 0.35) { g.fillStyle = '#c84a3a'; g.fillRect(vx + 14, vy + 20 + this.vendT * 90, 3, 5); } else { g.fillStyle = '#c84a3a'; g.fillRect(vx + 12, vy + 55, 5, 3); } if (this.vendT > 2.5) this.vendT = -1; }
     }
-    FT.blit(g, c.front); FT.Lighting.statics(g, lit, 'front');
+    FT.blit(g, c.front); FT.Lighting.statics(g, lit, 'front'); if (this.life) this.life.front(g, S, t, dt, wind);
     // ---- birds on the wires (they scatter when the cursor comes close), moths round the lamp
-    if (F) { var near = this.perched.filter(function (pb) { return Math.hypot(mouse.x - pb.x, mouse.y - wireY(pb.x, pb.k)) < 110; }); if (near.length) { sound.flap((near[0].x / W) * 1.6 - 0.8); near.forEach(function (pb) { self.birds.push({ x: pb.x, y: wireY(pb.x, pb.k) - 2, vx: rand(-70, 70), vy: rand(-80, -40), ph: 0 }); }); this.perched = this.perched.filter(function (pb) { return near.indexOf(pb) < 0; }); }
-      g.fillStyle = S.dark > 0.5 ? '#0e1014' : '#2f302e'; this.perched.forEach(function (pb) { pb.bob += dt; var y = Math.round(wireY(pb.x, pb.k)) - 3, hb = Math.sin(pb.bob * 1.7) > 0.95 ? 1 : 0; g.fillRect(Math.round(pb.x) - 1, y, 3, 2); g.fillRect(Math.round(pb.x) + 1, y - 1 + hb, 1, 1); }); }
+    if (F) { var near = this.perched.filter(function (pb) { return Math.hypot(mouse.x - pb.x, mouse.y - FT.wireAt(pb.x, pb.k)) < 110; }); if (near.length) { sound.flap((near[0].x / W) * 1.6 - 0.8); near.forEach(function (pb) { self.birds.push({ x: pb.x, y: FT.wireAt(pb.x, pb.k) - 2, vx: rand(-70, 70), vy: rand(-80, -40), ph: 0 }); }); this.perched = this.perched.filter(function (pb) { return near.indexOf(pb) < 0; }); }
+      g.fillStyle = S.dark > 0.5 ? '#0e1014' : '#2f302e'; this.perched.forEach(function (pb) { pb.bob += dt; var y = Math.round(FT.wireAt(pb.x, pb.k)) - 3, hb = Math.sin(pb.bob * 1.7) > 0.95 ? 1 : 0; g.fillRect(Math.round(pb.x) - 1, y, 3, 2); g.fillRect(Math.round(pb.x) + 1, y - 1 + hb, 1, 1); }); }
     if (F && lampOn > 0.3) { g.fillStyle = 'rgba(244,236,210,0.8)'; this.moths.forEach(function (mo) { mo.a += dt * mo.sp; mo.j += dt * 7; var x = LAMP.x + Math.cos(mo.a) * mo.r + Math.sin(mo.j) * 2, y = LAMP.y - 12 + Math.sin(mo.a * 1.3) * mo.r * 0.5 + mo.y; g.fillRect(x | 0, y | 0, 1, 1); }); }
     // ---- traffic: one-of-a-kind vehicles pass now and then
     if (F) { this.nextCar -= dt; if (this.nextCar <= 0) { this.nextCar = (S.dark > 0.5 ? rand(30, 90) : rand(12, 45)) * (hour >= 1 && hour < 5 ? 2.5 : 1); var free = ['van', 'taxi', 'courier'].filter(function (kk) { return !self.cars.some(function (cc) { return cc.k === kk; }); }); if (free.length) { var kk = pick(free), dir3 = Math.random() < 0.5 || (this.bus && this.bus.state !== 'stop') ? 1 : -1, V = L.veh[kk]; this.cars.push({ k: kk, dir: dir3, x: dir3 > 0 ? -V.w - 10 : W + 10, base: dir3 > 0 ? NEAR_LANE : FAR_LANE, speed: V.speed * rand(0.85, 1.15) }); sound.whoosh(dir3, (W + V.w) / V.speed); } }
@@ -136,29 +149,54 @@
       // a car never joins the far lane while the bus is moving in it; far lane first; nobody drives through the vehicle ahead
       this.cars.sort(function (p, q) { return p.base - q.base; });
       this.cars.forEach(function (car) { var V = L.veh[car.k]; car.v = car.speed; self.cars.forEach(function (o) { var gap = car.dir > 0 ? o.x - (car.x + V.w) : car.x - (o.x + L.veh[o.k].w); if (o !== car && o.dir === car.dir && gap > -V.w && gap < 40) car.v = Math.min(car.v, o.speed * clamp(gap / 40, 0, 1)); });
-        var bb2 = self.bus; if (car.dir < 0 && bb2 && bb2.state !== 'stop' && car.x > bb2.x && car.x - (bb2.x + L.bus.w) < 40) car.v = Math.min(car.v, bb2.v * clamp((car.x - (bb2.x + L.bus.w)) / 40, 0, 1)); });
+        var bb2 = self.bus; if (car.dir < 0 && bb2 && bb2.state !== 'stop' && car.x > bb2.x && car.x - (bb2.x + L.bus.w) < 40) car.v = Math.min(car.v, bb2.v * clamp((car.x - (bb2.x + L.bus.w)) / 40, 0, 1));
+        if (car.stopX != null) { var rem = (car.stopX - car.x) * car.dir; if (rem <= 0.5) { car.v = 0; car.held = (car.held || 0) + dt; if (car.held > car.holdFor) car.stopX = null; } else car.v = Math.min(car.v, Math.max(8, rem * 1.3)); } });   // a taxi pulling in for someone who hailed it (life.js)
       this.cars.forEach(function (car) { var V = L.veh[car.k]; car.x += car.dir * car.v * dt; car.d = (car.d || 0) + car.v * dt; var fr2 = V.frames ? Math.floor(t * 9) % V.frames : 0, fw = V.w, bob = !V.frames && Math.sin(car.d * 0.09) > 0.93 ? -1 : 0; nr.save(); nr.translate(Math.round(car.x) + (car.dir < 0 ? V.w : 0), car.base - V.h + bob); if (car.dir < 0) nr.scale(-1, 1); nr.drawImage(car.dir < 0 && V.cL ? V.cL : V.c, fr2 * fw, 0, fw, V.h, 0, 0, fw, V.h); spin(nr, V.wheels, car.d); nr.restore(); nr.fillStyle = 'rgba(16,20,22,0.3)'; nr.fillRect(Math.round(car.x) + 4, car.base - 1, V.w - 8, 3); });
       this.cars = this.cars.filter(function (car) { return car.x > -L.veh[car.k].w - 40 && car.x < W + 40; });
       if (this.cars.length || this.bus) { FT.Lighting.grab(nearC, NY, lit, true); tint(nr, W, H, S, 'front'); FT.Lighting.give(nr, lit); g.drawImage(nearC, 0, 0, W, H - NY, 0, NY, W, H - NY); this.busLights(g, S, L);
         if (S.dark > 0.2) { g.globalCompositeOperation = 'screen'; this.cars.forEach(function (car) { var V = L.veh[car.k], fx = car.dir > 0 ? car.x + V.front : car.x + V.w - V.front, fy = car.base - V.h + V.lightY, cg = g.createLinearGradient(fx, 0, fx + car.dir * 170, 0); cg.addColorStop(0, rgba('#fff0c8', 0.45 * S.dark)); cg.addColorStop(1, 'rgba(255,240,200,0)'); g.fillStyle = cg; g.beginPath(); g.moveTo(fx, fy - 2); g.lineTo(fx + car.dir * 170, fy - 22); g.lineTo(fx + car.dir * 170, fy + 26); g.lineTo(fx, fy + 3); g.fill();
-          var tx2 = car.dir > 0 ? car.x + 5 : car.x + V.w - 5; g.fillStyle = rgba('#ff3a2a', 0.7 * S.dark); g.fillRect(Math.round(tx2) - 1, Math.round(fy), 3, 2); glow.push([fx - 2, fy - 2, 5, 5, '#fff0c8', S.dark], [tx2 - 2, fy - 1, 4, 4, '#ff3a2a', 0.6 * S.dark]); }); g.globalCompositeOperation = 'source-over'; } } }
+          var tx2 = car.dir > 0 ? car.x + 5 : car.x + V.w - 5; g.fillStyle = rgba('#ff3a2a', 0.7 * S.dark); g.fillRect(Math.round(tx2) - 1, Math.round(fy), 3, 2);
+            // headlights and tail-lights, streaked down the wet road
+            if (wx.wet > 0.08) { [[fx, '#fff0c8', 0.4], [tx2, '#ff3a2a', 0.3]].forEach(function (q) { for (var ry = 0; ry < 26; ry += 2) { g.fillStyle = rgba(q[1], q[2] * S.dark * wx.wet * (1 - ry / 26)); g.fillRect(Math.round(q[0] - 2 + Math.sin(t * 3 + ry) * 1.2), car.base + 1 + ry, 4, 1); } }); }
+            glow.push([fx - 2, fy - 2, 5, 5, '#fff0c8', S.dark], [tx2 - 2, fy - 1, 4, 4, '#ff3a2a', 0.6 * S.dark]); }); g.globalCompositeOperation = 'source-over'; } } }
     // ---- steam in bursts, smoke from anyone having a cigarette under the awning, sparks
     this.nextSteam -= dt; if (this.nextSteam <= 0) { this.nextSteam = rand(0.05, 0.4) * (Math.random() < 0.1 ? 12 : 1); var burst = Math.random() < 0.15 ? 4 : 1; for (var sb = 0; sb < burst; sb++) this.steam.push({ x: MIDX + rand(-12, 12), y: 688, vx: wind * 0.4 * rand(0.5, 1.2), vy: -rand(14, 30), age: 0, life: rand(2, 4.5), s: rand(10, 18), v: (Math.random() * 4) | 0 }); }
-    if (F && crowd) { this.nextWisp -= dt; crowd.list.forEach(function (p) { if (p.state === 'stand' && p.what === 'smoke') { var hx = p.x + p.dir * 7, hy = LANES[p.lane].y - 34; if (self.nextWisp <= 0) self.wisps.push({ x: hx, y: hy, vx: wind * 0.2, vy: -rand(6, 12), age: 0, life: rand(2, 3.5), s: 3 }); if (S.dark > 0.3 && Math.sin(t * 3 + p.x) > -0.2) { g.fillStyle = '#ff9a4a'; g.fillRect(Math.round(hx), Math.round(hy), 1, 1); } } }); if (this.nextWisp <= 0) this.nextWisp = rand(0.3, 0.6); }
+    if (F && crowd) { this.nextWisp -= dt; crowd.list.forEach(function (p) { if (p.state === 'stand' && (p.what === 'smoke' || p.act === 'smoke')) { var hx = p.x + p.dir * 7, hy = LANES[p.lane].y - 34; if (self.nextWisp <= 0) self.wisps.push({ x: hx, y: hy, vx: wind * 0.2, vy: -rand(6, 12), age: 0, life: rand(2, 3.5), s: 3 }); if (S.dark > 0.3 && Math.sin(t * 3 + p.x) > -0.2) { g.fillStyle = '#ff9a4a'; g.fillRect(Math.round(hx), Math.round(hy), 1, 1); } } }); if (this.nextWisp <= 0) this.nextWisp = rand(0.3, 0.6); }
     this.steam.concat(this.wisps).forEach(function (st) { st.age += dt; st.x += st.vx * dt; st.y += st.vy * dt; var q = st.age / st.life, sz = st.s + q * (st.s > 5 ? 50 : 14); g.globalAlpha = (1 - q) * Math.min(1, st.age * 2.5) * (F ? 0.75 : 0.6) * (st.s > 5 ? 1 : 0.6); g.drawImage(c.wisp[st.v || 0], st.x - sz / 2, st.y - sz * 0.4, sz, sz * 0.75); });
-    g.globalAlpha = 1; this.steam = this.steam.filter(function (st) { return st.age < st.life; }); this.wisps = this.wisps.filter(function (st) { return st.age < st.life; });
+    g.globalAlpha = 1; this.steam = this.steam.filter(function (st) { return st.age < st.life; }); this.wisps = this.wisps.filter(function (st) { return st.age < st.life; }); if (this.life) this.life.late(g, S, t, dt);
     g.fillStyle = '#ffd890'; this.sparks.forEach(function (sp) { sp.age += dt; sp.vy += 300 * dt; sp.x += sp.vx * dt; sp.y += sp.vy * dt; if (sp.age < sp.life) g.fillRect(sp.x | 0, sp.y | 0, 1, 1); }); this.sparks = this.sparks.filter(function (sp) { return sp.age < sp.life; });
     // ---- a bank of fog rolls in now and then and swallows one end of the street
     if (F) { this.nextBank -= dt; if (!this.bank && this.nextBank <= 0) { this.nextBank = rand(240, 700); this.bank = { t: 0, dur: rand(50, 90), side: Math.random() < 0.6 ? 1 : -1 }; }
-      if (this.bank) { var bk = this.bank; bk.t += dt; var dens = bk.t < 15 ? bk.t / 15 : bk.t < bk.dur - 15 ? 1 : (bk.dur - bk.t) / 15; if (bk.t > bk.dur) this.bank = null; else { dens = smooth(dens); g.globalAlpha = dens; g.imageSmoothingEnabled = true; if (bk.side > 0) g.drawImage(c.bank, W - 900 + (1 - dens) * 500, 160, 900, 460); else { g.save(); g.translate(900 - (1 - dens) * 500, 160); g.scale(-1, 1); g.drawImage(c.bank, 0, 0, 900, 460); g.restore(); } g.imageSmoothingEnabled = false; g.globalAlpha = 1; } } }
+      if (this.bank) { var bk = this.bank; bk.t += dt; var dens = bk.t < 15 ? bk.t / 15 : bk.t < bk.dur - 15 ? 1 : (bk.dur - bk.t) / 15; if (bk.t > bk.dur) this.bank = null; else { dens = smooth(dens); var roll = 14 * Math.sin(t * 0.05) + 6 * Math.sin(t * 0.13 + 1); g.globalAlpha = dens * (0.62 + 0.08 * Math.sin(t * 0.08)); g.imageSmoothingEnabled = true; if (bk.side > 0) g.drawImage(c.bank, W - 900 + (1 - dens) * 500 + roll, 160, 900, 460); else { g.save(); g.translate(900 - (1 - dens) * 500 - roll, 160); g.scale(-1, 1); g.drawImage(c.bank, 0, 0, 900, 460); g.restore(); } g.imageSmoothingEnabled = false; g.globalAlpha = 1; } } }
     var drift2 = (t * (7 + wind * 0.35)) % (W * 2); g.globalAlpha = 0.6 + 0.25 * Math.sin(t * 0.061 + 2); g.imageSmoothingEnabled = true; g.drawImage(c.fogB, -drift2, 470, W * 2, 120); g.drawImage(c.fogB, W * 2 - drift2, 470, W * 2, 120); g.imageSmoothingEnabled = false; g.globalAlpha = 1;
     FT.blit(g, c.fg);   // the near frame, in front of everything but what falls
     // ---- what falls: rain, snow, autumn leaves on the gusts, and the ash
     if (F) {
-      var nd = Math.round(260 * Q.p * wx.rain); while (this.drops.length < nd) this.drops.push({ x: rand(-40, W), y: rand(-H, 0), v: rand(520, 700), l: rand(6, 12), stop: rand(G - 10, H) }); if (this.drops.length > nd) this.drops.length = nd;
-      g.fillStyle = S.dark > 0.5 ? 'rgba(150,160,180,0.35)' : 'rgba(210,216,224,0.4)'; this.drops.forEach(function (d) { d.y += d.v * dt; d.x += wind * 0.6 * dt; if (d.y > d.stop) { g.fillRect(d.x | 0, d.stop | 0, 2, 1); d.y = rand(-60, 0); d.x = rand(-40, W); d.stop = rand(G - 10, H); } else { g.fillRect(d.x | 0, d.y | 0, 1, d.l); } });
-      var nf = Math.round(220 * Q.p * wx.snow); while (this.flakes.length < nf) this.flakes.push({ x: rand(-20, W), y: rand(-H, 0), v: rand(18, 40), ph: rand(0, 6), s: Math.random() < 0.3 ? 2 : 1 }); if (this.flakes.length > nf) this.flakes.length = nf;
-      g.fillStyle = 'rgba(240,244,248,0.85)'; this.flakes.forEach(function (f) { f.y += f.v * dt; f.x += (wind * 0.3 + Math.sin(t + f.ph) * 10) * dt; if (f.y > H) { f.y = -4; f.x = rand(-20, W); } g.fillRect(f.x | 0, f.y | 0, f.s, f.s); });
+      // rain in three depths: fine and slow far off, mid-length, long fast streaks close by; the middle layer splashes where
+      // it lands; drops in the lamp's cone catch its light; drips run off the awning, the canopy and the shelter roof; the
+      // drainpipes spill onto the pavement
+      var nd = Math.round(300 * Q.p * wx.rain), LZ = [[300, 380, 3, 4, 0.16], [520, 640, 7, 10, 0.3], [820, 960, 15, 22, 0.36]], lampLit = lampOn * fl > 0.3;
+      while (this.drops.length < nd) { var z = Math.random() < 0.5 ? 0 : Math.random() < 0.7 ? 1 : 2, Lz = LZ[z]; this.drops.push({ z: z, x: rand(-40, W), y: rand(-H, 0), v: rand(Lz[0], Lz[1]), l: rand(Lz[2], Lz[3]), stop: z === 0 ? rand(380, G) : z === 1 ? rand(G, H) : H + 30 }); }
+      if (this.drops.length > nd) this.drops.length = nd; this.splashes = this.splashes || [];
+      var rc = S.dark > 0.5 ? [150, 162, 176] : [206, 214, 220], selfR = this;
+      this.drops.forEach(function (d) { d.y += d.v * dt; d.x += wind * (0.3 + d.z * 0.3) * dt;
+        if (d.y > d.stop) { if (d.z === 1 && selfR.splashes.length < 90) selfR.splashes.push({ x: d.x, y: d.stop, a: 0 }); d.y = rand(-60, 0); d.x = rand(-40, W); return; }
+        var inCone = lampLit && d.y > LAMP.y && d.y < G + 60 && Math.abs(d.x - LAMP.x) < (d.y - LAMP.y) * 0.5 + 6;
+        g.fillStyle = inCone ? 'rgba(255,232,176,' + (0.5 + d.z * 0.12) + ')' : 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',' + LZ[d.z][4] + ')'; g.fillRect(d.x | 0, d.y | 0, 1, d.l | 0); });
+      g.fillStyle = 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',0.45)'; this.splashes = this.splashes.filter(function (s) { s.a += dt; var k = s.a < 0.06 ? 1 : 2; g.fillRect((s.x - k) | 0, (s.y - k) | 0, 1, 1); g.fillRect((s.x + k) | 0, (s.y - k) | 0, 1, 1); return s.a < 0.13; });
+      this.drips = this.drips || []; var EDGES = [[780, 906, 440], [1201, 1287, 429], [346, 424, 501]];   // the WRITING awning, the hotel canopy, the shelter roof
+      if (Math.random() < dt * 14 * wx.rain) { var e = pick(EDGES); this.drips.push({ x: rand(e[0], e[1]), y: e[2], v: 0, stop: e[2] > 495 ? rand(560, 572) : rand(530, 570) }); }
+      g.fillStyle = 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',0.6)'; this.drips = this.drips.filter(function (dp) { dp.v += 600 * dt; dp.y += dp.v * dt; if (dp.y > dp.stop) { selfR.splashes.push({ x: dp.x, y: dp.stop, a: 0 }); return false; } g.fillRect(dp.x | 0, dp.y | 0, 1, 2); return true; });
+      if (wx.rain > 0.05) [242, 919].forEach(function (px) { for (var s2 = 0; s2 < 4; s2++) { g.fillStyle = 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',' + (0.55 * wx.rain).toFixed(2) + ')'; g.fillRect(px + (s2 % 2), G - 7 + ((t * 30 + s2 * 2.5) % 9) | 0, 1, 2); } g.fillRect(px - 2 + ((t * 7) % 2 | 0), G + 1, 5, 1); });   // the drainpipes spilling
+      // snow in three depths: fine and slow far off (it settles on the far side of the street), small flakes, and big soft
+      // flakes close by, each swaying on its own; the ones in the lamp's cone catch its light
+      var nf = Math.round(420 * Q.p * wx.snow), FZ = [[12, 22, 5, 0.45], [24, 38, 9, 0.75], [40, 62, 15, 0.9]], dim = S.dark > 0.5 ? [196, 206, 220] : [244, 247, 250];
+      while (this.flakes.length < nf) { var zf = Math.random() < 0.55 ? 0 : Math.random() < 0.7 ? 1 : 2, Fz = FZ[zf]; this.flakes.push({ z: zf, x: rand(-20, W), y: rand(-H, 0), v: rand(Fz[0], Fz[1]), ph: rand(0, 6), sw: Fz[2] * rand(0.6, 1.2), stop: zf === 0 ? rand(400, G + 10) : H + 4 }); }
+      if (this.flakes.length > nf) this.flakes.length = nf; var lampSn = lampOn * fl > 0.3;
+      this.flakes.forEach(function (f) { f.y += f.v * dt; f.x += (wind * (0.2 + f.z * 0.15) + Math.sin(t * (0.8 + f.z * 0.3) + f.ph) * f.sw) * dt; if (f.y > f.stop) { f.y = -4; f.x = rand(-20, W); }
+        var lit = lampSn && f.y > LAMP.y && f.y < G + 60 && Math.abs(f.x - LAMP.x) < (f.y - LAMP.y) * 0.5 + 6, cl = lit ? [255, 230, 180] : dim, a = FZ[f.z][3], x = f.x | 0, y = f.y | 0;
+        g.fillStyle = 'rgba(' + cl[0] + ',' + cl[1] + ',' + cl[2] + ',' + a + ')';
+        if (f.z === 0) g.fillRect(x, y, 1, 1); else if (f.z === 1) g.fillRect(x, y, 2, 2); else { g.fillRect(x, y, 2, 2); g.fillStyle = 'rgba(' + cl[0] + ',' + cl[1] + ',' + cl[2] + ',' + (a * 0.4) + ')'; g.fillRect(x - 1, y, 1, 2); g.fillRect(x + 2, y, 1, 2); g.fillRect(x, y - 1, 2, 1); g.fillRect(x, y + 2, 2, 1); } });
       if (wx.season === 'autumn' && wx.rain < 0.5) { this.nextGust -= dt; if (this.nextGust <= 0) { this.nextGust = rand(15, 50); var cnt = 5 + (Math.random() * 10 | 0); for (var lf = 0; lf < cnt; lf++) this.leaves.push({ x: -10 - rand(0, 200), y: rand(380, 560), vx: rand(60, 120), vy: rand(-10, 10), ph: rand(0, 6), col: pick(['#8a5a2a', '#a8703a', '#6b3530', '#9a8a4a']), land: rand(G + 4, KERB - 2) }); } }
       this.leaves.forEach(function (lf) { if (lf.y < lf.land) { lf.x += lf.vx * dt; lf.y += (lf.vy + 18 + Math.sin(t * 3 + lf.ph) * 20) * dt; lf.ph += dt * 6; } else { lf.rest = (lf.rest || 0) + dt; lf.x += lf.vx * dt * 0.08; } g.fillStyle = lf.col; if (Math.sin(lf.ph) > 0) g.fillRect(lf.x | 0, lf.y | 0, 2, 1); else g.fillRect(lf.x | 0, lf.y | 0, 1, 2); });
       this.leaves = this.leaves.filter(function (lf) { return lf.x < W + 20 && (lf.rest || 0) < 25; });
@@ -167,7 +205,7 @@
     while (this.ash.length < na) this.ash.push({ x: rand(-20, W), y: this.seeded ? -4 : rand(0, H), vy: rand(8, 26), sw: rand(0.3, 1.2), ph: rand(0, 6), s: Math.random() < 0.12 ? 2 : 1, ember: !F && Math.random() < 0.12 }); this.seeded = true; if (this.ash.length > na) this.ash.length = na;
     this.ash.forEach(function (as) { as.y += as.vy * dt; as.x += (wind * 0.4 + Math.sin(t * as.sw + as.ph) * 8) * dt; g.fillStyle = as.ember ? '#ff8a3a' : F ? rgba(S.dark > 0.5 ? '#9aa0a8' : '#f4f2ec', 0.7) : 'rgba(8,4,3,0.85)'; g.fillRect(as.x | 0, as.y | 0, as.s, 1); });
     this.ash = this.ash.filter(function (as) { return as.y < H + 4; });
-    // ---- light: the lamp's reflection on a wet road, the substation's warning light, then bloom from everything that glows
+    // ---- light: the lamp's reflection on a wet road, the switch box's warning light, then bloom from everything that glows
     g.globalCompositeOperation = 'screen';
     if (F && lampOn * fl > 0.01 && wx.wet > 0.1) { g.globalAlpha = lampOn * fl * wx.wet * 0.35; g.drawImage(this.rf || (this.rf = glowSprite('#f4e0b0', 40)), LAMP.x - 40, 600, 80, 110); }
     if (blink) { g.globalAlpha = F ? 0.3 + 0.5 * S.dark : 0.8; g.drawImage(this.rglow || (this.rglow = glowSprite('#ff4a2a', 14)), B.switch[0] + 81 - 14, G - 58 - 14); }
@@ -377,7 +415,7 @@
     g.drawImage(I.fg.c, ox, oy);
     if (F && diner && V2) diner.stools.forEach(function (s, i) { if (!s.def) return; var sh2 = diner.sheet(s.def, 'back-' + s.kind, s.def.id + 'b' + s.kind), mk2 = sh2.mk, fr2 = Math.floor(t * 1000 / 90 + i * 5) % mk2.n;   // seen from behind, at the counter
       g.globalAlpha = s.alpha; g.drawImage(sh2.c, fr2 * mk2.fw, 0, mk2.fw, mk2.fh, Math.round(s.x - mk2.footX), Math.round(G - mk2.footY), mk2.fw, mk2.fh); g.globalAlpha = 1; });
-    var ch = hour < 1 / 60 ? 23 + 59 / 60 : hour, cx = ox + I.clock[0], cy = oy + I.clock[1], ha = (ch % 12) / 12 * Math.PI * 2, ma = (ch % 1) * Math.PI * 2; g.fillStyle = '#22211f';   // the clock keeps the visitor's time, and stops for a minute at midnight
+    var ch = hour >= 3 + 33 / 60 && hour < 5 ? 3 + 33 / 60 : hour < 1 / 60 ? 23 + 59 / 60 : hour,   /* (from 3:33 until five it stops) */ cx = ox + I.clock[0], cy = oy + I.clock[1], ha = (ch % 12) / 12 * Math.PI * 2, ma = (ch % 1) * Math.PI * 2; g.fillStyle = '#22211f';   // the clock keeps the visitor's time, and stops for a minute at midnight
     for (var hi = 0; hi <= 2; hi++) g.fillRect(Math.round(cx + Math.sin(ha) * hi), Math.round(cy - Math.cos(ha) * hi), 1, 1); for (var mi = 0; mi <= 4; mi++) g.fillRect(Math.round(cx + Math.sin(ma) * mi), Math.round(cy - Math.cos(ma) * mi), 1, 1);
     var pw = env.power.level(MIDX, t);
     if (pw < 0.5) { g.fillStyle = 'rgba(8,10,14,0.85)'; g.fillRect(ox, oy, D.inside[2], D.inside[3]); }

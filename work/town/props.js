@@ -19,7 +19,8 @@
       p.E(26, 19, 8, 7, c2); p.R(25, 11, 2, 3, c2); p.R(22, 17, 2, 1, 'rgba(230,236,240,0.4)'); }));   // a black bag, a grey one, a flattened box
     list.push(prop(K, 480, 525, 22, 34, function (p) { var c = F ? '#3b4a5a' : '#2a1d18'; p.R(1, 4, 20, 26, c); p.E(11, 4, 10, 4, c); p.R(4, 10, 14, 2, '#22211f'); p.R(8, 30, 6, 4, '#22211f'); p.R(4, 16, 4, 6, F ? '#d8d2c2' : '#3a2e28'); p.R(1, 4, 2, 26, sh(c, 1.2)); }));   // a mailbox
     list.push(prop(K, 684, 576, 60, 32, function (p) { var c = F ? '#5a4a3a' : '#2a1d18'; p.R(0, 0, 60, 3, c); p.R(0, 7, 60, 3, c); p.R(0, 14, 60, 4, c); p.R(0, 14, 60, 1, sh(c, 1.3)); p.R(24, 7, 8, 3, sh(c, 0.6)); p.R(3, 18, 3, 14, '#22211f'); p.R(54, 18, 3, 14, '#22211f'); p.R(3, 0, 2, 18, '#22211f'); p.R(55, 0, 2, 18, '#22211f'); p.R(40, 11, 10, 3, F ? '#d8d2c2' : '#3a2e28'); }));   // a bench, one slat broken, a newspaper left on it
-    list.push(prop(K, 790, 525, 18, 30, function (p) { var c = F ? '#a8833a' : '#3a2e28'; p.R(0, 0, 18, 26, c); p.R(2, 4, 14, 9, P.glass); p.R(4, 6, 10, 5, F ? '#d8d2c2' : '#1a0f0c'); p.R(6, 26, 4, 4, '#22211f'); p.R(0, 0, 18, 1, sh(c, 1.2)); }));   // a newspaper box
+    list.push(prop(K, 790, 525, 18, 30, function (p) { var c = F ? '#6a4a32' : '#2a1d18', bd = F ? '#2a2e2c' : '#140a08'; p.L(2, 30, 6, 2, c, 2); p.L(16, 30, 12, 2, c, 2); p.R(5, 2, 8, 2, sh(c, 1.2)); p.R(4, 5, 10, 19, c); p.R(5, 6, 8, 17, bd);
+      if (F) { p.R(6, 8, 6, 1, '#d8d2c2'); p.R(6, 10, 4, 1, '#d8d2c2'); p.R(6, 13, 6, 1, '#c9a55a'); p.R(7, 15, 4, 1, '#d8d2c2'); p.R(6, 17, 5, 1, '#d8d2c2'); p.R(6, 20, 6, 1, 'rgba(216,210,194,0.5)'); } }));   // the bookshop's chalk board: the hours, and what's new
     list.push(prop(K, 896, 526, 20, 15, function (p) { var c = F ? '#7d6a52' : '#2a1d18'; p.R(0, 0, 20, 15, c); for (var s = 1; s < 15; s += 4) p.R(0, s, 20, 1, sh(c, 0.75)); p.L(2, 13, 18, 2, sh(c, 0.8)); p.R(4, 4, 8, 3, F ? '#c8c0b0' : '#3a2e28'); }));   // a crate
     list.push(prop(K, 856, 578, 18, 28, function (p) { var c = F ? '#4c4b47' : '#1a0f0c'; p.R(1, 4, 16, 24, c); p.R(0, 2, 18, 3, sh(c, 1.15)); for (var s = 3; s < 16; s += 4) p.R(s, 8, 1, 18, sh(c, 0.8)); p.R(4, 0, 6, 3, F ? '#d8d2c2' : '#3a2e28'); }));   // a bin, a cup on top
     list.push(prop(K, 960, 524, 36, 24, function (p) { var c = F ? '#2f3438' : '#1a0f0c', f = F ? '#6b3530' : '#3d1a12'; p.ring(6, 17, 6, c); p.ring(6, 17, 5, c); p.ring(29, 17, 6, c); p.ring(29, 17, 5, c); p.L(6, 17, 14, 7, f); p.L(14, 7, 27, 7, f); p.L(27, 7, 29, 17, f); p.L(14, 7, 17, 17, f); p.L(17, 17, 6, 17, f); p.R(12, 4, 5, 2, c); p.L(27, 7, 26, 2, c); p.R(24, 1, 5, 1, c); }));   // a bike, leaning on the wall
@@ -35,7 +36,7 @@
       p.R(56, 14, 16, 22, F ? '#d8d2c2' : '#3a2e28'); p.R(58, 16, 12, 9, F ? '#5f7470' : '#2a1510'); p.R(58, 27, 10, 1, F ? '#22211f' : '#6e2a17'); p.R(58, 30, 7, 1, F ? '#22211f' : '#6e2a17');   // a faded ad
       p.R(6, 20, 9, 12, F ? '#ece6d6' : '#d9cbb0'); p.R(7, 21, 7, 2, F ? '#7a3b34' : '#9c2a1a'); p.R(8, 24, 5, 4, F ? '#8a8680' : '#3a2e28'); for (var tb = 7; tb < 15; tb += 2) p.R(tb, 32, 1, 3, F ? '#ece6d6' : '#d9cbb0');   // MISSING (with tear-off tabs)
       p.R(84, 0, 2, 80, fr); p.E(85, 6, 6, 6, F ? '#3a6a8a' : '#2a1d18'); p.T('9', 85, 6, 10, '#ece6d6'); p.R(81, 18, 9, 14, F ? '#e8e2d4' : '#3a2e28'); for (var tl = 21; tl < 31; tl += 2) p.R(82, tl, 7, 1, F ? '#8a8680' : '#6e2a17'); }));
-    ["sign", "vending", "phone", "hydrant", "bags", "mailbox", "bench", "news", "crate", "bin", "bike", "lamp", "cone", "barrel", "shelter"].forEach(function (id, i) { if (list[i]) list[i].id = id; });
+    ["sign", "vending", "phone", "hydrant", "bags", "mailbox", "bench", "board", "crate", "bin", "bike", "lamp", "cone", "barrel", "shelter"].forEach(function (id, i) { if (list[i]) list[i].id = id; });
     return list;
   }
   // the lamp's light (soft by day, a dithered cone at night), the vending machine's glow
@@ -60,11 +61,32 @@
   // ---------------------------------------------------------------- painted once more: snow on the ledges, the wet street, the passing vehicles, the stranger, the dog, the rat, a bank of fog
   var POLE_A = [26, 118], POLE_B = [1262, 140];
   function wireY(x, k) { var u = (x - POLE_A[0]) / (POLE_B[0] - POLE_A[0]); return POLE_A[1] + 9 + k * 9 + (POLE_B[1] - POLE_A[1]) * u + Math.sin(u * Math.PI) * 40 + Math.sin(u * Math.PI * 3) * 3; }
+  // snow, settled: thick lumpy caps (a highlight on top, a shadow lip under) on every ledge, roof, sign, awning, canopy and
+  // the tops of the street furniture; on the ground a soft sheet (blotched in three tones, not dithered), banked against the
+  // walls, trodden grey along the walking lanes, heaped in a ridge on the kerb; and slush on the road with dark tyre ruts
   function capsLayer(K) {
-    var p = new Pt(W, H), snow = '#eef1f4', r = rng(77);
-    K.ledges.concat([[774, 414, 138], [762, 170, 162], [1119, 408, 106], [422, 330, 88]]).forEach(function (l) { p.R(l[0], l[1] - 2, l[2], 2, snow); for (var x = l[0]; x < l[0] + l[2]; x++) if (r() < 0.35) p.R(x, l[1] - 3, 1, 1, snow); });
-    SIGNS.forEach(function (s) { p.R(s[0] - 1, s[1] - 3, s[2] + 2, 2, snow); });
-    p.D(0, G, W, KERB - G, snow, function (x, y) { return 0.42 + 0.2 * Math.sin(x * 0.05) * Math.sin(y * 0.3); }); p.D(0, KERB, W, 6, snow, 0.6); p.D(0, ROAD, W, 12, snow, 0.3);
+    var p = new Pt(W, H), r = rng(77), S0 = '#eef1f4', S1 = '#e0e6ea', S2 = '#cbd3da', S3 = '#b3bdc6', HI = '#fbfcfd';
+    function cap(x, y, w, th) { x = Math.round(x); w = Math.round(w); for (var xx = x; xx < x + w; xx++) { var u = (xx - x + 0.5) / w, edge = Math.min(1, Math.min(u, 1 - u) * 7), lump = Math.max(1, Math.round(th * edge * (0.75 + 0.35 * Math.sin(xx * 0.55) * Math.sin(xx * 0.23 + 1)))); p.R(xx, y - lump, 1, lump, S0); p.R(xx, y - lump, 1, 1, HI); if (lump > 1) p.R(xx, y - 1, 1, 1, S1); } p.R(x, y, w, 1, 'rgba(120,132,146,0.35)'); }
+    K.ledges.forEach(function (l) { cap(l[0], l[1], l[2], 2.6); });
+    [[774, 414, 138, 3], [762, 170, 162, 4], [1102, 432, 50, 3], [1151, 410, 46, 3], [422, 330, 88, 4], [513, 420, 254, 4], [1200, 412, 88, 3], [343, 500, 82, 3], [1066, 384, 16, 2], [556, 186, 168, 3],   // awning, billboard, substation, laundry roof, the diner, the canopy, the shelter, the lamp, MY WORK
+      [212, 456, 36, 3], [238, 466, 40, 3], [684, 545, 60, 2], [480, 491, 22, 3], [791, 497, 16, 2], [856, 551, 18, 2], [1082, 505, 16, 2]].forEach(function (q) { cap(q[0], q[1], q[2], q[3]); });   // vending, booth, bench, mailbox, news box, bins
+    Object.keys(FT.B).forEach(function (k) { var b = FT.B[k]; if (k !== 'work' && k !== 'edge') cap(b[0], b[2], b[1], 4); });   // the roofs
+    SIGNS.forEach(function (s) { cap(s[0] - 1, s[1], s[2] + 2, 2); });
+    // the ground, pixel by pixel: value noise blotches the sheet; banks against the walls; trodden lanes; the kerb ridge; the road's slush and ruts
+    var img = p.g.getImageData(0, G - 6, W, H - G + 6), d = img.data, cols = [S0, S1, S2, S3, HI].map(FT.hex), grid = [];
+    for (var gy = 0; gy < 40; gy++) { grid.push([]); for (var gx = 0; gx < 70; gx++) grid[gy].push(r()); }
+    function vn(x, y) { var ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy, a = grid[iy % 40][ix % 70], b = grid[iy % 40][(ix + 1) % 70], c = grid[(iy + 1) % 40][ix % 70], e = grid[(iy + 1) % 40][(ix + 1) % 70]; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy); return a + (b - a) * fx + (c - a) * fy + (a - b - c + e) * fx * fy; }
+    function put(x, yy, col, a) { var o = ((yy - (G - 6)) * W + x) * 4; d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = Math.round(255 * a); }
+    for (var x = 0; x < W; x++) {
+      var bank = Math.round(1 + vn(x / 9, 3) * 4); for (var by = G - bank; by < G; by++) put(x, by, by === G - bank ? cols[4] : cols[0], 1);   // banked against the walls
+      for (var y = G; y < KERB; y++) { var n = vn(x / 23, y / 6) * 0.7 + vn(x / 5, y / 2) * 0.3, lane = [534, 548, 562].some(function (ly) { return Math.abs(y - ly + 1) < 2; }), ci = n < 0.55 ? 0 : n < 0.8 ? 1 : 2;
+        if (y < G + 3) ci = Math.max(ci, 2);   // the shadow at the foot of the walls
+        if (lane && n > 0.35) ci = n > 0.7 ? 3 : 2; put(x, y, cols[ci], 1); }
+      var ridge = Math.round(2 + vn(x / 7, 9) * 4); for (var ry = KERB - ridge; ry < ROAD + 2; ry++) put(x, ry, ry === KERB - ridge ? cols[4] : ry > ROAD - 1 ? cols[3] : cols[0], 1);   // the ridge on the kerb
+      for (var sy = ROAD + 2; sy < H; sy++) { var plow = sy < ROAD + 10 + vn(x / 11, 5) * 6, rut = [620, 640, 684, 702].some(function (ry2) { return Math.abs(sy - ry2) < 2; }), m = vn(x / 17, sy / 5);
+        if (plow) put(x, sy, cols[m > 0.6 ? 2 : 1], 1); else if (rut) put(x, sy, [86, 88, 92], 0.55); else put(x, sy, m > 0.55 ? [176, 180, 184] : [150, 150, 146], 0.42 + m * 0.2); }   // slush, ruts
+    }
+    p.g.putImageData(img, 0, G - 6);
     return p;
   }
   function wetLayer() {
@@ -109,7 +131,13 @@
       (walk ? [[4, ph < 2 ? 1 : -1], [6, ph < 2 ? -1 : 1], [10, ph < 2 ? -1 : 1], [12, ph < 2 ? 1 : -1]] : [[4, 0], [6, 0], [10, 0], [12, 0]]).forEach(function (l) { p.L(ox + l[0], 7, ox + l[0] + l[1], 11, d); }); }
     return { c: p.c, fw: fw, fh: fh }; }
   function ratSheet() { var p = new Pt(20, 5), c = '#4a4844'; for (var f = 0; f < 2; f++) { var ox = f * 10; p.E(ox + 4, 2.5, 3.5, 1.8, c); p.R(ox + 7, 2, 2, 1, c); p.R(ox + 8, 1, 1, 1, '#2a2826'); p.L(ox, 3, ox - 2 + 2, 4, '#5a5450'); p.R(ox + 2 + f, 4, 1, 1, c); p.R(ox + 5 - f, 4, 1, 1, c); } return p.c; }
-  function bankLayer() { var p = new Pt(450, 230), r = rng(61), g = p.g; g.scale(0.5, 0.5); for (var i = 0; i < 70; i++) { var x = 200 + r() * 700, y = 180 + r() * 260, rr = 60 + r() * 140, gr = g.createRadialGradient(x, y, 0, x, y, rr); gr.addColorStop(0, 'rgba(226,223,214,' + (0.16 + (x / 900) * 0.2).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(226,223,214,0)'); g.fillStyle = gr; g.fillRect(x - rr, y - rr, rr * 2, rr * 2); } return p; }
+  // a bank of fog: separate billows, thick at its far end and near the ground, torn into tufts at the edge it leads
+  // with, so the street still shows through it as shapes (it hides the town's end, it doesn't paint over it)
+  function bankLayer() { var p = new Pt(450, 230), r = rng(61), g = p.g; g.scale(0.5, 0.5);
+    for (var i = 0; i < 72; i++) { var u = Math.pow(r(), 0.75), x = 60 + u * 840, top = 330 - u * 150 - r() * 50, y = top + r() * (450 - top), rr = 30 + r() * 70 * (0.55 + u), a = (0.1 + 0.22 * u) * (0.55 + 0.45 * (y - 150) / 300);
+      var gr = g.createRadialGradient(x, y, 0, x, y, rr); gr.addColorStop(0, 'rgba(226,223,214,' + a.toFixed(3) + ')'); gr.addColorStop(0.6, 'rgba(226,223,214,' + (a * 0.55).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(226,223,214,0)');
+      g.save(); g.translate(x, y); g.scale(1.6, 0.8); g.translate(-x, -y); g.fillStyle = gr; g.fillRect(x - rr, y - rr, rr * 2, rr * 2); g.restore(); }
+    return p; }
   // a room seen through a lit window (for the glimpse)
   function paintRoom(cv, kind) {
     var p = new Pt(160, 100), r = rng(kind.length * 97 + 3), wall = { office: '#b89870', study: '#a8a078', late: '#2a3040', reading: '#9a7858', bench: '#8a7a62', home: '#b0a080' }[kind] || '#a89878', who = '#2a2420', g = p.g;
@@ -178,13 +206,32 @@
     for (var m = 0; m < 4; m++) { var mx = 2 + m * 14; p.R(mx, 46, 12, 22, steel); p.R(mx, 46, 12, 1, '#ffffff'); p.R(mx + 2, 48, 8, 2, F ? '#8a9094' : '#1a0f0c'); p.ring(mx + 6, 58, 5, '#5a6064'); p.E(mx + 6, 58, 4, 4, F ? '#3a4044' : '#0e0807'); }
     p.R(0, 40, w, 2, F ? '#a0a8a4' : '#1a0f0c'); p.R(0, h - 4, w, 4, F ? '#8a8a80' : '#0e0807');
     return { c: p.c, x: x0, y: y0, drums: [0, 1, 2, 3].map(function (m2) { return [x0 + 2 + m2 * 14 + 6, y0 + 58]; }) }; }
+  // ---------------------------------------------------------------- weathering: one pass over a painted layer's pixels, once
+  // A little per-pixel variation (no wall is one flat colour), damp rising at the foot of the walls, water stains running
+  // down from every sill and ledge, rust bleeding from the metal signs, moss where the walls meet the pavement. noiseOnly
+  // (for the layers further back): just the variation.
+  function weathering(pt, K, noiseOnly) {
+    var c = pt.c, g = pt.g, img = g.getImageData(0, 0, W, H), d = img.data, r = rng(K.F ? 5151 : 6262), F = K.F;
+    function hash(x, y) { var n = (x * 374761393 + y * 668265263) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) & 1023) / 1023; }
+    function shade(x, y, f, tint, ta) { if (x < 0 || y < 0 || x >= W || y >= H) return; var o = (y * W + x) * 4; if (!d[o + 3]) return; for (var i = 0; i < 3; i++) { var v = d[o + i] * f; if (tint) v = v * (1 - ta) + tint[i] * ta; d[o + i] = v < 0 ? 0 : v > 255 ? 255 : v; } }
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) { var o = (y * W + x) * 4; if (!d[o + 3]) continue; var n = (hash(x, y) - 0.5) * (noiseOnly ? 0.05 : 0.07) + 1;   // the variation
+      if (!noiseOnly && y < G && y >= G - 18) { var damp = (y - (G - 18)) / 18; if (BAYER[(y & 3) * 4 + (x & 3)] / 16 < damp * 1.2) n *= 1 - 0.16 * damp; }   // rising damp, dithered at its top
+      d[o] = Math.min(255, d[o] * n); d[o + 1] = Math.min(255, d[o + 1] * n); d[o + 2] = Math.min(255, d[o + 2] * n); }
+    if (!noiseOnly) {
+      (K.ledges || []).forEach(function (l) { var k = Math.max(1, Math.round(l[2] / 9 * r())); for (var i = 0; i < k; i++) { var sx = Math.round(l[0] + r() * l[2]), len = 4 + r() * 14; for (var j = 1; j < len; j++) if (j < len * 0.6 || (j & 1)) shade(sx, l[1] + j, 0.9 - 0.1 * (1 - j / len)); } });   // stains under sills
+      (FT.SIGNS || []).forEach(function (s) { for (var i = 0; i < 3; i++) { var sx = Math.round(s[0] + 3 + r() * (s[2] - 6)), len = 5 + r() * 12; for (var j = 0; j < len; j++) if (j < len * 0.7 || (j & 1)) shade(sx, s[1] + s[3] + j, 0.96, F ? [138, 74, 42] : [110, 40, 20], 0.28 * (1 - j / len)); } });   // rust from the signs
+      if (F) for (var mx = 0; mx < W; mx++) if (r() < 0.06) { var h2 = 1 + (r() * 3 | 0); for (var my = 0; my < h2; my++) shade(mx, G - 1 - my, 0.85, [58, 74, 46], 0.55); }   // moss at the foot of the walls
+    }
+    g.putImageData(img, 0, 0); return pt;
+  }
   function build(name) {
     var K = { F: name === 'fog', P: PAL[name], r: rng(1234), wins: name === 'fog' ? [] : null, ledges: [] };
     var pack = FT.pack;   // each layer is packed the moment it is painted, so only one full-size painting is ever alive
-    K.layer = 'far'; var fa = pack(far(K), 0, G); K.layer = 'mid'; var mi = pack(mid(K), 0, G); K.layer = 'back'; var ba = pack(back(K), 0, G);   // (the street hides everything below G)
-    FT.LEDGES = K.F ? K.ledges : null; K.layer = 'street'; var st = pack(street(K)); FT.LEDGES = null; K.layer = 'front'; var fr = pack(front(K));
+    var bgPack = function (src) { return K.F ? pack(src, 0, G) : FT.packHalf(src, G); };   // (the rust world keeps its distant layers at half size: they sit in the dark)
+    K.layer = 'far'; var fa = bgPack(far(K)); K.layer = 'mid'; var mi = bgPack(weathering(mid(K), K, true)); K.layer = 'back'; var ba = bgPack(weathering(back(K), K, true));   // (the street hides everything below G)
+    FT.LEDGES = K.F ? K.ledges : null; K.layer = 'street'; var st = pack(weathering(street(K), K)); FT.LEDGES = null; K.layer = 'front'; var fr = pack(front(K));
     var L = { K: K, far: fa, mid: mi, back: ba, street: st, front: fr, props: props(K), finish: finish(K.F), cone: lampCone(K.F), fogA: fogStrip(K.F, 3, 180, K.F ? 0.26 : 0.34), fogB: fogStrip(K.F, 8, 120, K.F ? 0.22 : 0.3), puff: puff(K.F ? '#e4e1d8' : '#2a120c') };
-    L.horizon = pack(FT.horizon(K), 0, G); L.hwy = pack(FT.highwayDeck(K), 0, G); L.rail = pack(FT.highwayRail(K), 0, G); L.fg = pack(FT.foreground(K)); L.inside = dinerInside(K); L.wisp = wisps(K.F ? '#e4e1d8' : '#2a120c');
+    L.cbank = FT.cloudBank(K.F); L.horizon = bgPack(FT.horizon(K)); L.hwy = bgPack(FT.highwayDeck(K)); L.rail = bgPack(FT.highwayRail(K)); L.fg = pack(FT.foreground(K)); L.inside = dinerInside(K); L.wisp = wisps(K.F ? '#e4e1d8' : '#2a120c');
     L.lInside = laundryInside(K); if (K.F) { L.cat = catSheet(); L.dog2 = dogSheet('#9a968e', '#6a6660'); L.bus = busSprite(); }
     if (K.F) { L.caps = pack(capsLayer(K)); L.wet = pack(wetLayer()); L.veh = vehicles(); L.bank = bankLayer(); L.stranger = stranger(); L.dog = dogSheet(); L.rat = ratSheet(); }
     if (K.wins) K.wins.forEach(function (w) { w.home = rand(16.5, 21.5); w.bed = rand(21.5, 26.5); w.early = Math.random() < 0.25 ? rand(5.2, 7.2) : null; w.day = Math.random() < 0.12; w.col = pick(['#f0c070', '#e8b060', '#f4d8a0', '#d8e4e0', '#f0c070']); w.tv = Math.random() < 0.1; w.never = Math.random() < (w.layer === 'mid' ? 0.55 : 0.42); w.who = Math.random() < 0.3 ? rand(0.25, 0.75) : null; w.flip = 0; w.isOn = false; });

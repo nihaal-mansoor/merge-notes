@@ -72,13 +72,17 @@
     shake: [F({}), F({}), F({ n: ['to', 'front', -4, 3] }), F({ n: ['to', 'front', 0, 0] }), F({ n: ['to', 'front', 0, 0], nod: 1 }), F({ n: ['to', 'front', 0, -1.4] }), F({ n: ['to', 'front', 0, 1.2] }), F({ n: ['to', 'front', 0, -1.4] }),
       F({ n: ['to', 'front', 0, 1.2] }), F({ n: ['to', 'front', 0, 0] }), F({ n: ['to', 'front', 0, 0] }), F({ n: ['to', 'chest', 0, 2] }), F({}), F({})],
     talk: [F({}), F({ n: ['ang', 14, 74] }), F({ n: ['ang', 20, 96] }), F({ n: ['ang', 14, 74] }), F({ n: ['ang', 24, 108] }), F({ n: ['ang', 24, 108] }), F({ n: ['ang', 12, 60] }), F({ nod: 1 }),
-      F({}), F({}), F({ nod: 1 }), F({ nod: 1 }), F({ w: 'f' }), F({ w: 'f' }), F({ w: 'f', nod: 1 }), F({})]
+      F({}), F({}), F({ nod: 1 }), F({ nod: 1 }), F({ w: 'f' }), F({ w: 'f' }), F({ w: 'f', nod: 1 }), F({})],
+    // work: sweeping the pavement, strumming a guitar, shovelling snow
+    sweep: (function () { var a = []; for (var i = 0; i < 12; i++) { var s2 = Math.sin(i / 12 * Math.PI * 2); a.push(F({ n: ['to', 'front', -2 + s2 * 3, 6], f: ['to', 'front', -7 + s2 * 2, -3], nod: 1, w: i < 6 ? 'n' : 'f' })); } return a; })(),
+    play: (function () { var a = []; for (var i = 0; i < 12; i++) a.push(F({ n: ['to', 'chest', 2, 7 + (i % 2 ? -2 : 1)], f: ['to', 'front', 3, -5], nod: i % 6 < 3 ? 1 : 0, w: i < 6 ? 'n' : 'f' })); return a; })(),
+    shovel: (function () { var a = [], DX = [0, 1, 2, 3, 4, 5, 5, 4, 3, 2, 1, 0], DY = [13, 13, 13, 13, 13, 12, 8, 4, 6, 9, 12, 13]; for (var i = 0; i < 12; i++) a.push(F({ n: ['to', 'front', DX[i] - 3, DY[i]], f: ['to', 'front', DX[i] - 9, DY[i] - 7], nod: 1, w: i > 5 && i < 9 ? 'f' : 'n' })); return a; })()
   };
   function pose(kind, i, s) {
     var k = s.height / 64, P = { kind: kind, k: k, Lt: 14.5 * k, Ls: 14.5 * k, Lu: 11.5 * k, Lf: 10.5 * k, To: 20.5 * k }, hipH = P.Lt + P.Ls + 2.8;   // (the sole of the shoe is 2.8 below the ankle)
     function plant(legs) { var low = -1e9; legs.forEach(function (L) { var an = limb2([0, 0], L.th, L.kn, P.Lt, P.Ls)[2], sn = Math.sin(L.ft), c = Math.cos(L.ft); low = Math.max(low, an[1] + 0.6 - 1.7 * sn + 2.2 * c, an[1] + 0.6 + 4.7 * sn + 2.2 * c); }); return -low; }   // the lowest heel or toe sole on the ground
     var gt = s.gait || BASE.gait;
-    if (kind === 'walk') {
+    if (kind === 'walk' || kind === 'push') {   // (push: walking behind a pram or a bin, both hands on the handle)
       var hipAt = function (j) { return -hipH + (plant([legKey(j, gt), legKey(j + 4, gt)]) + hipH) * gt.bob; };
       var hy = hipAt(i), sway = 0.9 * Math.sin(i / 8 * Math.PI * 2);   // the hips shift toward the leg carrying the weight
       P.hip = [sway, hy]; P.legN = legKey(i, gt); P.legF = legKey(i + 4, gt); P.sh = [1.2 + gt.lean, hy - P.To];
@@ -86,6 +90,7 @@
       var arm = function (j, sd) { return sd * -22 * gt.swing * Math.cos(j / 8 * Math.PI * 2); };   // the arms swing against the legs
       P.armN = { up: arm(i, 1) * D, el: (8 + 0.9 * Math.max(0, arm(i - 1, 1))) * D };   // the forearm bends as the arm comes forward, a frame late
       P.armF = { up: arm(i, -1) * D, el: (8 + 0.9 * Math.max(0, arm(i - 1, -1))) * D };
+      if (kind === 'push') { P.armN = { up: 44 * D, el: 26 * D }; P.armF = { up: 38 * D, el: 32 * D }; }
     } else if (kind === 'cycle') {   // riding a bicycle: on the saddle, leaning to the bars, the feet going round with the pedals
       var a = i / 8 * Math.PI * 2, BB = [0, -8.5 * k], cr = 3.3 * k, hipC = [-4.5 * k, -30 * k], swc = (s.shape === 'f' ? 4.6 : 6.1) * s.build;
       function legIK(h, t) { var best = null;   // the same reach, but the knee kept forward
@@ -300,7 +305,7 @@
   }
 
   function frame(s, kind, i, opts) { var M = new Map2(); if (kind.indexOf('back-') === 0) drawBack(M, s, kind.slice(5), i || 0); else { var P = pose(kind, i || 0, s); if (kind === 'front') drawFront(M, s, P); else drawBody(M, s, P); } return paint(M, s, opts); }
-  var N = { walk: 8, idle: 24, hail: 6, front: 1, sit: 1, smoke: 20, phone: 16, watch: 12, wave: 12, shake: 14, talk: 16, 'back-eat': 12, 'back-drink': 12, 'back-phone': 12, 'back-talk': 12, cycle: 8 };
+  var N = { walk: 8, push: 8, sweep: 12, play: 12, shovel: 12, idle: 24, hail: 6, front: 1, sit: 1, smoke: 20, phone: 16, watch: 12, wave: 12, shake: 14, talk: 16, 'back-eat': 12, 'back-drink': 12, 'back-phone': 12, 'back-talk': 12, cycle: 8 };
   function sheet(s, kind, opts) { var n = N[kind], c = document.createElement('canvas'); c.width = FW * n; c.height = FH; var g = c.getContext('2d'); for (var i = 0; i < n; i++) g.drawImage(frame(s, kind, i, opts), i * FW, 0); return { c: c, fw: FW, fh: FH, n: n, footX: GX, footY: GY, ms: (s.gait || BASE.gait).ms }; }
 
   window.FTBody2 = { BASE: BASE, spec: spec, frame: frame, sheet: sheet, FW: FW, FH: FH, GX: GX, GY: GY, N: N };

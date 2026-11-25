@@ -33,9 +33,11 @@
     }
     return cast;
   }
-  // a person dressed for the weather ('cold', 'rain' or 'summer')
+  // a person dressed for the weather ('cold', 'snow', 'rain' or 'summer'); in rain and snow they hunch into it a little
   function dress(def, clim) {
     var s = JSON.parse(JSON.stringify(def.base));
+    if (clim === 'snow' || clim === 'rain') s.gait = Object.assign({}, s.gait, { lean: (s.gait.lean || 0) + (clim === 'rain' ? 1.6 : 1), ms: Math.round(s.gait.ms * 0.94) });
+    if (clim === 'snow') clim = 'cold';
     if (clim === 'cold' || clim === 'rain') {
       if (!s.jacket || s.jacket.len === 'hip' || clim === 'rain') s.jacket = { col: def.coat.col, len: clim === 'rain' ? 'knee' : def.coat.len, open: clim === 'rain' ? false : def.coat.open, leather: false };
       if (def.scarf && def.age !== 'kid' && !s.accent.type) s.accent = { type: 'scarf', col: s.accent.col };

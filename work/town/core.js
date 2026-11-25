@@ -74,6 +74,7 @@
   }
   function blit(g, s, dx, dy) {
     dx = dx || 0; dy = dy || 0; if (!s.sheet) { g.drawImage(s, dx, dy); return; }
+    if (s.scale) { for (var j = 0; j < s.parts.length; j++) { var q = s.parts[j]; g.drawImage(q.c, q.x * s.scale + dx, q.y * s.scale + dy, q.c.width * s.scale, q.c.height * s.scale); } return; }   // a sheet stored small, drawn big
     for (var i = 0; i < s.parts.length; i++) { var p = s.parts[i]; g.drawImage(p.c, p.x + dx, p.y + dy); }
   }
   // part of a sheet, in place (for relighting one sign out of the street)
@@ -97,6 +98,8 @@
   var SCRATCH = {};
   function scratch(name, w, h) { var c = SCRATCH[name] || (SCRATCH[name] = document.createElement('canvas')); if (c.width !== w || c.height !== h) { c.width = w; c.height = h; } return c; }
 
-  FT.SCRATCH = SCRATCH; FT.pack = pack; FT.blit = blit; FT.blitRect = blitRect; FT.mapSheet = mapSheet; FT.grainTile = grainTile; FT.scratch = scratch;
+  // a painted layer kept at half size (for the rust world's distant layers, which sit in the dark under the torch)
+  function packHalf(src, y1) { var cv = src.c || src, c = document.createElement('canvas'); c.width = W / 2; c.height = H / 2; var g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(cv, 0, 0, W / 2, H / 2); if (src.c) src.c.width = 0; var s = pack(c, 0, y1 / 2); s.scale = 2; return s; }
+  FT.packHalf = packHalf; FT.SCRATCH = SCRATCH; FT.pack = pack; FT.blit = blit; FT.blitRect = blitRect; FT.mapSheet = mapSheet; FT.grainTile = grainTile; FT.scratch = scratch;
   FT.W = W; FT.H = H; FT.G = G; FT.KERB = KERB; FT.ROAD = ROAD; FT.MIDX = MIDX; FT.BAYER = BAYER; FT.PAL = PAL; FT.PP = PP; FT.rng = rng; FT.hex = hex; FT.mix = mix; FT.sh = sh; FT.rgba = rgba; FT.clamp = clamp; FT.smooth = smooth; FT.rand = rand; FT.pick = pick; FT.Pt = Pt; 
 })(window.FT = window.FT || {});

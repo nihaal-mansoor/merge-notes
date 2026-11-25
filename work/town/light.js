@@ -8,10 +8,12 @@
     return { dark: dark, warm: Math.max(0, 1 - Math.abs(h - 18.2) / 1.3), dawn: Math.max(0, 1 - Math.abs(h - 6) / 1.1), rain: 0 };
   }
   function blend(stops) { var tot = 0, acc = [0, 0, 0]; stops.forEach(function (s) { var c = hex(s[0]); tot += s[1]; acc[0] += c[0] * s[1]; acc[1] += c[1] * s[1]; acc[2] += c[2] * s[1]; }); return 'rgb(' + acc.map(function (v) { return Math.round(v / tot); }).join(',') + ')'; }
-  var GRADE = { horizon: ['#2e3646', 0.58], hwy: ['#1a2230', 0.64], rail: ['#1a2230', 0.64], fg: ['#0a0e14', 0.72], far: ['#2a3242', 0.6], mid: ['#1e2634', 0.64], back: ['#161d29', 0.66], street: ['#10161f', 0.66], front: ['#10161f', 0.68], fog: ['#2e3644', 0.62], props: ['#10161f', 0.66] };
+  var GRADE = { horizon: ['#2e3646', 0.58], hwy: ['#1a2230', 0.64], rail: ['#1a2230', 0.64], fg: ['#0a0e14', 0.72], far: ['#2a3242', 0.6], mid: ['#1e2634', 0.64], back: ['#141d26', 0.66], street: ['#0e181e', 0.66], front: ['#0e181e', 0.68], fog: ['#2e3644', 0.62], props: ['#10161f', 0.66] };
   function tint(g, w, h, S, which) {
     g.globalCompositeOperation = 'source-atop';
-    if (S.rain > 0.01) { g.fillStyle = rgba('#3a4250', 0.2 * S.rain); g.fillRect(0, 0, w, h); }
+    var wr = S.wetRain != null ? S.wetRain : S.rain;
+    if (wr > 0.01) { g.fillStyle = rgba('#3e5a58', 0.27 * wr); g.fillRect(0, 0, w, h); }   // rain pulls everything toward teal-grey (the lights, drawn later, stay warm)
+    if (S.snow > 0.01) { g.fillStyle = rgba('#dde4ec', 0.13 * S.snow); g.fillRect(0, 0, w, h); }   // snow: pale and cool
     if (S.warm > 0.01) { g.fillStyle = rgba('#c8804a', 0.2 * S.warm * (1 - S.rain * 0.7)); g.fillRect(0, 0, w, h); }
     if (S.dawn > 0.01) { g.fillStyle = rgba('#9a8aa8', 0.16 * S.dawn); g.fillRect(0, 0, w, h); }
     if (S.dark > 0.01) { g.fillStyle = rgba(GRADE[which][0], GRADE[which][1] * S.dark); g.fillRect(0, 0, w, h); }
@@ -22,7 +24,7 @@
   // ---------------------------------------------------------------- the sky, in bands: four colours from the top down to the horizon, by the hour
   var SKIES = {
     day: ['#a7a59c', '#b6b4ac', '#c4c2b9', '#d2cfc6'], dusk: ['#6a5660', '#8e6a64', '#b18266', '#d49a6a'], dawn: ['#6a6a80', '#8e8892', '#b0a2a2', '#d0b8b0'],
-    night: ['#070a10', '#0e121a', '#161b25', '#1e2530'], rain: ['#6c727a', '#7a8088', '#8a9096', '#9aa0a6'], rust: ['#0a0504', '#1a0806', '#2a0e08', '#3a140c']
+    night: ['#070a10', '#0e121a', '#161b25', '#1e2530'], rain: ['#4e5e5c', '#5e6e6a', '#70807a', '#84948c'], rust: ['#0a0504', '#1a0806', '#2a0e08', '#3a140c']
   };
   function skyCols(S, F) {
     if (!F) return SKIES.rust.slice();
@@ -48,13 +50,26 @@
     for (var i = 0; i < s.streaks.length; i++) { var q = s.streaks[i]; g.fillStyle = q[0]; g.fillRect(q[1], q[2], q[3], 1); }
   }
   // a background layer tinted toward the sky at its height (far layers melt into the sky, near ones stay dark)
-  var SKYTINT = { horizon: [452, 0.78, 0.1], far: [440, 0.6, 0.22], mid: [420, 0.46, 0.32], hwy: [380, 0.4, 0.38], rail: [380, 0.4, 0.38], back: [300, 0.3, 0.46], fog: [440, 0.55, 0.3] };
+  var SKYTINT = { cloud: [60, 0.42, 0.45], horizon: [452, 0.82, 0.1], far: [440, 0.68, 0.22], mid: [420, 0.54, 0.32], hwy: [380, 0.4, 0.38], rail: [380, 0.4, 0.38], back: [300, 0.3, 0.46], fog: [440, 0.55, 0.3] };
   function skyGrade(src, which, S, cols, out) {
     if (src.sheet) return FT.mapSheet(src, function (c, o) { return skyGrade(c, which, S, cols, o); }, out);
     out = out || document.createElement('canvas'); out.width = src.width; out.height = src.height; var g = out.getContext('2d'), st = SKYTINT[which]; g.clearRect(0, 0, out.width, out.height); g.drawImage(src, 0, 0);
     g.globalCompositeOperation = 'source-atop'; g.fillStyle = rgba(skyAt(cols, st[0]), st[1]); g.fillRect(0, 0, out.width, out.height);
     if (S.dark > 0.01) { g.fillStyle = rgba('#04050c', st[2] * S.dark); g.fillRect(0, 0, out.width, out.height); }
     g.globalCompositeOperation = 'source-over'; return out;
+  }
+  // the overcast overhead: a bank of cloud in four tones, darkest at the top, its bottom edge ragged and dithered, a few
+  // breaks where the light comes through. Painted at half size (it is drawn at double: chunky, like the reference) and
+  // seamless across its width, so it can drift for ever
+  function cloudBank(F) {
+    var p = new Pt(W / 2, 90), r = rng(3131), tones = F ? ['#666a6c', '#767a7a', '#888c8a', '#9c9e9a'] : ['#1a0806', '#240c08', '#2e100a', '#38140c'];
+    tones.forEach(function (tc, li) { for (var i = 0; i < 34; i++) { var x = r() * W / 2, y = 6 + li * 11 + r() * 12, rx = 16 + r() * 34, ry = 5 + r() * 7 - li;
+      [x, x - W / 2, x + W / 2].forEach(function (xx) { p.E(xx, y - (li === 0 ? 10 : 0), rx, ry + (li === 0 ? 10 : 0), tc); }); } });
+    var g = p.g, img = g.getImageData(0, 0, W / 2, 90), d = img.data;
+    for (var x = 0; x < W / 2; x++) for (var y = 88; y > 0; y--) { var o = (y * W / 2 + x) * 4; if (d[o + 3]) { for (var k = 0; k < 4; k++) { var oo = ((y - k) * W / 2 + x) * 4; if (oo > 0 && BAYER[((y - k) & 3) * 4 + (x & 3)] / 16 < 0.7 - k * 0.2) d[oo + 3] = 0; } break; } }   // the ragged bottom edge
+    g.putImageData(img, 0, 0);
+    for (var b = 0; b < 4; b++) { var bx = 30 + r() * (W / 2 - 60), by = 34 + r() * 20; g.save(); g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.ellipse(bx, by, 8 + r() * 10, 2 + r() * 2, 0, 0, 7); g.fill(); g.restore(); }   // breaks in the cloud
+    return p;
   }
   // a cloud, made fresh each time (so none ever repeats): puffs with a shaded underside, a lit top, a flat base and a dithered edge
   function makeCloud(big) {
@@ -69,5 +84,5 @@
     kill.forEach(function (k2) { d[k2 + 3] = 0; }); p.g.putImageData(img, 0, 0);
     return { c: p.c, w: W2, h: H2 };
   }
-  FT.GRADE = GRADE; FT.sky = sky; FT.blend = blend; FT.tint = tint; FT.grade = grade; FT.SKIES = SKIES; FT.skyCols = skyCols; FT.skyAt = skyAt; FT.bandedSky = bandedSky; FT.drawSky = drawSky; FT.skyGrade = skyGrade; FT.makeCloud = makeCloud;
+  FT.GRADE = GRADE; FT.sky = sky; FT.blend = blend; FT.tint = tint; FT.grade = grade; FT.SKIES = SKIES; FT.skyCols = skyCols; FT.skyAt = skyAt; FT.bandedSky = bandedSky; FT.drawSky = drawSky; FT.skyGrade = skyGrade; FT.makeCloud = makeCloud; FT.cloudBank = cloudBank;
 })(window.FT = window.FT || {});

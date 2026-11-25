@@ -43,7 +43,8 @@
       { id: 'warn', kind: 'point', x: sw + 81, y: G - 58, r: 50, sq: 1, col: '#ff4a2a', k: 0.7, still: true },
       { id: 'flash', kind: 'point', x: 147, y: 486, r: 130, sq: 0.55, col: '#f4f8ff', k: 1.3 },   // the portrait studio's camera
       { id: 'tvs', kind: 'spill', box: [932, 487, 68, 31], col: '#a8c4f0', k: 0.55, still: true },   // the TV workshop's screens
-      { id: 'clocks', kind: 'spill', box: [286, 464, 34, 32], col: '#f0c890', k: 0.4, still: true }   // the clock repairer's night light
+      { id: 'clocks', kind: 'spill', box: [286, 464, 34, 32], col: '#f0c890', k: 0.4, still: true },   // the clock repairer's night light
+      { id: 'kiosk', kind: 'point', x: sw + 23, y: G - 58, r: 64, sq: 0.9, col: '#ffd090', k: 0.5, still: true }   // the bulb under the news stand's awning
     ];
   }
   // the box a light can reach, in screen pixels (even numbers, so the half-size shape lines up)
@@ -148,9 +149,25 @@
       });
     });
   }
+  // ---------------------------------------------------------------- the wet street: what stands above it, mirrored in it
+  // A dark, rippling mirror of the shopfronts in the pavement, and every light (from last frame's quarter-size bloom
+  // buffer) dropped down the pavement and the road in blocky, rippling streaks. Only while the ground is wet.
+  var bloomed = false;
+  function reflect(g, wet, t) {
+    if (wet < 0.06) return; var KERB = FT.KERB, mirror = FT.scratch('mirror', W, 96), mg = mirror.getContext('2d');
+    mg.globalCompositeOperation = 'copy'; mg.drawImage(g.canvas, 0, G - 96, W, 96, 0, 0, W, 96); mg.globalCompositeOperation = 'source-over';
+    g.globalAlpha = 0.2 * wet;
+    for (var y = 0; y < KERB - G; y += 2) { var sy = 95 - Math.min(95, y * 1.7); g.drawImage(mirror, 0, sy, W, 1, Math.round(Math.sin(t * 1.7 + y * 0.6) * 1.2), G + y, W, 2); }
+    if (bloomed) { var b0 = FT.SCRATCH.bloom0; g.globalCompositeOperation = 'lighter';
+      g.imageSmoothingEnabled = true; for (var y2 = G + 1; y2 < H; y2 += 2) { var src = G - (y2 - G) / 0.55; if (src < 0) break; var fade = 1 - (y2 - G) / (H - G) * 0.6;
+        g.globalAlpha = 0.42 * wet * fade; g.drawImage(b0, 0, src / 4, W / 4, 0.5, Math.round(Math.sin(t * 1.4 + y2 * 0.13) * 1.6 + Math.sin(t * 3.1 + y2 * 0.9) * 0.6), y2, W, 2); }
+      g.imageSmoothingEnabled = false;
+      g.globalCompositeOperation = 'source-over'; }
+    g.globalAlpha = 1;
+  }
   // bloom: what glows, drawn at a quarter size, softened twice by halving, and added back over the frame
   function bloom(g, list, amt) {
-    if (amt < 0.02 || !list.length || (FT.Q && FT.Q.p < 0.55)) return;   // the first thing a slow machine gives up
+    bloomed = false; if (amt < 0.02 || !list.length || (FT.Q && FT.Q.p < 0.55)) return; bloomed = true;   // the first thing a slow machine gives up
     var b0 = FT.scratch('bloom0', W / 4, H / 4), b1 = FT.scratch('bloom1', W / 8, H / 8), b2 = FT.scratch('bloom2', W / 16, H / 16);
     var x0 = b0.getContext('2d'); x0.setTransform(1, 0, 0, 1, 0, 0); x0.globalCompositeOperation = 'source-over'; x0.clearRect(0, 0, W / 4, H / 4); x0.setTransform(0.25, 0, 0, 0.25, 0, 0); x0.globalCompositeOperation = 'lighter';
     for (var i = 0; i < list.length; i++) { var q = list[i]; x0.globalAlpha = Math.min(1, q[5]); x0.fillStyle = q[4]; x0.fillRect(q[0], q[1], q[2], q[3]); } x0.globalAlpha = 1;
@@ -161,5 +178,5 @@
     g.imageSmoothingEnabled = false; g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   }
 
-  FT.Lighting = { preset: preset, PRESETS: PRESETS, ready: ready, frame: frame, statics: statics, grab: grab, give: give, shadows: shadows, bloom: bloom };
+  FT.Lighting = { reflect: reflect, preset: preset, PRESETS: PRESETS, ready: ready, frame: frame, statics: statics, grab: grab, give: give, shadows: shadows, bloom: bloom };
 })(window.FT = window.FT || {});

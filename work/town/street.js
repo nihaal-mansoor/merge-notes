@@ -3,7 +3,7 @@
   'use strict';
   var W = FT.W, H = FT.H, G = FT.G, KERB = FT.KERB, ROAD = FT.ROAD, MIDX = FT.MIDX, BAYER = FT.BAYER, PAL = FT.PAL, PP = FT.PP, rng = FT.rng, hex = FT.hex, mix = FT.mix, sh = FT.sh, rgba = FT.rgba, clamp = FT.clamp, smooth = FT.smooth, rand = FT.rand, pick = FT.pick, Pt = FT.Pt, brick = FT.brick, stone = FT.stone, stucco = FT.stucco, plate = FT.plate, planks = FT.planks, grime = FT.grime, crack = FT.crack, plaster = FT.plaster, cornice = FT.cornice, band = FT.band, win = FT.win, shopWin = FT.shopWin, door = FT.door, signBoard = FT.signBoard, drainpipe = FT.drainpipe, leaves = FT.leaves, vine = FT.vine, weeds = FT.weeds, STACKS = FT.STACKS, far = FT.far, mid = FT.mid, back = FT.back;
   // ---------------------------------------------------------------- the street: buildings (MY WORK in the middle), the pavement, the road
-  var B = { edge: [-10, 68, 200], about: [60, 190, 186], how: [272, 148, 262], laundry: [424, 84, 330], work: [MIDX - 127, 254, 420], writing: [778, 130, 286], toolkit: [916, 152, 222], switch: [1104, 92, 430], hotel: [1198, 92, 150] };
+  var B = { edge: [-10, 68, 200], about: [60, 190, 186], how: [272, 148, 262], laundry: [424, 84, 330], work: [MIDX - 127, 254, 420], writing: [778, 130, 286], toolkit: [916, 152, 222], switch: [1104, 92, 412], hotel: [1198, 92, 150] };
   // the diner (MY WORK) and the hotel (CONTACT): where their parts are, for painting and for the live light
   var DINER = { x: MIDX - 127, w: 254, roof: 420, sign: [MIDX - 84, 186, 168, 56], word: 'MY WORK', wordY: 214, size: 36, sub: 'OPEN ALL NIGHT', subBox: [MIDX - 50, 244, 100, 18],
     band: [MIDX - 117, 450, 234, 46], glass: [[MIDX - 115, 452, 103, 42], [MIDX + 24, 452, 91, 42]], door: [627, 452, 26, 58], inside: [MIDX - 127, 448, 254, 50], stools: [535, 562, 589, 700, 727], bulbs: [] };
@@ -112,14 +112,29 @@
     p.R(sx2 + 90, G - 98, 14, 20, F ? '#4c5a7a' : '#d9cbb0'); p.R(sx2 + 92, G - 95, 10, 2, F ? '#ece6d6' : '#9c2a1a'); p.R(sx2 + 92, G - 90, 6, 8, F ? '#c9a55a' : '#6e2a17');   // a gig poster
     p.R(sx2 + sw - 2, stt + 40, 22, 4, P.metal); p.R(sx2 + sw + 2, stt + 44, 16, 104, P.dark); p.R(sx2 + sw + 4, stt + 46, 12, 100, F ? '#5f7470' : P.sign); p.R(sx2 + sw + 4, stt + 46, 1, 100, F ? '#7d928d' : '#3a2e28');
     'TOOLKIT'.split('').forEach(function (ch, i) { p.T(ch, sx2 + sw + 10, stt + 58 + i * 13, 17, P.signText, { shadow: 'rgba(16,20,22,0.5)' }); });
-    // the substation: the switch that turns the town (the lever on its wall)
-    b = B.switch; var wx = b[0], ww = b[1], wt = b[2];
-    brick(p, K, wx, wt, ww, G - wt, P.brick); p.R(wx - 3, wt - 4, ww + 6, 6, sh(P.stone, 0.9)); p.R(wx - 3, wt - 4, ww + 6, 1, sh(P.stone, 1.15));
-    p.R(wx + 8, G - 70, 30, 70, F ? '#4f5a58' : '#2a1d18'); p.R(wx + 8, G - 70, 30, 1, F ? '#6f7a78' : '#3a2e28'); for (var lv2 = 0; lv2 < 4; lv2++) p.R(wx + 12, G - 60 + lv2 * 6, 22, 2, F ? '#3b4442' : '#1a0f0c'); p.R(wx + 32, G - 38, 3, 6, '#b8a77a');
+    // the corner lot, where the old substation stood: a news stand, and the town's switch on a green street cabinet
+    // beside it (the lever is still the way down). Over them, the city shows through again
+    b = B.switch; var wx = b[0], wt = b[2], kx = wx + 2, kw = 42, kc = F ? '#3e5446' : '#1a120e', ink = F ? '#22211f' : '#0e0807', cream = F ? '#d8d2c2' : '#2a1d18';
+    p.R(kx - 2, G - 86, kw + 4, 3, F ? '#2a302c' : '#0e0807'); p.R(kx, G - 83, kw, 12, F ? '#26282a' : '#140a08'); p.T('NEWS', kx + kw / 2, G - 77, 11, F ? '#e8dcb8' : '#5a3a2a');   // its board
+    for (var ay = 0; ay < 8; ay++) for (var ax = -3; ax < kw + 3; ax++) p.R(kx + ax + Math.round(ay * 0.3) - 1, G - 71 + ay, 1, 1, ((ax + 3) / 6 | 0) % 2 ? (F ? '#d8d0bc' : '#2a1d18') : (F ? '#4a6a50' : '#1a0f0c'));   // the striped awning
+    for (var sc2 = -3; sc2 < kw + 3; sc2 += 6) p.E(kx + sc2 + 3, G - 63, 3, 1.6, ((sc2 + 3) / 6 | 0) % 2 ? (F ? '#d8d0bc' : '#2a1d18') : (F ? '#4a6a50' : '#1a0f0c'));
+    p.R(kx, G - 62, kw, 62, kc); p.R(kx, G - 62, 1, 62, sh(kc, 1.25)); p.R(kx + kw - 1, G - 62, 1, 62, sh(kc, 0.7));
+    p.R(kx + 4, G - 58, kw - 8, 28, F ? '#3a2e24' : '#0e0807'); p.R(kx + 4, G - 58, kw - 8, 1, ink);                    // the window (the vendor's inside: shops.js)
+    p.R(kx + kw / 2, G - 62, 1, 4, ink);                                                                                  // the bulb's flex
+    for (var mg = 0; mg < 4; mg++) { p.R(kx + 1, G - 56 + mg * 7, 3, 5, ['#a8463a', '#c9a55a', '#5a6a7a', '#d8c8b0'][mg]); p.R(kx + kw - 4, G - 56 + mg * 7, 3, 5, ['#7a8a6a', '#d8d0c0', '#a8463a', '#4c5a7a'][mg]); }   // magazines, pegged up either side
+    p.R(kx + 2, G - 30, kw - 4, 3, F ? '#6a5a44' : '#2a1d18'); p.R(kx + 2, G - 30, kw - 4, 1, F ? '#8a7a5e' : '#3a2e28');   // the counter
+    [[kx + 6, 7], [kx + 15, 6], [kx + 30, 7]].forEach(function (q) { p.R(q[0], G - 32, q[1], 2, cream); p.R(q[0], G - 32, q[1], 1, sh(cream, 1.1)); });   // stacks of papers on it
+    for (var ry = 0; ry < 2; ry++) for (var rx = 0; rx < 4; rx++) { var px2 = kx + 3 + rx * 9.5, py2 = G - 25 + ry * 11, pc = (rx + ry) % 3 === 2 ? (F ? '#d8b8a8' : '#2a1d18') : cream;   // the day's papers, in the rack
+      p.R(px2, py2, 8, 10, pc); p.R(px2, py2, 8, 2, F ? '#2a2826' : '#140a08'); p.R(px2 + 1, py2 + 3, 6, 1, F ? '#4a4844' : '#1a0f0c'); p.R(px2 + 1, py2 + 5, 3, 3, F ? '#7a7670' : '#1a0f0c'); p.R(px2 + 5, py2 + 5, 2, 1, F ? '#8a8680' : '#1a0f0c'); p.R(px2 + 5, py2 + 7, 2, 1, F ? '#8a8680' : '#1a0f0c'); }
+    p.R(kx, G - 3, kw, 3, F ? '#2a302c' : '#0e0807');
+    var cx0 = wx + 49, cw = 42, gc = F ? '#4e6252' : '#1a120e';                                                         // the cabinet
+    p.R(cx0 - 2, G - 5, cw + 4, 5, F ? '#8a8678' : '#1a0f0c'); p.R(cx0 - 2, G - 5, cw + 4, 1, F ? '#a8a494' : '#2a1d18');
+    p.R(cx0, wt + 2, cw, G - 5 - wt - 2, gc); p.R(cx0 - 2, wt, cw + 4, 3, sh(gc, 0.8)); p.R(cx0, wt + 3, 1, G - wt - 8, sh(gc, 1.25)); p.R(cx0 + cw - 1, wt + 3, 1, G - wt - 8, sh(gc, 0.7));
+    for (var lv2 = 0; lv2 < 3; lv2++) p.R(cx0 + 8, G - 15 + lv2 * 3, cw - 16, 1, sh(gc, 0.6));   // its louvres
+    p.R(wx + 72, wt - 10, 3, 10, F ? '#3a3e3c' : '#0e0807');                                                            // the conduit up to the wires
     p.R(wx + 50, G - 86, 40, 50, F ? '#5f6a68' : '#2a1d18'); p.R(wx + 50, G - 86, 40, 1, F ? '#7f8a88' : '#3a2e28'); p.R(wx + 54, G - 80, 32, 38, F ? '#3b4442' : '#140a08');
     p.R(wx + 62, G - 74, 16, 4, F ? '#b8b4a8' : '#5a3a2a'); p.L(wx + 70, G - 72, wx + 80, G - 52, F ? '#8a8a84' : '#3a2e28', 2); p.R(wx + 76, G - 56, 10, 5, F ? '#a83a2a' : '#c8442a');   // the knife switch, its handle red
     p.R(wx + 52, G - 100, 36, 12, F ? '#e8d84a' : '#3a2e28'); p.P([[wx + 58, G - 90], [wx + 62, G - 98], [wx + 66, G - 90]], F ? '#22211f' : '#9c2a1a'); p.T('DANGER', wx + 77, G - 94, 11, F ? '#22211f' : '#9c2a1a');
-    p.L(wx + 70, G - 86, wx + 70, wt, '#22211f', 2); p.L(wx + 76, G - 86, wx + 76, wt, '#22211f', 1);
     if (F) { p.R(wx + 58, G - 30, 26, 12, '#ece6d6'); p.R(wx + 59, G - 29, 24, 10, '#7a3b34'); p.T('PULL', wx + 71, G - 24, 11, '#ece6d6'); }
     // the hotel at the end of the street: CONTACT is its lobby. Its HOTEL sign has a dead letter, and another that buzzes
     var hx = HOTEL.x, hw = HOTEL.w, ht = HOTEL.top, hc = F ? '#6a564a' : '#5a2214';
@@ -137,8 +152,47 @@
     HOTEL.letters.split('').forEach(function (ch, i) { p.T(ch, hs[0] + hs[2] / 2, hs[1] + 16 + i * 24, 22, F ? '#4a5054' : '#241812'); });
     if (F) { vine(p, K, hx + 4, ht + 12, 40, 2); weeds(p, K, hx + 2, G, 3); }
     FT.shopWin(p, K, FT.Shops.CLOCKS.win[0], FT.Shops.CLOCKS.win[1], FT.Shops.CLOCKS.win[2], FT.Shops.CLOCKS.win[3], 'clocks'); FT.Shops.paint(p, K);   // the ground-floor shops
+    clutter(p, K);   // the small things (below)
     SIGNS.forEach(function (s) { if (s[4]) goose(p, K, s[0] + s[2] / 2 - 8, s[1] + 2); });
     return p;
+  }
+  // ---------------------------------------------------------------- clutter: the small things that make a street lived in
+  // Rooftop machinery (each kind once), signs whose lettering can't quite be read, torn posters, bulb sockets on the
+  // awning and the canopy (lit at night, shops.js), manhole covers, a second drain, tyre tracks, a worn crossing
+  function glyphs(p, x, y, n, col, r, down) { for (var i = 0; i < n; i++) { var gx = down ? x : x + i * 4, gy = down ? y + i * 6 : y; for (var px = 0; px < 3; px++) for (var py = 0; py < 5; py++) if (r() < 0.45) p.R(gx + px, gy + py, 1, 1, col); } }
+  function roofItem(p, K, kind, x, top) {
+    var F = K.F, m = F ? '#5a5e5c' : '#1a0f0c', m2 = F ? '#7a7e7a' : '#2a1d18', dk = F ? '#2a2e2e' : '#0e0807';
+    if (kind === 'ac') { p.R(x, top - 9, 15, 9, m); p.R(x, top - 9, 15, 1, m2); for (var i = 2; i < 14; i += 2) p.R(x + i, top - 7, 1, 5, dk); p.R(x + 2, top - 1, 2, 1, dk); p.R(x + 11, top - 1, 2, 1, dk); }
+    if (kind === 'aerial') { p.R(x, top - 24, 1, 24, dk); for (var a = 0; a < 3; a++) p.R(x - 5 + a, top - 22 + a * 5, 11 - a * 2, 1, dk); }
+    if (kind === 'vent') { p.R(x, top - 11, 3, 11, m); p.R(x - 1, top - 13, 5, 2, dk); p.R(x + 1, top - 11, 1, 11, m2); }
+    if (kind === 'dish') { p.R(x + 3, top - 5, 1, 5, dk); p.E(x + 3, top - 8, 4, 3.5, m2); p.E(x + 4, top - 8, 2.5, 2, m); p.R(x + 3, top - 9, 1, 1, dk); }
+    if (kind === 'flue') { p.R(x, top - 15, 6, 15, F ? '#6e4c42' : '#3d1a12'); p.R(x - 1, top - 16, 8, 2, dk); p.R(x + 1, top - 14, 1, 13, F ? '#4a3a32' : '#1a0f0c'); }
+    if (kind === 'cabinet') { p.R(x, top - 12, 18, 12, m); p.R(x, top - 12, 18, 1, m2); p.R(x + 8, top - 11, 1, 11, dk); p.R(x + 3, top - 7, 2, 1, F ? '#c8a040' : '#3a2e28'); }
+    if (kind === 'hood') { p.R(x, top - 8, 14, 8, m); p.R(x, top - 8, 14, 1, m2); p.R(x + 4, top - 14, 6, 6, m); p.R(x + 3, top - 16, 8, 2, dk); for (var hv = 2; hv < 13; hv += 3) p.R(x + hv, top - 6, 1, 4, dk); }
+    if (kind === 'tank') { p.R(x + 1, top - 6, 1, 6, dk); p.R(x + 15, top - 6, 1, 6, dk); p.R(x, top - 22, 17, 16, F ? '#6a5040' : '#2a1510'); for (var b = top - 20; b < top - 6; b += 4) p.R(x, b, 17, 1, dk); p.P([[x - 1, top - 22], [x + 18, top - 22], [x + 8.5, top - 29]], dk); }
+  }
+  function clutter(p, K) {
+    var F = K.F, r = rng(9090), dk = F ? '#22211f' : '#0e0807';
+    [['about', 'ac', 146], ['about', 'aerial', 232], ['laundry', 'vent', 438], ['laundry', 'dish', 486], ['toolkit', 'flue', 970], ['hotel', 'tank', 1222]].forEach(function (q) { roofItem(p, K, q[1], q[2], B[q[0]][2]); });
+    if (!F) { p.R(250, 338, 3, 2, dk); p.R(252, 340, 15, 48, '#2a1510'); p.R(252, 340, 15, 1, '#3a2e28'); glyphs(p, 258, 344, 7, '#3a2e28', r, true); }   // a blade sign in the alley (on the surface it swings on its chains: life.js)
+    roofItem(p, K, 'hood', 728, B.work[2]);   // the diner kitchen's hood (it steams: life.js)
+    var dm = F ? '#3e4e40' : '#1a120e'; p.R(251, G - 17, 20, 15, dm); p.R(250, G - 19, 22, 3, sh(dm, 0.8)); p.R(251, G - 17, 20, 1, sh(dm, 1.25)); p.R(253, G - 12, 16, 1, sh(dm, 0.75)); p.R(253, G - 2, 3, 2, dk); p.R(266, G - 2, 3, 2, dk); p.R(256, G - 21, 7, 2, F ? '#1a1c1e' : '#0e0807');   // a dumpster down the alley, a bag left on its lid
+    var sc = F ? '#6a6e70' : '#2a1d18', pl = F ? '#8a6a44' : '#2a1d18'; [924, 952, 980].forEach(function (x) { p.R(x, 232, 2, G - 232, sc); p.R(x, 232, 1, G - 232, sh(sc, 1.2)); p.R(x - 2, G - 2, 6, 2, dk); });   // scaffolding up the side of TOOLKIT, where its plaster has gone
+    [298, 360, 422].forEach(function (y) { p.R(921, y, 64, 3, pl); p.R(921, y, 64, 1, sh(pl, 1.2)); p.R(922, y - 10, 62, 1, sc); for (var bx2 = 924; bx2 < 980; bx2 += 28) p.L(bx2 + 1, y + 3, bx2 + 28, y + 60 > G ? G - 2 : y + 60, sh(sc, 0.85)); });
+    for (var ly2 = 364; ly2 < 422; ly2 += 5) p.R(964, ly2, 8, 1, pl); p.R(963, 362, 1, 60, pl); p.R(972, 362, 1, 60, pl);   // a ladder between two of its lifts
+    [958, 972, 986].forEach(function (x) { var rc = F ? '#5a5e5c' : '#1a0f0c'; p.R(x, G - 6, 1, 12, rc); p.R(x + 8, G - 6, 1, 12, rc); p.R(x + 1, G - 7, 7, 1, rc); });   // a bike rack
+    [[72, 26], [331, 30]].forEach(function (q) { var st = F ? '#9a968a' : '#2a1d18', ir = F ? '#22211f' : '#0e0807'; p.R(q[0] - 4, G, q[1] + 8, 3, st); p.R(q[0] - 4, G, q[1] + 8, 1, sh(st, 1.15)); p.R(q[0] - 7, G + 3, q[1] + 14, 3, sh(st, 0.95)); p.R(q[0] - 7, G + 3, q[1] + 14, 1, sh(st, 1.1));   // stoops at the doors, with railings
+      [q[0] - 7, q[0] + q[1] + 6].forEach(function (x) { p.R(x, G - 11, 1, 17, ir); p.R(x - 1, G - 12, 3, 1, ir); }); p.L(q[0] - 7, G - 11, q[0] - 3, G - 9, ir); p.L(q[0] + q[1] + 6, G - 11, q[0] + q[1] + 2, G - 9, ir); });
+    [[90, 474], [355, 470], [1042, 476]].forEach(function (q) { p.R(q[0], q[1], 7, 8, F ? '#e8e2d2' : '#2a1d18'); for (var hl = 0; hl < 3; hl++) p.R(q[0] + 1, q[1] + 2 + hl * 2, 4 + (hl % 2), 1, F ? '#6a6660' : '#1a0f0c'); });   // opening hours, on the doors
+    p.R(218, 416, 7, 6, F ? '#a8583a' : '#2a1510'); p.R(217, 416, 9, 1, F ? '#c8784a' : '#3a2e28'); if (F) { p.R(219, 412, 1, 4, '#5a6a3a'); p.R(221, 410, 1, 6, '#4a6a3a'); p.R(223, 413, 1, 3, '#5a6a3a'); p.R(220, 411, 1, 1, '#6a7a4a'); p.R(222, 410, 2, 1, '#6a7a4a'); }   // a geranium on a sill (the only one)
+    [[253, 450, 15, 20, F ? '#d8d0bc' : '#2a1d18'], [256, 474, 13, 16, F ? '#9a4a3a' : '#3d1a12'], [1200, 484, 22, 18, F ? '#a8a49a' : '#2a1d18'], [1205, 494, 14, 12, F ? '#c9a55a' : '#3a2e28']].forEach(function (q) {   // posters, pasted over each other, torn
+      p.R(q[0], q[1], q[2], q[3], q[4]); for (var tx = q[0]; tx < q[0] + q[2]; tx++) { var tear = (r() * 4) | 0; if (tear) p.g.clearRect(tx, q[1] + q[3] - tear, 1, tear); }
+      glyphs(p, q[0] + 2, q[1] + 3, Math.max(1, (q[2] - 3) / 4 | 0), F ? 'rgba(34,33,31,0.7)' : '#0e0807', r); });
+    for (var bx = 782; bx <= 906; bx += 10) p.R(bx, 442, 1, 2, dk); for (var hx = 1202; hx <= 1286; hx += 6) p.R(hx, 430, 1, 2, dk);   // bulb sockets
+    [[300, 654], [1010, 698]].forEach(function (q) { p.E(q[0], q[1], 12, 3.2, F ? '#3a3a38' : '#0e0807'); p.E(q[0], q[1], 10, 2.4, F ? '#4a4a46' : '#170d0a'); for (var mx = -8; mx <= 8; mx += 4) p.R(q[0] + mx, q[1] - 1, 1, 3, F ? '#363634' : '#0e0807'); });   // manhole covers
+    p.R(960, 576, 18, 4, dk); for (var gx = 961; gx < 978; gx += 3) p.R(gx, 577, 1, 2, F ? '#4a4a46' : '#1a0f0c');   // a second drain at the kerb
+    p.D(0, 638, W, 3, F ? 'rgba(20,22,24,0.18)' : 'rgba(0,0,0,0.25)', 0.5); p.D(0, 696, W, 3, F ? 'rgba(20,22,24,0.18)' : 'rgba(0,0,0,0.25)', 0.5);   // tyre tracks
+    for (var sx = 944; sx < 1044; sx += 22) for (var yy = 584; yy < 706; yy++) for (var xx = sx; xx < sx + 12; xx++) if (r() < 0.36) p.R(xx, yy, 1, 1, F ? 'rgba(200,198,188,0.26)' : 'rgba(60,40,30,0.3)');   // a crossing, worn half away
   }
   // in front of the people: the poles and wires
   function front(K) {
@@ -146,9 +200,9 @@
     p.R(poleA[0], poleA[1], 6, G + 30 - poleA[1], F ? '#4a3e32' : '#1a0f0c'); p.R(poleA[0] + 1, poleA[1], 1, G + 30 - poleA[1], F ? '#5e5040' : '#2a1d18'); p.R(poleA[0] - 18, poleA[1] + 8, 42, 3, F ? '#4a3e32' : '#1a0f0c'); p.R(poleA[0] - 9, poleA[1] + 30, 14, 22, F ? '#5a5f5e' : '#1a0f0c'); p.R(poleA[0] - 9, poleA[1] + 30, 14, 1, F ? '#7a807e' : '#2a1d18');   // a wooden pole with a transformer
     p.R(poleB[0], poleB[1], 4, G + 30 - poleB[1], F ? '#6f6c66' : '#1a0f0c'); p.R(poleB[0] - 12, poleB[1] + 6, 28, 2, F ? '#6f6c66' : '#1a0f0c'); for (var bo = poleB[1] + 20; bo < G; bo += 30) p.R(poleB[0] - 2, bo, 8, 1, F ? '#5d5b55' : '#1a0f0c');   // a concrete one
     function wireY(x, k) { var u = (x - poleA[0]) / (poleB[0] - poleA[0]); return poleA[1] + 9 + k * 9 + (poleB[1] - poleA[1]) * u + Math.sin(u * Math.PI) * 40 + Math.sin(u * Math.PI * 3) * 3; }
-    for (var wk = 0; wk < 3; wk++) for (var wx = poleA[0]; wx < poleB[0]; wx++) p.R(wx, wireY(wx, wk), 1, 1, F ? 'rgba(34,36,36,0.8)' : '#2a1d18');
-    p.L(B.switch[0] + 73, B.switch[2], poleB[0], poleB[1] + 30, F ? 'rgba(34,36,36,0.8)' : '#2a1d18');   // the substation's cable to the pole
-    if (F) { var sx3 = 470, sy3 = wireY(sx3, 1); p.L(sx3, sy3, sx3 + 3, sy3 + 14, '#2f2e2b'); p.L(sx3 + 3, sy3 + 14, sx3 + 9, sy3 + 13, '#2f2e2b'); p.E(sx3 + 7, sy3 + 15, 4, 2, '#3a3a38'); p.L(sx3, sy3, sx3 - 2, sy3 + 11, '#2f2e2b'); p.E(sx3 - 1, sy3 + 12, 4, 2, '#4a3a2e'); }   // a pair of shoes
+    if (!F) for (var wk = 0; wk < 3; wk++) for (var wx = poleA[0]; wx < poleB[0]; wx++) p.R(wx, wireY(wx, wk), 1, 1, '#2a1d18');   // (on the surface the wires sway, and the shoes on them: life.js)
+    p.L(B.switch[0] + 73, B.switch[2] - 10, poleB[0], poleB[1] + 30, F ? 'rgba(34,36,36,0.8)' : '#2a1d18');   // the cabinet's cable to the pole
+    if (F) { } else if (false) { var sx3 = 470, sy3 = wireY(sx3, 1); p.L(sx3, sy3, sx3 + 3, sy3 + 14, '#2f2e2b'); p.L(sx3 + 3, sy3 + 14, sx3 + 9, sy3 + 13, '#2f2e2b'); p.E(sx3 + 7, sy3 + 15, 4, 2, '#3a3a38'); p.L(sx3, sy3, sx3 - 2, sy3 + 11, '#2f2e2b'); p.E(sx3 - 1, sy3 + 12, 4, 2, '#4a3a2e'); }   // a pair of shoes
     else for (var slp = 0; slp < 34; slp++) { var lx2 = 40 + slp * 36 + r() * 16, ly = wireY(lx2, slp % 3), len = 8 + r() * 40; p.R(lx2, ly, 1, len, '#3a2e28'); p.R(lx2 - 6, ly + len, 13, 17, '#d9cbb0'); for (var tx = 0; tx < 4; tx++) p.R(lx2 - 4, ly + len + 4 + tx * 3, 6 + r() * 4, 1, tx === 0 ? '#9c2a1a' : '#6e2a17'); }
     return p;
   }

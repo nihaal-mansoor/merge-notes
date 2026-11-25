@@ -22,7 +22,7 @@
     for (var sp = 0; sp < 12; sp++) { var an = sp / 12 * Math.PI * 2, ex = fwx + Math.cos(an) * fwr, ey = fwy + Math.sin(an) * fwr; p.L(fwx, fwy, ex, ey, d); p.R(Math.round(ex) - 2, Math.round(ey) + 1, 5, 4, c); }
     p.L(fwx, fwy, fwx - 26, base, c, 2); p.L(fwx, fwy, fwx + 26, base, c, 2); p.E(fwx, fwy, 3, 3, l);
     for (var x = 0; x < W;) { var bw = 40 + r() * 60, bh = 40 + r() * 70; p.R(x, base - bh, bw, bh + 20, c); for (var wy = base - bh + 6; wy < base - 8; wy += 8) for (var wx = x + 4; wx < x + bw - 5; wx += 7) { p.R(wx, wy, 2, 3, d); if (K.wins && r() < 0.5) K.wins.push({ x: wx, y: wy, w: 2, h: 3, layer: 'far', small: true, cx: wx }); } if (K.F && bh > 90) FT.BEACONS.push([Math.round(x + bw - 4), base - bh - 2, 'far']); x += bw + r() * 30; }
-    p.fog(K.F ? 0.14 : 0.35, K.P.fog, [410, 472, K.F ? 0.35 : 0.3]); return p;
+    p.fog(K.F ? 0.26 : 0.35, K.P.fog, [410, 472, K.F ? 0.35 : 0.3]); return p;
   }
   // one distant building with some character: a roof of its own kind, ledges, windows with sills, a lit side and a shaded side
   function block(p, K, x, top, bw, base, c, r, layer) {
@@ -51,7 +51,7 @@
       block(p, K, Math.round(x), top, Math.round(bw), base, pass ? sh(c, 0.9 + r() * 0.08) : sh(c, 1.08 + r() * 0.06), r, 'mid');
       x += bw + (pass ? 6 + r() * 30 : r() * 8);
     }
-    p.fog(K.F ? 0.1 : 0.28, K.P.fog, [450, 505, K.F ? 0.38 : 0.25]); return p;
+    p.fog(K.F ? 0.18 : 0.28, K.P.fog, [450, 505, K.F ? 0.38 : 0.25]); return p;
   }
   function back(K) {
     var p = new Pt(W, H), c = K.P.back, r = rng(44), base = 520;
@@ -63,7 +63,7 @@
       if (b[3] === 'vent') { p.R(x + 30, top - 14, 10, 14, '#3b3a37'); p.P([[x + 27, top - 14], [x + 35, top - 20], [x + 43, top - 14]], '#3b3a37'); }
       if (b[3] === 'tree' && K.F) { var t2 = x + 60, ty = top - 30; p.L(t2, top, t2 - 4, ty + 10, '#3a2e24', 2); p.L(t2 - 4, ty + 10, t2 - 14, ty - 2, '#3a2e24'); p.L(t2 - 3, ty + 14, t2 + 10, ty + 2, '#3a2e24'); leaves(p, K, t2 - 10, ty - 4, 14, 9, 90); leaves(p, K, t2 + 8, ty, 11, 7, 60); }
     });
-    p.fog(K.F ? 0.06 : 0.12, K.P.fog, [460, 520, K.F ? 0.3 : 0.14]); return p;
+    p.fog(K.F ? 0.1 : 0.12, K.P.fog, [460, 520, K.F ? 0.3 : 0.14]); return p;
   }
 
   // ---------------------------------------------------------------- more depth: the horizon, an elevated highway, a dark near frame
@@ -77,7 +77,7 @@
     function cable(xa, xb, ya, sag) { for (var x2 = xa; x2 <= xb; x2++) { var u = (x2 - xa) / (xb - xa), yy = ya + Math.sin(u * Math.PI) * sag; p.R(x2, yy, 1, 1, sh(c, 0.9)); if ((x2 - xa) % 6 === 0) p.R(x2, yy, 1, bd - yy, sh(c, 0.96)); } }
     cable(t1, t2, bd - 62, 52); cable(640, t1, bd - 30, -26 + 0); cable(t2, W, bd - 62, 30);
     for (var bl = 650; bl < W; bl += 14) HORIZON_LIGHTS.push([bl, bd - 1, 'amber']);
-    p.fog(K.F ? 0.2 : 0.4, K.P.fog, [410, 445, K.F ? 0.4 : 0.3]); return p;
+    p.fog(K.F ? 0.34 : 0.4, K.P.fog, [410, 445, K.F ? 0.4 : 0.3]); return p;
   }
   // the elevated highway, in two parts: the deck and its pillars (behind the cars), the parapet (in front of them)
   function highwayDeck(K) {
@@ -88,11 +88,23 @@
     p.fog(K.F ? 0.08 : 0.25, K.P.fog, [430, 505, K.F ? 0.4 : 0.25]); return p;
   }
   function highwayRail(K) { var p = new Pt(W, H), c = K.F ? '#7a7872' : '#3a1c14', y = HWY.deck; p.R(0, y - 5, W, 5, c); p.R(0, y - 5, W, 1, sh(c, 1.1)); for (var x = 0; x < W; x += 40) p.R(x, y - 6, 2, 6, sh(c, 0.85)); p.fog(K.F ? 0.08 : 0.25, K.P.fog); return p; }
-  // the near frame: a sliver of a pole at the left edge, heavy cables across the top right, a parking meter and the near kerb
+  // the near frame, dark and cut off by the edges of the picture: a bare tree on the left (its trunk just inside the frame,
+  // its branches reaching into the sky), a utility pole on the right with its crossarms, insulators and transformer, the
+  // heavy cables across the top right, a parking meter and the near kerb
   function foreground(K) {
-    var p = new Pt(W, H), c = K.F ? '#24282b' : '#0e0807', hi = K.F ? '#3a4044' : '#1a0f0c';
-    p.R(0, 0, 9, H, c); p.R(7, 0, 1, H, hi); for (var b = 40; b < H; b += 90) p.R(0, b, 12, 3, c);
-    for (var k = 0; k < 2; k++) for (var x = 860; x < W; x++) { var u = (x - 860) / (W - 860), yy = -6 + k * 7 + Math.sin(u * Math.PI * 0.9) * 46 + u * 14; p.R(x, yy, 1, 3 - k, c); }
+    var p = new Pt(W, H), c = K.F ? '#1e2224' : '#0e0807', hi = K.F ? '#323a3c' : '#1a0f0c', r = rng(4417);
+    p.P([[-8, H], [6, H], [5, 520], [4, 300], [-8, 290]], c); p.R(3, 300, 1, 420, hi);   // the trunk, mostly off the left edge
+    (function branch(x, y, ang, len, w, d) {   // each branch splits into two or three, thinner and shorter, until twigs
+      var x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len; p.L(x, y, x2, y2, c, Math.max(1, Math.round(w)));
+      if (d === 0 || y2 < 4) return; var n = r() < 0.4 ? 3 : 2;
+      for (var i = 0; i < n; i++) branch(x2, y2, ang + (i - (n - 1) / 2) * (0.38 + r() * 0.3) + (r() - 0.5) * 0.3, len * (0.62 + r() * 0.16), w * 0.62, d - 1);
+    })(2, 330, -1.05, 70, 5, 6);
+    (function branch2(x, y, ang, len, w, d) { var x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len; p.L(x, y, x2, y2, c, Math.max(1, Math.round(w))); if (d === 0) return; for (var i = 0; i < 2; i++) branch2(x2, y2, ang + (i ? 0.45 : -0.35) + (r() - 0.5) * 0.4, len * 0.66, w * 0.6, d - 1); })(3, 420, -0.55, 48, 3, 4);   // a lower bough
+    p.R(1273, 0, 8, H, c); p.R(1274, 0, 1, H, hi); for (var b = 120; b < H; b += 90) p.R(1270, b, 10, 2, c);   // the pole, its step bolts
+    [[34, 64], [58, 52]].forEach(function (q) { p.R(W - q[1], q[0], q[1], 4, c); p.R(W - q[1], q[0], q[1], 1, hi); for (var ix = W - q[1] + 4; ix < W - 8; ix += 16) { p.R(ix, q[0] - 4, 3, 4, K.F ? '#5a6460' : '#2a1d18'); p.R(ix + 1, q[0] - 5, 1, 1, K.F ? '#7a8480' : '#3a2e28'); } });   // crossarms, insulators
+    p.R(1252, 78, 14, 22, c); p.R(1253, 80, 12, 1, hi); p.R(1252, 100, 14, 2, hi); p.R(1266, 84, 7, 2, c); p.L(1258, 78, 1250, 38, c);   // the transformer, its drop
+    for (var k = 0; k < 2; k++) for (var x = 860; x < W - 8; x++) { var u = (x - 860) / (W - 8 - 860), yy = -6 + k * 7 + Math.sin(u * Math.PI * 0.9) * 46 + u * (14 + k * 18); p.R(x, yy, 1, 3 - k, c); }
+    for (var x3 = 1040; x3 < W - 8; x3++) { var u3 = (x3 - 1040) / (W - 8 - 1040); p.R(x3, 30 + Math.sin(u3 * Math.PI) * 26 + u3 * 4, 1, 1, c); }   // a slacker line, looping down
     p.R(1190, 642, 6, 78, c); p.R(1184, 618, 18, 26, c); p.R(1186, 622, 14, 9, hi); p.R(1188, 632, 10, 2, hi);
     p.R(0, 708, W, 12, c); p.R(0, 708, W, 1, hi); for (var j = 0; j < W; j += 64) p.R(j, 708, 1, 12, hi);
     return p;
