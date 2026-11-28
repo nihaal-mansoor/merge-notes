@@ -109,9 +109,9 @@
       var B = new Buf(K), L = legs(t), tw = stand ? 0 : Math.cos(t * TAU);
       var dy = Math.round(L.dy * D * K) / (D * K);
       [L.n, L.f].forEach(function (g) { ['hip', 'knee', 'ank'].forEach(function (k) { g[k] = [g[k][0], g[k][1] + dy]; }); g.foot = g.foot.map(function (p) { return [p[0], p[1] + dy]; }); if (g.instep) g.instep = g.instep.map(function (p) { return [p[0], p[1] + dy]; }); });
-      var nL = L.n, fL = L.f, pel = [CX, dy], sway = stand ? (f ? 0.9 : 0) : (f ? 0.5 : 0.15) * Math.sin(t * TAU * 2), shTw = stand ? 0 : -0.5 * tw;
+      var nL = L.n, fL = L.f, pel = [CX, dy], sway = stand ? (f ? 0.9 : 0) : (f ? 0.5 : 0.15) * Math.sin(t * TAU * 2), shTw = stand ? 0 : -0.25 * tw;
       var lean = elder ? 0.4 : 0;                        // (an upright back for everyone; the elderly just a touch forward)
-      function T(p) { return [pel[0] + p[0] * XS + (p[1] < -10 ? shTw * (-p[1] - 10) / 12 : 0) + (p[1] < -8 ? lean * (-p[1] - 8) / 15 : 0), pel[1] + p[1]]; }
+      function T(p) { return [pel[0] + p[0] * XS * (p[1] < -12 ? 1 - 0.14 * Math.min(1, (-p[1] - 12) / 10) : 1) + (p[1] < -10 ? shTw * (-p[1] - 10) / 12 : 0) + (p[1] < -8 ? lean * (-p[1] - 8) / 15 : 0), pel[1] + p[1]]; }
       var lag = stand ? 0 : 0.9 * Math.sin(t * TAU * 2 - 0.9);
       var bust = f && !kid ? (def.bust === undefined ? 1 : def.bust) : 0, hips = def.hips || (f ? 1 : 0.4), belly = def.belly || 0;
       // the chest follows the step a moment late, a little (more for a fuller bust); still when standing or sitting
@@ -179,21 +179,21 @@
       // ----- the body (an upright back), then what they wear on it
       var body = f
         ? [[-0.8, -23.4], [1.4, -23], [2.4, -19.4], [2.4 + 1.0 * bust, -17.8 + gv * 0.3 + bb * 0.4], [2.4 + 1.85 * bust, -16.0 + gv * 0.7 + bb * 0.7], [2.4 + 2.0 * bust, -14.8 + gv + bb], [2.4 + 1.75 * bust, -13.7 + gv + bb * 0.8], [2.4 + 1.1 * bust, -12.7 + gv * 0.8 + bb * 0.6], [2.4 + 0.3 * bust, -12.2 + gv * 0.5 + bb * 0.4], [2.0, -11], [1.8 + belly * 0.6, -8.6], [2.6 + belly * 0.8, -4.4], [2.2, -1], [-2.4 - hips * 1.2, -1], [-2.4 - hips * 0.6, -5], [-2.2, -8.8], [-2.3, -13], [-2.4, -18], [-2.1, -21.8]]
-        : [[-1.0, -23.6], [1.6, -23.2], [2.8, -20.4], [3.2, -17], [3.0 + belly * 0.3, -13], [2.6 + belly * 0.9, -9], [2.6 + belly * 0.8, -4.4], [2.2, -1], [-2.6 - hips, -1], [-2.5, -5], [-2.4, -9], [-2.6, -13], [-2.7, -18], [-2.4, -22]];
+        : [[-1.0, -23.6], [1.5, -23.2], [2.6, -20.4], [2.95, -17], [3.0 + belly * 0.3, -13], [2.6 + belly * 0.9, -9], [2.6 + belly * 0.8, -4.4], [2.2, -1], [-2.6 - hips, -1], [-2.5, -5], [-2.4, -9], [-2.6, -13], [-2.7, -18], [-2.4, -22]];
       var bodyT = body.map(T);
       B.poly(bodyT, S.b);
       B.poly([T([-2.4, -18]), T([-2.1, -21.8]), T([-1.8, -21.9]), T([-2.0, -17.6]), T([-2.0, -13]), T([-2.3, -13])], S.s);
       // the top: from the shoulders to the waist (a tank scoops at the neck and leaves the shoulders bare)
       if (outfit.top) {
         var tk = outfit.top.kind, hem = outfit.top.hem || -8.6, upper = tk === 'tank' ? [[-1.6, -21.4], [-0.8, -21.0], [0.6, -19.0], [2.2, -18.6], [2.6, -19.6]] : [[-1.0, -23.0], [1.4, -22.8], [2.4, -19.6]];
-        var shape = upper.concat(body.filter(function (p) { return p[1] > -19.6 && p[1] < hem && p[0] > 0; }), [[body[f ? 10 : 7][0] + 0.2, hem], [-2.4 - (hem > -6 ? hips * 0.6 : 0), hem]], body.filter(function (p) { return p[1] < hem && p[1] > -21.9 && p[0] < 0 && p[1] < -6; }).reverse());
+        var shape = upper.concat(body.filter(function (p) { return p[1] > -19.6 && p[1] < hem && p[0] > 0; }), [[body[f ? 10 : 7][0] + 0.2, hem], [-2.4 - (hem > -6 ? hips * 0.6 : 0), hem]], body.filter(function (p) { return p[1] < hem && p[1] > -22.6 && p[0] < 0 && p[1] < -6; }).reverse());
         B.poly(shape.map(T), top.b);
         B.poly([T([-2.4, -18]), T([-2.2, -20.8]), T([-1.9, -20.8]), T([-2.0, -17]), T([-2.0, hem + 0.2]), T([-2.4, hem])], top.s);   // its far side
         if (f && bust > 0.15) { B.poly([T([2.0, -13.6 + gv + bb]), T([2.4 + 1.4 * bust, -14.2 + gv + bb]), T([2.4 + 0.6 * bust, -12.8 + gv + bb * 0.5]), T([2.0, -12.0])], top.s); B.seg(T([2.4 + 1.6 * bust, -16.2 + gv * 0.7 + bb * 0.7]), T([2.4 + 1.9 * bust, -15.0 + gv + bb]), 0.5, 0.5, top.h); }
         B.seg(T([-1.0, -12.0]), T([0.8, -10.4]), 0.5, 0.5, top.s); B.seg(T([-1.6, -10.4]), T([-0.2, -9.6]), 0.5, 0.5, top.d);   // folds
         if (tk === 'tank') { B.seg(T([-1.6, -21.4]), T([-0.4, -23.2]), 0.5, 0.5, top.b); B.seg(T([0.0, -21.6]), T([1.6, -21.0]), 0.5, 0.5, S.s); }
         if (tk === 'shirt' || tk === 'polo' || tk === 'shirtL') { B.poly([T([-1.2, -23.6]), T([1.6, -23.2]), T([2.2, -21.8]), T([0.6, -22.0])], top.h); for (var by = -20; by > hem; by -= 3) B.set(T([2.2 + (by < -15 ? bust * 1.4 : 0), by])[0], T([0, by])[1], top.d); }
-        if (outfit.top.stripe) for (var sy = -21; sy < hem; sy += 2) B.seg(T([-2.2, sy]), T([body[f ? 4 : 3][0] - 0.2, sy]), 0.5, 0.5, outfit.top.stripe);
+        if (outfit.top.stripe) for (var sy = -21; sy < hem; sy += 2) { var fx = null; for (var bi = 1; bi < body.length - 1 && fx === null; bi++) { var p0 = body[bi - 1], p1 = body[bi]; if (p0[0] > 0 && p1[0] > 0 && (p0[1] - sy) * (p1[1] - sy) <= 0 && p0[1] !== p1[1]) fx = p0[0] + (p1[0] - p0[0]) * (sy - p0[1]) / (p1[1] - p0[1]); } B.seg(T([-2.0, sy]), T([(fx === null ? 2.0 : fx) - 0.5, sy]), 0.5, 0.5, outfit.top.stripe); }   // (each stripe ends at the front of the body)
       }
       // the bottom: a skirt or dress over the legs, or a waistband over trousers
       var bk2 = outfit.bottom.kind, hn = lerp(nL.hip, nL.knee, outfit.bottom.len || 0.3), hf = lerp(fL.hip, fL.knee, outfit.bottom.len || 0.3);
@@ -240,7 +240,7 @@
         if (ck === 'puffer') for (var qy = -21; qy < -3; qy += 3) B.seg(T([-2.7 - pf, qy]), T([1.2 + pf, qy]), 0.5, 0.5, coat.s);
         if (ck === 'trench' || outfit.coat.belt) { B.seg(T([-2.6, -9.2]), T([1.4 + belly * 0.6, -9.2]), 0.9, 0.9, coat.d); B.set(T([0.4, -9.2])[0], T([0, -9.2])[1], '#c8b070'); }
         if (ck === 'rain') B.seg(T([0.2, -20]), longC ? [fr[0] - 2, fr[1] - 1] : T([0.4, -3]), 0.5, 0.5, coat.h);
-        if (ck === 'rain' && outfit.coat.hood) { B.poly([T([-2.2, -21.6]), T([-3.6, -22.6]), T([-3.6, -24.6]), T([-2.6, -25.2]), T([-1.6, -24.2])], coat.s); B.seg(T([-3.2, -24.4]), T([-2.0, -24.0]), 0.5, 0.5, coat.d); }   // a hood folded down at the back of the neck
+        if (ck === 'rain' && outfit.coat.hood) { B.poly([T([-1.9, -21.8]), T([-2.7, -22.3]), T([-2.7, -23.7]), T([-1.6, -24.0])], coat.s); B.seg(T([-2.5, -23.4]), T([-1.7, -23.6]), 0.5, 0.5, coat.d); }   // a hood folded down at the back of the neck
       }
       if (outfit.bag) {
         var bg = tones(outfit.bag.col);
@@ -251,7 +251,7 @@
 
       // ----- neck and head: a plain face (no features), hair over it
       B.poly([T([0.2, -23]), T([1.6, -23]), T([1.9, -25.6]), T([0.4, -25.8])], S.s);
-      var H0 = [T([0, 0])[0] - 0.8, T([0, 0])[1]];
+      var H0 = [T([0, 0])[0] - 1.1, T([0, 0])[1]];   // (the head over the shoulders, not ahead of them)
       function Hd(p) { return [H0[0] + p[0] * headK, H0[1] - 25.4 + (p[1] + 25.4) * headK]; }
       var bald = hs === 'bald' || hs === 'buzz';
       B.ell(Hd([1.2, -30.2])[0], Hd([1.2, -30.2])[1], 3.9 * headK, 4.7 * headK, bald ? S.b : H.b);
@@ -308,7 +308,7 @@
       var wd = def.wide || 1, hips = def.hips || (f ? 1 : 0.4), belly = def.belly || 0, ts = kid ? 0.82 : 1;
       var hipY = GY - (opts.seat || 8.5) / K, shY = hipY - 21.5 * ts - breath;
       var bulk = coat ? (outfit.coat.kind === 'puffer' ? 1.14 : 1.06) : 1;
-      var shW = (f ? 4.5 : 5.3) * wd * bulk * (kid ? 0.8 : 1), waW = ((f ? 3.1 : 3.7) + belly * 0.7) * wd * bulk * (kid ? 0.85 : 1), hpW = (f ? 3.4 + hips * 1.0 : 3.9) * wd * bulk * (kid ? 0.85 : 1);
+      var shW = (f ? 4.1 : 4.8) * wd * bulk * (kid ? 0.8 : 1), waW = ((f ? 3.1 : 3.7) + belly * 0.7) * wd * bulk * (kid ? 0.85 : 1), hpW = (f ? 3.4 + hips * 1.0 : 3.9) * wd * bulk * (kid ? 0.85 : 1);
       var bk = outfit.bottom.kind, longLeg = (bk === 'trousers' || bk === 'jeans') && (outfit.bottom.len || 2) > 1.5 || (bk === 'dress' || bk === 'skirt') && (outfit.bottom.len || 0.3) > 1.6;
       var calf = longLeg ? bot : legCol || S;
       // calves and heels

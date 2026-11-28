@@ -799,7 +799,7 @@
       for (var ix = 0; ix < reach; ix++) if (rnd() < 0.55 - ix * 0.03) px(800 + ix, iy, rnd() < 0.25 ? K.PLANTHI : rnd() < 0.5 ? K.PLANT : K.MOSS);
       if (iy % 9 === 0) px(800 + Math.floor(rnd() * reach), iy, K.WOODD);   // a woody stem showing
     }
-    box(800, 412, 190, 30, K.BOXB, 412, 30); frame(800, 412, 190, 30, K.METALD, 2);
+    box(800, 412, 178, 30, K.BOXB, 412, 30); frame(800, 412, 178, 30, K.METALD, 2);   // (it stops short of the pole at the corner)
     sign('DATA', 868, 416, { font: FB, scale: 3, fill: K.LETD, shade: K.BOXBD });
     centred('DUBAI', 950, 419, K.LETD, 1); centred('NUMBERS', 950, 427, K.LETD, 1);
     box(800, 442, 190, 88, K.DARK);
@@ -996,14 +996,14 @@
   // In front of everyone: power poles and wires, the street lamp, the railing, the barrier round the works
   function paintNear() {
     seed = 9090;
-    var P1 = 196, P2 = 992;
+    var P1 = 196, P2 = 986;                                // (P2 stands clear of the billboard, with room for the view to pan)
     [P1, P2].forEach(function (x, i) {
       box(x - 6, 24, 12, FOOT + 12 - 24, K.POLE, 24, FOOT); box(x - 6, 24, 3, FOOT - 12, K.POLED);
       box(x - 34, 46, 68, 5, K.POLED); box(x - 26, 76, 52, 4, K.POLED);
       [-30, -14, 14, 30].forEach(function (d) { box(x + d - 1, 40, 3, 6, K.METALHI); });
       [-22, 22].forEach(function (d) { box(x + d - 1, 71, 3, 5, K.METALHI); });
       for (var st = 120; st < 580; st += 26) box(x + (i ? -8 : 6), st, 3, 2, K.METALD);
-      if (i === 1) { box(x + 6, 104, 20, 34, K.METAL, 104, 34); box(x + 8, 100, 16, 4, K.METALD); line(x + 16, 104, x + 16, 82, K.WIRE); }
+      if (i === 1) { box(x - 26, 104, 20, 34, K.METAL, 104, 34); box(x - 24, 100, 16, 4, K.METALD); line(x - 16, 104, x - 16, 82, K.WIRE); }   // the transformer, on the side away from the billboard
       if (i === 0) { box(x + 6, 296, 44, 9, K.SIGNGR); frame(x + 6, 296, 44, 9, K.LITTER); text('MERGE ST', x + 13, 298, K.LITTER, 1, F3); box(x + 6, 300, 1, 1, K.METALD); }
       if (i === 1) { ellipse(x - 10, 322, 6, 6, K.SIGNRD); ellipse(x - 10, 322, 4.5, 4.5, K.SIGNBL); line(x - 14, 318, x - 6, 326, K.SIGNRD, 2); box(x - 6, 321, 4, 2, K.METALD); }
       box(x - 4, 300, 8, 18, K.LITTER); box(x - 4, 300, 8, 1, K.PAVED); for (var fl = 303; fl < 316; fl += 3) box(x - 3, fl, 6, 1, K.GRIME);   // an old flyer, peeling
@@ -1018,7 +1018,7 @@
     line(1229, 334, 1206, 326, K.POLED, 3); box(1186, 324, 26, 6, K.METALD); box(1190, 330, 18, 3, K.LAMP);
     // the railing along the curb, open in front of the works
     for (var x = -M + 4; x < W + M; x += 64) {
-      var gap = function (xx) { return xx > 996 && xx < 1176; };
+      var gap = function () { return false; };            // (it used to open for the roadworks barrier)
       if (!gap(x)) box(x, 572, 4, FOOT + 10 - 572, K.RAIL);
       for (var a = 0; a <= 64; a++) { var ax = x + a; if (gap(ax)) continue; px(ax, 572, K.RAIL); px(ax, 573, K.RAIL); px(ax, 574, K.RAIL); px(ax, 575, K.METALHI); px(ax, 590, K.RAIL); px(ax, 591, K.RAIL); if (a > 3 && a < 64) { var tt = (a - 4) / 60, ay = 576 + Math.sin(tt * Math.PI) * 9; px(ax, ay, K.RAIL); px(ax, ay + 1, K.RAIL); } }
     }
@@ -1028,10 +1028,6 @@
     line(bk, 596, bk + 10, 584, K.BIKE); line(bk + 10, 584, bk + 22, 584, K.BIKE); line(bk + 22, 584, bk + 26, 596, K.BIKE); line(bk + 10, 584, bk + 13, 596, K.BIKE); line(bk + 13, 596, bk, 596, K.BIKE);
     line(bk + 13, 596, bk + 22, 584, K.BIKE); line(bk + 10, 584, bk + 9, 580, K.BIKE); box(bk + 6, 579, 7, 2, K.METALD); line(bk + 22, 584, bk + 23, 578, K.BIKE); box(bk + 21, 577, 6, 1, K.METALD);
     line(bk + 12, 592, bk + 18, 586, K.METALHI); px(bk + 19, 586, K.METALHI);                     // the chain, round the railing
-    box(1000, 580, 172, 12, K.BAR1); for (var bx = 1000; bx < 1172; bx++) for (var by = 580; by < 592; by++) if ((((bx + by) / 8) % 2) < 1) px(bx, by, K.BAR2);
-    frame(1000, 580, 172, 12, K.BAR2); [1004, 1084, 1166].forEach(function (p) { box(p, 592, 3, 16, K.BAR2); });
-    box(1058, 564, 56, 14, K.BOXY); frame(1058, 564, 56, 14, K.BAR2);   // (its words are drawn live: a countdown to the next article)
-    [988, 1178].forEach(function (cx2) { box(cx2 + 3, 592, 4, 4, K.CONE); box(cx2 + 2, 596, 6, 3, K.CONEW); box(cx2 + 1, 599, 8, 6, K.CONE); box(cx2, 605, 10, 3, K.BAR2); });
   }
   // ---------- Build the parts (each is coloured only when a time of day first needs it) ----------
   var curPart = '', curZ = 0, LITWIN = [];                      // lit flat windows, so they can keep their own hours
@@ -1168,7 +1164,7 @@
       windows: [{ x: 278, y: 223, w: 42, h: 35 }, { x: 349, y: 223, w: 46, h: 35 }],
       stools: STOOLS.map(function (x) { return x / 2; }), stoolFoot: 260, stoolSeat: 8.5, shelter: [270, 402],
       waiter: { y: 260, x0: 280, x1: 393 }, dinerSize: 36, waiterSize: 36, workerSize: 30,
-      barrier: { x0: 502, x1: 584, top: 290 },
+      barrier: { x0: 502, x1: 584, top: 288 },          // (the crew show above the railing's top rail: below it they are down in the stairwell)
       workers: [{ id: 'workerA', x: 515, y: 296, dir: 1, kind: 'drill' }, { id: 'workerB', x: 563, y: 304, dir: -1, kind: 'shovel' }, { id: 'workerC', x: 592, y: 296, dir: -1, kind: 'sign' }],
       spots: [{ x: 50, kind: 'look', time: [3, 6] }, { x: 74, kind: 'look', time: [3, 6] }, { x: 133, kind: 'look', time: [3, 5] }, { x: 239, kind: 'look', time: [3, 5] },
         { x: 335, kind: 'look', time: [4, 7] }, { x: 447, kind: 'look', time: [4, 7] }, { x: 160, kind: 'wait', time: [8, 16] }, { x: 470, kind: 'wait', time: [8, 16] }, { x: 540, kind: 'wait', time: [6, 12] }],
@@ -1415,19 +1411,77 @@
   // ---------- Drawing ----------
   var lastTop = '';
   // The sky, the far city and the haze over it: one picture, redrawn only when the light, the weather or the view moves it
-  var back = offscreen(W, GROUND), backKey = '';
-  function drawBackdrop(fogAmount) {
+  // The sky (cached), the clouds drifting in front of it, then the far city in its haze (cached)
+  var back = offscreen(W, GROUND), backFar = offscreen(W, GROUND), backKey = '';
+  function drawBackdrop(fogAmount, t) {
     var key = offset(FAR.z) + '|' + Math.round(state.dusk * 96) + '|' + Math.round(state.day * 96) + '|' + Math.round(fogAmount * 40);
     if (key !== backKey) {
       backKey = key;
       var g = back.createLinearGradient(0, 0, 0, GROUND - 120);
       for (var i = 0; i < SKY.stops.length; i++) g.addColorStop(SKY.stops[i], css(skyAt(i)));
       back.fillStyle = g; back.fillRect(0, 0, W, GROUND);
-      drawPart(back, FAR);
-      fogWash(back, 0, GROUND, 0.05 * fogAmount, 0.22 * fogAmount);
+      backFar.clearRect(0, 0, W, GROUND); drawPart(backFar, FAR);
+      fogWash(backFar, 0, GROUND, 0.05 * fogAmount, 0.22 * fogAmount);
     }
     ctx.drawImage(back.canvas, 0, 0);
+    drawClouds(ctx, t || 0, fogAmount);
+    ctx.drawImage(backFar.canvas, 0, 0);
     drawSky();
+  }
+  // ---------- Clouds: pixel-art cumulus in two layers (far: small, flat, slow; near: bigger), each built from
+  // puffs over a flat base, lit from the upper left and shaded in four tones blended with an ordered dither.
+  // Their colours follow the time of day (white and grey by day, peach and lilac at dusk, dim and city-lit at night)
+  // and they turn heavier and greyer in rain and snow.
+  var CLOUD_PAL = {
+    day: ['#a2adb6', '#c2cace', '#e0e4e2', '#f6f5ef'], dusk: ['#76687e', '#a68a98', '#e4ae9c', '#ffd6a4'],
+    night: ['#2e2230', '#3e2f3c', '#524250', '#6a5664'], storm: ['#5a5e66', '#6e737a', '#868b90', '#9ea2a4']
+  };
+  var BAYER = [[0, 0.5], [0.75, 0.25]];
+  var CLOUDS = (function () {
+    var seed = 9137, r = function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }, out = [];
+    for (var i = 0; i < 9; i++) {
+      var far = i < 4, w = Math.round(far ? 64 + r() * 56 : 110 + r() * 120), h = Math.round(w * (far ? 0.2 : 0.26) + r() * 6);
+      var m = new Uint8Array(w * h), puffs = [], n = Math.max(3, Math.round(w / 15));
+      for (var p = 0; p < n; p++) {
+        var u = p / (n - 1), pr = h * (0.34 + r() * 0.26) * (1.05 - Math.abs(u - 0.42) * 0.9);
+        puffs.push([8 + (w - 16) * u + (r() - 0.5) * 6, h - 3 - pr * 0.85, pr]);
+      }
+      for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+        var best = -9;
+        puffs.forEach(function (q) { var dx = (x + 0.5 - q[0]) / q[2], dy = (y + 0.5 - q[1]) / (q[2] * 0.82); if (dx * dx + dy * dy <= 1) best = Math.max(best, -0.55 * dx - 0.84 * dy); });
+        var base = y >= h * 0.6 && y < h - 1 && x > w * 0.07 && x < w * 0.93;
+        if (best < -8 && !base) continue;
+        var yy = y / h, L = clamp(0.55 + (best < -8 ? -0.3 : best) * 0.6 - Math.max(0, yy - 0.55) * 1.3, 0, 0.999) * 3;
+        var lv = Math.floor(L); if (L - lv > BAYER[y & 1][x & 1]) lv++;   // (the ordered dither between tones)
+        m[y * w + x] = 1 + Math.min(3, lv);
+      }
+      out.push({ w: w, h: h, m: m, far: far, x: r() * (W + 400), y: far ? 26 + r() * 46 : 40 + r() * 86, v: far ? 1.6 + r() * 1.4 : 3 + r() * 2.5, cv: null, key: '' });
+    }
+    return out;
+  })();
+  function cloudColours(fogAmount) {
+    var storm = clamp((fogAmount - 1) * 2.8, 0, 1), pal = [];
+    for (var i = 0; i < 4; i++) {
+      var c = mix(mix(rgbH(CLOUD_PAL.night[i]), rgbH(CLOUD_PAL.dusk[i]), state.dusk), rgbH(CLOUD_PAL.day[i]), state.day);
+      pal.push(mix(c, mix(rgbH(CLOUD_PAL.storm[i]), rgbH(CLOUD_PAL.night[i]), 1 - state.day), storm * 0.75));
+    }
+    return pal;
+  }
+  function drawClouds(g, t, fogAmount) {
+    var pal = cloudColours(fogAmount), key = pal.map(function (c) { return (c[0] >> 2) + ',' + (c[1] >> 2) + ',' + (c[2] >> 2); }).join('|');
+    var span = W + 400, storm = clamp((fogAmount - 1) * 2.8, 0, 1);
+    CLOUDS.forEach(function (c) {
+      if (c.key !== key) {                               // recolour this cloud (only when the light has moved)
+        if (!c.cv) c.cv = offscreen(c.w, c.h);
+        var img = c.cv.createImageData(c.w, c.h), d = img.data;
+        for (var i = 0; i < c.m.length; i++) { var v = c.m[i]; if (!v) continue; var col = pal[v - 1]; d[i * 4] = col[0]; d[i * 4 + 1] = col[1]; d[i * 4 + 2] = col[2]; d[i * 4 + 3] = 255; }
+        c.cv.putImageData(img, 0, 0); c.key = key;
+      }
+      var x = Math.round(((c.x - t * c.v + offset(c.far ? 0.05 : 0.09)) % span + span) % span - 200);
+      g.globalAlpha = (c.far ? 0.62 : 0.88) * (0.75 + 0.25 * state.day) + storm * 0.1;
+      g.drawImage(c.cv.canvas, x, Math.round(c.y));
+    });
+    g.globalAlpha = 1;
   }
   function drawSky() {
     var top = css(skyAt(0));
@@ -1540,7 +1594,7 @@
     });
   }
   // Service wires from the poles to three buildings, drawn live so each end moves with what it is tied to
-  var DROPS = [[196, 80, 150, 158, 8, 0.43], [992, 80, 966, 158, 4, 0.42]];
+  var DROPS = [[196, 80, 150, 158, 8, 0.43], [986, 80, 960, 158, 4, 0.42]];
   function drawDropWires(g) {
     g.strokeStyle = css(litColor('WIRE')); g.lineWidth = 1; g.beginPath();
     DROPS.forEach(function (d) { var x0 = d[0] + offset(NEAR_Z) + 0.5, x1 = d[2] + offset(d[5]) + 0.5; g.moveTo(x0, d[1] + 0.5); g.quadraticCurveTo((x0 + x1) / 2, (d[1] + d[3]) / 2 + d[4] * 2, x1, d[3] + 0.5); });
@@ -1556,8 +1610,6 @@
       g.fillStyle = glow ? '#2aa060' : '#b4ffd2';
       for (var k = 0; k < 17; k++) { var v = Math.sin((t * 1.6 + i * 2) + k * 0.55) * 3 + Math.sin(t * 0.7 + k * 1.3 + i) * 2; g.fillRect(s[0] + 2 + k + oe, Math.round(s[1] + 8 + v), 1, 1); }
     });
-    var on = ((t * 1.4) % 1) < 0.5, ob = offset(NEAR_Z);
-    g.fillStyle = '#ff4a2a'; if (on) { g.fillRect(1002 + ob, 603, 3, 3); g.fillRect(1167 + ob, 603, 3, 3); }
   }
   // The puddles' dark water, laid on the ground
   function drawPuddles(g) {
@@ -1723,8 +1775,8 @@
   function renderScene(t) {
     var fogAmount = 1 + 0.35 * rainLevel + 0.2 * snowLevel, e = env();
     // Sky, the far city in its haze, chimney smoke, the street of buildings, the ground and its puddles
-    drawBackdrop(fogAmount); drawBirds(t);
-    fogBand(ctx, 40, 5, 3, 0.45 * fogAmount, t, 0.15);
+    drawBackdrop(fogAmount, t); drawBirds(t);
+    fogBand(ctx, 150, 5, 3, 0.22 * fogAmount, t, 0.15);   // (a low haze over the far city; the sky has its clouds)
     drawSmoke(ctx, 'back');
     drawDrone(ctx, t, false);
     drawStreet(t);
@@ -1744,8 +1796,8 @@
     // Front: the stairwell's railings, the railing, poles and wires, the lamp; steam, low fog, weather, grain
     ftx.clearRect(0, 0, W, H);
     if (!(crowd && crowd.drawWorkers)) drawPart(ftx, SUBWAY);   // (otherwise it goes between the walkers and the workers)
-    if (PROPS_FRONT) drawPart(ftx, PROPS_FRONT);            // things at the curb stand in front of the walkers
-    drawPart(ftx, NEAR); drawDropWires(ftx); drawCountdown(ftx); drawXmasFront(ftx, t); drawPigeons(ftx, t, false);
+    drawPart(ftx, NEAR); if (PROPS_FRONT) drawPart(ftx, PROPS_FRONT);   // things at the curb stand in front of the walkers, and of the railing (their feet are nearer)
+    drawDropWires(ftx); drawXmasFront(ftx, t); drawPigeons(ftx, t, false);
     drawSmoke(ftx, 'front');
     fogBand(ftx, 450, 4, 9, 0.16 * fogAmount, t, 0.5);
     fogBand(ftx, 540, 3, -6, 0.12 * fogAmount, t + 40, 0.7);
@@ -2071,7 +2123,7 @@
       for (var u = 0; u <= 1; u += 0.15) g.fillRect(Math.round(x + 24 + (Math.cos(an2) * r1) * (1 - u) + Math.cos(an3) * r2 * u), Math.round(134 + (Math.sin(an2) * r1) * (1 - u) + Math.sin(an3) * r2 * u), 1, 1); }
   }
   // OPEN / CLOSED boards on the doors, turning over when the hours change
-  var SHOPSIGNS = [{ x: 352, y: 444, open: [9, 21] }, { x: 658, y: 478, open: [17, 2] }, { x: 1110, y: 454, open: [10, 22] }];
+  var SHOPSIGNS = [{ x: 352, y: 444, open: [9, 21] }, { x: 658, y: 478, open: [11, 2] }, { x: 1110, y: 454, open: [10, 22] }];
   function drawShopSigns(g, t) {
     SHOPSIGNS.forEach(function (s) {
       var on = between(state.hour, s.open[0], s.open[1]);
@@ -2289,16 +2341,6 @@
   }
   var MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   readNext(); window.setInterval(readNext, 60000);
-  function pixText(g, str, cx, y, col) {
-    var x = Math.round(cx - (str.length * 4 - 1) / 2); g.fillStyle = col;
-    for (var i = 0; i < str.length; i++) { var r = glyphRows(F3, str[i]); if (r) for (var yy = 0; yy < 5; yy++) for (var xx = 0; xx < 3; xx++) if (r[yy][xx] === 'X') g.fillRect(x + i * 4 + xx, y + yy, 1, 1); }
-  }
-  function drawCountdown(g) {
-    var cx = 1086 + offset(NEAR_Z), col = amb('#2a2018');
-    if (!NEXT) { pixText(g, 'OPENING', cx, 566, col); pixText(g, 'SOON', cx, 572, col); return; }
-    pixText(g, 'NEXT ' + NEXT.d.getDate() + ' ' + MONTHS[NEXT.d.getMonth()], cx, 566, col);
-    pixText(g, NEXT.days === 0 ? 'OUT TODAY' : NEXT.days === 1 ? 'TOMORROW' : 'IN ' + NEXT.days + ' DAYS', cx, 572, col);
-  }
 
   // ---------- Christmas (20 Nov to 6 Jan; ?xmas=1 or ?xmas=0 to preview) ----------
   var XMAS = (function () { var q = query.get('xmas'); if (q === '1') return true; if (q === '0') return false; var d = new Date(), m = d.getMonth(), day = d.getDate(); return (m === 10 && day >= 20) || m === 11 || (m === 0 && day <= 6); })();
@@ -2319,7 +2361,7 @@
   }
   var WIRE_BULBS = [], AWN_BULBS = [], TREE_BULBS = [];
   (function () {
-    var x0 = 196 - 22, x1 = 992 - 22;
+    var x0 = 196 - 22, x1 = 986 - 22;
     for (var x = x0 + 10; x < x1 - 6; x += 15) { var tt = (x - x0) / (x1 - x0); WIRE_BULBS.push([x, Math.round(71 + 40 * 4 * tt * (1 - tt)) + 2]); }
     for (var ax = 538; ax < 806; ax += 9) AWN_BULBS.push([ax, 428 + ((ax / 9) % 2 ? 1 : 0)]);
     [[412, 497, 9], [412, 507, 12], [412, 517, 15]].forEach(function (r) { for (var k = -r[2] + 2; k <= r[2] - 2; k += 5) TREE_BULBS.push([r[0] + k, r[1] + (k % 2 ? 2 : 0)]); });

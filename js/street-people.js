@@ -953,7 +953,7 @@ window.StreetPeople = function (D) {
   }
 
   // ---------- People inside the diner, and the road workers ----------
-  var diners = [];
+  var diners = [], dinersTrimmed = false;
   // P.stools: customers sit outside on stools at an open counter, backs to the street (feet at P.stoolFoot, the
   // seat BACK_SEAT higher). Otherwise (P.seats) they sit inside at the counter, side on.
   var STOOLS = P.stools || null, STOOL_FOOT = P.stoolFoot || 264, BACK_SEAT = P.stoolSeat || 11;
@@ -965,7 +965,7 @@ window.StreetPeople = function (D) {
   // printer prints the ticket, the server brings the food, and when they have eaten they come back out of the door.
   var arrivals = [], orders = [];
   function freeStool() { if (!STOOLS) return -1; var free = []; STOOLS.forEach(function (x, i) { if (!diners.some(function (d) { return d.stool === i; })) free.push(i); }); return free.length ? free[Math.floor(Math.random() * free.length)] : -1; }
-  function wantDiners(h) { return h >= 19 && h < 23 ? 7 : h >= 12 && h < 14.5 ? 5 : h >= 1 && h < 6 ? 1 : 3; }   // how full the counter is through the day
+  function wantDiners(h) { return h >= 2 && h < 11 ? 0 : h >= 19 && h < 23 ? 7 : h >= 12 && h < 14.5 ? 5 : h >= 1 && h < 2 ? 1 : 3; }   // how full the counter is through the day (shut from 2 till 11, as the door says)
   var waiter = { x: WAITER.x0 + 12, dir: 1, dist: 0, state: 'walk', timer: 0, pose: 'idle' };
   var workers = P.workers || [{ id: 'workerA', x: 566, dir: 1, kind: 'talk' }, { id: 'workerB', x: 590, dir: -1, kind: 'shovel' }, { id: 'workerC', x: 626, dir: -1, kind: 'sign' }];
 
@@ -1072,6 +1072,7 @@ window.StreetPeople = function (D) {
     for (var q = puffs.length - 1; q >= 0; q--) { var pf = puffs[q]; pf.age += dt; pf.x += (pf.vx + drift) * dt; pf.y += pf.vy * dt; pf.vx *= Math.pow(0.5, dt); pf.vy = pf.vy * Math.pow(0.6, dt) - 2 * dt; if (pf.age >= pf.life) puffs.splice(q, 1); }
     if (STOOLS) {
       var hour = env.hour === undefined ? 20 : env.hour;
+      if (!dinersTrimmed) { dinersTrimmed = true; while (diners.length > wantDiners(hour)) diners.splice(Math.floor(Math.random() * diners.length), 1); }   // (the first time the hour is known: as full as the hour says)
       if (diners.length + arrivals.length < wantDiners(hour) && Math.random() < dt * 0.02) { arrivals.push({ id: pick(DINERS), at: t + 1.5 }); door.open = 1.8; }   // someone slips in
       for (var ar = arrivals.length - 1; ar >= 0; ar--) {
         if (t < arrivals[ar].at) continue;
@@ -1283,7 +1284,7 @@ window.StreetPeople = function (D) {
   function workerGlow(wk, i, env) {
     var kh = P.workerSize || 30;
     if (env.crewOff) return null;
-    if (((env.t + i * 0.7) % 1.6) >= 1.1) return null;
+    // (the helmet lamps stay on: no blinking)
     var ln = WORK_LEAN[wk.kind] || 0, wy = (wk.y || WORKER_Y) - Math.round(kh * (0.9 - (1 - Math.cos(ln)) * 0.5));
     if (wy >= BARRIER.top) return null;
     return { x: Math.round(wk.x + env.offset(WORKER_DEPTH) + wk.dir * kh * (0.04 + Math.sin(ln) * 0.34)), y: wy, w: 2, c: '#6dff8f', kind: 'helmet' };
